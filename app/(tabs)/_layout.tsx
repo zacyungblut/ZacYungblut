@@ -24,7 +24,7 @@ export default function TabLayout() {
     scrollViewRef.current?.scrollTo({
       x: index * SCREEN_WIDTH,
       y: 0,
-      animated: true,
+      animated: false,
     });
   }, []);
 
