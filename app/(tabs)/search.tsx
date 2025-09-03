@@ -1,28 +1,36 @@
 import { StyleSheet, TextInput, Dimensions } from "react-native";
 
 import { Text, View } from "@/components/Themed";
+import TopBar from "@/components/TopBar";
 
 const { width } = Dimensions.get("window");
 
 export default function SearchScreen() {
+  const handlePremiumPress = () => {
+    // Handle premium upsell navigation
+    console.log("Premium pressed");
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Search</Text>
+      <TopBar title="Search" onPremiumPress={handlePremiumPress} />
 
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Enter phone number..."
-          placeholderTextColor="#999"
-          keyboardType="phone-pad"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
+      <View style={styles.content}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Enter phone number..."
+            placeholderTextColor="#999"
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        <Text style={styles.subtitle}>
+          Search for anyone by phone number to see their status
+        </Text>
       </View>
-
-      <Text style={styles.subtitle}>
-        Search for anyone by phone number to see their status
-      </Text>
     </View>
   );
 }
@@ -30,18 +38,11 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
     justifyContent: "center",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 80,
-    position: "absolute",
-    top: 60,
-    left: 0,
-    right: 0,
   },
   searchContainer: {
     alignItems: "center",
