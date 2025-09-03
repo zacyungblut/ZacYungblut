@@ -12,7 +12,7 @@ export default function TopBar({ title, onPremiumPress }: TopBarProps) {
     <View style={styles.container}>
       <View style={styles.leftSection}>
         <Image
-          source={require("@/assets/images/taken.png")}
+          source={require("@/assets/images/official.png")}
           style={styles.logo}
           resizeMode="contain"
         />

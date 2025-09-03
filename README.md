@@ -38,7 +38,7 @@ When two people confirm their relationship, their status (dating, situationship,
 git clone <repository-url>
 
 # Navigate to the project directory
-cd taken
+cd official
 
 # Install dependencies
 npm install
