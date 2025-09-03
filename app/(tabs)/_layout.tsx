@@ -10,8 +10,8 @@ import { useColorScheme } from "@/components/useColorScheme";
 import TabBar from "@/components/TabBar";
 
 // Import your tab screens directly
-import TabOneScreen from "./index";
-import TabTwoScreen from "./two";
+import SearchScreen from "./search";
+import RelationshipScreen from "./relationship";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -53,10 +53,10 @@ export default function TabLayout() {
         bounces={false}
         decelerationRate="fast">
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-          <TabOneScreen />
+          <SearchScreen />
         </View>
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-          <TabTwoScreen />
+          <RelationshipScreen />
         </View>
       </Animated.ScrollView>
 
