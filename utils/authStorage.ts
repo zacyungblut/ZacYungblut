@@ -1,0 +1,47 @@
+import { MMKV } from "react-native-mmkv";
+
+// Create a dedicated MMKV instance for authentication
+export const authStorage = new MMKV({
+  id: "auth-storage",
+});
+
+const AUTH_TOKEN_KEY = "authToken";
+
+export class AuthService {
+  static getAuthToken(): string | undefined {
+    try {
+      const token = authStorage.getString(AUTH_TOKEN_KEY);
+      console.log(
+        "Retrieved auth token:",
+        token ? "Token exists" : "No token found"
+      );
+      return token;
+    } catch (error) {
+      console.error("Error retrieving auth token:", error);
+      return undefined;
+    }
+  }
+
+  static setAuthToken(token: string): void {
+    try {
+      authStorage.set(AUTH_TOKEN_KEY, token);
+      console.log("Auth token saved successfully");
+    } catch (error) {
+      console.error("Error saving auth token:", error);
+    }
+  }
+
+  static removeAuthToken(): void {
+    try {
+      authStorage.delete(AUTH_TOKEN_KEY);
+      console.log("Auth token removed successfully");
+    } catch (error) {
+      console.error("Error removing auth token:", error);
+    }
+  }
+
+  static isAuthenticated(): boolean {
+    const token = this.getAuthToken();
+    return !!token;
+  }
+}
