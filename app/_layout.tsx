@@ -9,6 +9,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
+import { router } from "expo-router";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthService } from "@/utils/authStorage";
@@ -17,11 +18,6 @@ export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from "expo-router";
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: "signup",
-};
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -56,22 +52,33 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  // Navigate based on authentication status once determined
+  useEffect(() => {
+    if (isAuthenticated !== null) {
+      if (isAuthenticated) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/auth");
+      }
+    }
+  }, [isAuthenticated]);
+
   if (!loaded || isAuthenticated === null) {
     return null;
   }
 
-  return <RootLayoutNav isAuthenticated={isAuthenticated} />;
+  return <RootLayoutNav />;
 }
 
-function RootLayoutNav({ isAuthenticated }: { isAuthenticated: boolean }) {
+function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName={isAuthenticated ? "(tabs)" : "signup"}>
+      <Stack>
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        <Stack.Screen name="signup" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

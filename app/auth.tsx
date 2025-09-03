@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import { useRouter } from "expo-router";
 
 // Using your existing icon as a placeholder for the logo
-import LogoPlaceholder from "@/assets/images/icon.png";
+import LogoPlaceholder from "@/assets/images/official.png";
 
 // Define colors similar to the example
 const colors = {
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: 0,
+    paddingBottom: 32,
   },
   button: {
     paddingVertical: 24,
