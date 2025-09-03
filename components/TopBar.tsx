@@ -12,7 +12,7 @@ export default function TopBar({ title, onPremiumPress }: TopBarProps) {
     <View style={styles.container}>
       <View style={styles.leftSection}>
         <Image
-          source={require("@/assets/images/icon.png")}
+          source={require("@/assets/images/taken.png")}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -27,7 +27,7 @@ export default function TopBar({ title, onPremiumPress }: TopBarProps) {
           style={styles.premiumButton}
           onPress={onPremiumPress}
           activeOpacity={0.7}>
-          <Text style={styles.premiumText}>P</Text>
+          <Text style={styles.premiumText}>🔮</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   logo: {
-    width: 32,
-    height: 32,
+    width: 48,
+    height: 48,
   },
   title: {
     fontSize: 18,
@@ -68,14 +68,10 @@ const styles = StyleSheet.create({
   premiumButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "#007AFF",
     alignItems: "center",
     justifyContent: "center",
   },
   premiumText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 20,
   },
 });
