@@ -103,7 +103,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentPage, onTabPress }) => {
         {/* Tab buttons */}
         <View style={styles.tabContainer}>
           <TabIcon name="search" index={0} label="Search" />
-          <TabIcon name="person" index={1} label="Profile" />
+          <TabIcon name="person" index={1} label="Relationship" />
         </View>
       </Animated.View>
     </View>

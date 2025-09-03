@@ -5,7 +5,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 
-import Colors from "@/constants/Colors";
+import { colors } from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import TabBar from "@/components/TabBar";
 
@@ -16,7 +16,6 @@ import RelationshipScreen from "./relationship";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const scrollViewRef = useRef<Animated.ScrollView>(null);
   const currentPage = useSharedValue(0);
 
@@ -47,7 +46,7 @@ export default function TabLayout() {
         style={[
           styles.scrollView,
           {
-            backgroundColor: Colors[colorScheme ?? "light"].background,
+            backgroundColor: colors.background.primary,
           },
         ]}
         bounces={false}
