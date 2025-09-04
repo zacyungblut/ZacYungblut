@@ -10,9 +10,14 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { router } from "expo-router";
+import { Provider } from "react-redux";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthService } from "@/utils/authStorage";
+import { getCurrentUser } from "@/api";
+import { AxiosError } from "axios";
+import { store } from "@/store";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -22,52 +27,107 @@ export {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+// Inner component that uses Redux
+function AppContent() {
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+
+  // Use Redux for user state management
+  const { user, saveUser, logoutUser } = useUserRedux();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
-  // Check authentication status when fonts are loaded
-  useEffect(() => {
-    if (loaded) {
-      // Get auth token and log it
-      const token = AuthService.getAuthToken();
-      console.log(
-        "Auth token check:",
-        token ? `Token: ${token}` : "No token found"
-      );
-
-      const authenticated = AuthService.isAuthenticated();
-      console.log("User authentication status:", authenticated);
-
-      setIsAuthenticated(authenticated);
-      SplashScreen.hideAsync();
+  // Function to fetch current user data
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await getCurrentUser();
+      console.log("Current user data:", response.data.user);
+      saveUser(response.data.user);
+      return response.data.user;
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      // If fetching user fails due to invalid token, clear auth
+      if (
+        error instanceof AxiosError &&
+        (error.response?.status === 401 || error.response?.status === 403)
+      ) {
+        console.log("Invalid token detected, clearing auth");
+        AuthService.removeAuthToken();
+        logoutUser();
+      }
+      return null;
     }
+  };
+
+  // Check authentication and fetch user when fonts are loaded
+  useEffect(() => {
+    const checkAuthAndFetchUser = async () => {
+      if (loaded) {
+        const token = AuthService.getAuthToken();
+        console.log(
+          "Auth token check:",
+          token
+            ? `Token exists: ${token.substring(0, 20)}...`
+            : "No token found"
+        );
+
+        if (token) {
+          // Token exists, try to fetch user
+          const userData = await fetchCurrentUser();
+          if (userData) {
+            console.log("User authenticated successfully:", userData);
+          } else {
+            console.log("Failed to fetch user data, redirecting to auth");
+          }
+        } else {
+          console.log("No auth token found, redirecting to auth");
+          logoutUser(); // Clear any existing user state
+        }
+
+        setAuthCheckComplete(true);
+        SplashScreen.hideAsync();
+      }
+    };
+
+    checkAuthAndFetchUser();
   }, [loaded]);
 
-  // Navigate based on authentication status once determined
+  // Navigate based on authentication status once check is complete
   useEffect(() => {
-    if (isAuthenticated !== null) {
-      if (isAuthenticated) {
+    if (authCheckComplete) {
+      const token = AuthService.getAuthToken();
+
+      if (token && user) {
+        // Has valid token and user data
+        console.log("Navigating to main app");
         router.replace("/(tabs)");
       } else {
+        // No token or no user data
+        console.log("Navigating to auth screen");
         router.replace("/auth");
       }
     }
-  }, [isAuthenticated]);
+  }, [authCheckComplete, user]);
 
-  if (!loaded || isAuthenticated === null) {
+  if (!loaded || !authCheckComplete) {
     return null;
   }
 
   return <RootLayoutNav />;
+}
+
+export default function RootLayout() {
+  return (
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
+  );
 }
 
 function RootLayoutNav() {
@@ -78,8 +138,12 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
-        <Stack.Screen name="verification" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="verification"
+          options={{ headerShown: false, presentation: "modal" }}
+        />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
     </ThemeProvider>

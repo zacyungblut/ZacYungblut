@@ -42,24 +42,26 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start", // Changed from center to flex-start
     minHeight: "100%",
   },
   mainContent: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start", // Changed from center to flex-start
     paddingHorizontal: 20,
-    paddingVertical: 40,
+    paddingTop: 40, // Reduced top padding
+    paddingBottom: 20, // Reduced bottom padding
   },
   formContainer: {
     width: "100%",
     maxWidth: 400,
     alignItems: "center",
+    marginTop: 20, // Added top margin to position content better
   },
   textContainer: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 32, // Reduced margin
   },
   title: {
     fontSize: 28,
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: colors.text.tertiary,
-    marginBottom: 40,
+    marginBottom: 20, // Reduced margin
     textAlign: "center",
   },
   phoneText: {
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
   codeInputContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 32,
+    marginBottom: 24, // Reduced margin
     gap: 16,
   },
   hiddenInput: {
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
   },
   resendContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16, // Reduced margin
   },
   resendText: {
     fontSize: 14,
@@ -113,7 +115,7 @@ const styles = StyleSheet.create({
   },
   keyboardStickyContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 90, // Increased bottom padding for the button area
     backgroundColor: colors.surface.white,
   },
   submitButtonContainer: {

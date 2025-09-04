@@ -3,7 +3,7 @@ export const colors = {
   // Primary colors
   // primary: "#1a2151",
   hero: "#121212",
-  heroSecondary: "#ffd4a3",
+  heroSecondary: "white",
   offBlack: "#121212",
   primary: "#000000",
   primaryLight: "#2a3161",

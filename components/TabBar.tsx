@@ -9,7 +9,6 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
-import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 
 const TAB_BAR_HEIGHT = 90;
@@ -102,8 +101,8 @@ const TabBar: React.FC<TabBarProps> = ({ currentPage, onTabPress }) => {
 
         {/* Tab buttons */}
         <View style={styles.tabContainer}>
-          <TabIcon name="search" index={0} label="Search" />
-          <TabIcon name="person" index={1} label="Relationship" />
+          <TabIcon name="person" index={0} label="My Relationship" />
+          <TabIcon name="search" index={1} label="Search Others" />
         </View>
       </Animated.View>
     </View>

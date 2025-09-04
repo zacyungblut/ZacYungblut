@@ -52,10 +52,10 @@ export default function TabLayout() {
         bounces={false}
         decelerationRate="fast">
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-          <SearchScreen />
+          <RelationshipScreen />
         </View>
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-          <RelationshipScreen />
+          <SearchScreen />
         </View>
       </Animated.ScrollView>
 

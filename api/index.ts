@@ -1,6 +1,7 @@
-export const baseURL = "http://localhost:4000"; // Updated to match backend port
 import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
+
+export const baseURL = "http://localhost:4000"; // Updated to match backend port
 
 let API = createAPIInstance();
 
@@ -57,4 +58,9 @@ export const verifyCode = async (phone: string, code: string) => {
 
 export const resendVerification = async (phone: string, type: string) => {
   return API.post("/auth/signup", { phone });
+};
+
+// Add this new function to get the current authenticated user
+export const getCurrentUser = async () => {
+  return API.get("/auth/me");
 };

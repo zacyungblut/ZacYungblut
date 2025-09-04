@@ -135,11 +135,19 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
     onPhoneNumberChange(limitedValue);
   };
 
+  const handleClearPress = () => {
+    onPhoneNumberChange("");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   // Get formatted display value
   const displayValue = formatPhoneNumber(phoneNumber, selectedCountry.dialCode);
 
   // Show placeholder when empty
   const showPlaceholder = phoneNumber.length === 0;
+
+  // Show clear button when there's content
+  const showClearButton = phoneNumber.length > 0;
 
   return (
     <>
@@ -176,6 +184,17 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
               )}
             </View>
 
+            {/* Clear Button */}
+            {showClearButton && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={handleClearPress}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+
             {/* Hidden TextInput for actual input handling */}
             <TextInput
               ref={hiddenInputRef}
@@ -189,6 +208,7 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
               autoCorrect={false}
               autoComplete="off"
               textContentType="none"
+              caretHidden={false}
             />
           </View>
           {error != null && error.length > 0 && (
@@ -298,6 +318,21 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: colors.text.placeholder,
+  },
+  clearButton: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.text.tertiary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  clearButtonText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: colors.background.primary,
+    lineHeight: 10,
   },
   hiddenInput: {
     position: "absolute",
