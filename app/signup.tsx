@@ -6,6 +6,7 @@ import {
   View,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { colors } from "@/constants/Colors";
@@ -15,6 +16,7 @@ import {
   DEFAULT_COUNTRY,
 } from "@/constants/countryCodes";
 import PhoneTextInput from "@/components/PhoneTextInput";
+import { signup } from "@/api";
 
 const { height } = Dimensions.get("window");
 
@@ -25,6 +27,7 @@ export default function SignupScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedCountry, setSelectedCountry] =
     useState<CountryCode>(DEFAULT_COUNTRY);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
     router.back();
@@ -46,11 +49,32 @@ export default function SignupScreen() {
     return number.length === expectedLength;
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (isValidNumber(phoneNumber)) {
+      setIsLoading(true);
       const fullNumberWithCountryCode = `${selectedCountry.dialCode}${phoneNumber}`;
-      console.log("Phone number to signup:", fullNumberWithCountryCode);
-      // TODO: Add actual signup logic here
+
+      try {
+        console.log("Phone number to signup:", fullNumberWithCountryCode);
+
+        // Call signup API
+        await signup(fullNumberWithCountryCode);
+
+        // Navigate to verification screen with phone number
+        router.push({
+          pathname: "/verification",
+          params: { phone: fullNumberWithCountryCode },
+        });
+      } catch (error: any) {
+        console.error("Signup error:", error);
+        Alert.alert(
+          "Error",
+          error.response?.data?.error ||
+            "Failed to send verification code. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -90,17 +114,19 @@ export default function SignupScreen() {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            !isValidNumber(phoneNumber) && styles.continueButtonDisabled,
+            (!isValidNumber(phoneNumber) || isLoading) &&
+              styles.continueButtonDisabled,
           ]}
           onPress={handleContinue}
-          disabled={!isValidNumber(phoneNumber)}
+          disabled={!isValidNumber(phoneNumber) || isLoading}
           activeOpacity={0.8}>
           <Text
             style={[
               styles.continueButtonText,
-              !isValidNumber(phoneNumber) && styles.continueButtonTextDisabled,
+              (!isValidNumber(phoneNumber) || isLoading) &&
+                styles.continueButtonTextDisabled,
             ]}>
-            Continue
+            {isLoading ? "Sending..." : "Continue"}
           </Text>
         </TouchableOpacity>
       </View>

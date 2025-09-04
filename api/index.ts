@@ -1,4 +1,4 @@
-export const baseURL = "http://localhost:3000"; // local host
+export const baseURL = "http://localhost:4000"; // Updated to match backend port
 import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
@@ -48,5 +48,13 @@ function createAPIInstance() {
 }
 
 export const signup = async (phone: string) => {
+  return API.post("/auth/signup", { phone });
+};
+
+export const verifyCode = async (phone: string, code: string) => {
+  return API.post("/auth/verify", { phone, code });
+};
+
+export const resendVerification = async (phone: string, type: string) => {
   return API.post("/auth/signup", { phone });
 };
