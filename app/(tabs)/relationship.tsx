@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: colors.hero,
+    backgroundColor: colors.background.primary,
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 16,
@@ -356,12 +356,12 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.heroSecondary,
+    color: colors.text.primary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: colors.heroSecondary,
+    color: colors.text.secondary,
     fontWeight: "500",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: "white",
+    backgroundColor: colors.text.tertiary,
     marginHorizontal: 16,
     opacity: 0.5,
   },
