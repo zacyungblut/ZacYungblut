@@ -6,18 +6,23 @@ import {
   TextInput,
   TextStyle,
   TouchableWithoutFeedback,
+  TouchableOpacity,
   View,
   ViewStyle,
+  Modal,
+  FlatList,
+  SafeAreaView,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { colors } from "@/constants/Colors";
-import { CountryCode } from "@/constants/countryCodes";
+import { CountryCode, COUNTRY_CODES } from "@/constants/countryCodes";
 
 interface PhoneTextInputProps {
   label: string;
   phoneNumber: string;
   onPhoneNumberChange: (text: string) => void;
   selectedCountry: CountryCode;
+  onCountryChange: (country: CountryCode) => void;
   placeholder?: string;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
@@ -31,6 +36,7 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
   phoneNumber,
   onPhoneNumberChange,
   selectedCountry,
+  onCountryChange,
   placeholder,
   containerStyle,
   inputStyle,
@@ -39,6 +45,7 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
   autoFocus,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [showCountryModal, setShowCountryModal] = useState(false);
   const hiddenInputRef = useRef<TextInput>(null);
 
   // Handle delayed auto focus on phone number input
@@ -63,6 +70,17 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
 
   const handleContainerPress = () => {
     hiddenInputRef.current?.focus();
+  };
+
+  const handleCountryPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowCountryModal(true);
+  };
+
+  const handleCountrySelect = (country: CountryCode) => {
+    onCountryChange(country);
+    setShowCountryModal(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const getBorderColor = () => {
@@ -124,54 +142,99 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
   const showPlaceholder = phoneNumber.length === 0;
 
   return (
-    <TouchableWithoutFeedback onPress={handleContainerPress}>
-      <View style={[styles.container, containerStyle]}>
-        <Text style={[styles.label, labelStyle]}>{label}</Text>
-        <View
-          style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
-          {/* Country Code Display */}
-          <View style={styles.countryCodeContainer}>
-            <Text style={styles.countryCodeText}>
-              {selectedCountry.dialCode}
-            </Text>
-          </View>
-
-          {/* Separator */}
-          <View style={styles.separator} />
-
-          {/* Phone Number Display */}
-          <View style={styles.phoneNumberContainer}>
-            {showPlaceholder ? (
-              <Text style={[styles.phoneNumberText, styles.placeholderText]}>
-                {placeholder ?? "Phone number"}
+    <>
+      <TouchableWithoutFeedback onPress={handleContainerPress}>
+        <View style={[styles.container, containerStyle]}>
+          <Text style={[styles.label, labelStyle]}>{label}</Text>
+          <View
+            style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
+            {/* Country Code Display - Now Touchable */}
+            <TouchableOpacity
+              style={styles.countryCodeContainer}
+              onPress={handleCountryPress}
+              activeOpacity={0.7}>
+              <Text style={styles.flagText}>{selectedCountry.flag}</Text>
+              <Text style={styles.countryCodeText}>
+                {selectedCountry.dialCode}
               </Text>
-            ) : (
-              <Text style={[styles.phoneNumberText, inputStyle]}>
-                {displayValue}
-              </Text>
-            )}
-          </View>
+              <Text style={styles.chevronText}>▼</Text>
+            </TouchableOpacity>
 
-          {/* Hidden TextInput for actual input handling */}
-          <TextInput
-            ref={hiddenInputRef}
-            style={styles.hiddenInput}
-            value={phoneNumber}
-            onChangeText={handlePhoneNumberChange}
-            keyboardType="number-pad"
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            blurOnSubmit={false}
-            autoCorrect={false}
-            autoComplete="off"
-            textContentType="none"
-          />
+            {/* Separator */}
+            <View style={styles.separator} />
+
+            {/* Phone Number Display */}
+            <View style={styles.phoneNumberContainer}>
+              {showPlaceholder ? (
+                <Text style={[styles.phoneNumberText, styles.placeholderText]}>
+                  {placeholder ?? "Phone number"}
+                </Text>
+              ) : (
+                <Text style={[styles.phoneNumberText, inputStyle]}>
+                  {displayValue}
+                </Text>
+              )}
+            </View>
+
+            {/* Hidden TextInput for actual input handling */}
+            <TextInput
+              ref={hiddenInputRef}
+              style={styles.hiddenInput}
+              value={phoneNumber}
+              onChangeText={handlePhoneNumberChange}
+              keyboardType="number-pad"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              blurOnSubmit={false}
+              autoCorrect={false}
+              autoComplete="off"
+              textContentType="none"
+            />
+          </View>
+          {error != null && error.length > 0 && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
         </View>
-        {error != null && error.length > 0 && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
-      </View>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+
+      {/* Country Selector Modal */}
+      <Modal
+        visible={showCountryModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCountryModal(false)}>
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setShowCountryModal(false)}
+              style={styles.modalCloseButton}>
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Country</Text>
+            <View style={styles.modalHeaderSpacer} />
+          </View>
+
+          <FlatList
+            data={COUNTRY_CODES}
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.countryItem,
+                  item.code === selectedCountry.code &&
+                    styles.selectedCountryItem,
+                ]}
+                onPress={() => handleCountrySelect(item)}>
+                <Text style={styles.countryFlag}>{item.flag}</Text>
+                <Text style={styles.countryName}>{item.name}</Text>
+                <Text style={styles.countryDialCode}>{item.dialCode}</Text>
+              </TouchableOpacity>
+            )}
+            style={styles.countryList}
+          />
+        </SafeAreaView>
+      </Modal>
+    </>
   );
 };
 
@@ -197,12 +260,24 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   countryCodeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingRight: 8,
+    paddingVertical: 14,
+  },
+  flagText: {
+    fontSize: 18,
+    marginRight: 6,
   },
   countryCodeText: {
     fontSize: 16,
     fontWeight: "400",
     color: colors.text.primary,
+    marginRight: 4,
+  },
+  chevronText: {
+    fontSize: 10,
+    color: colors.text.tertiary,
   },
   separator: {
     width: 1,
@@ -235,6 +310,65 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.status.error,
     marginTop: 4,
+  },
+
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  modalCloseButton: {
+    minWidth: 60,
+  },
+  modalCloseText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.text.primary,
+    textAlign: "center",
+  },
+  modalHeaderSpacer: {
+    minWidth: 60,
+  },
+  countryList: {
+    flex: 1,
+  },
+  countryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  selectedCountryItem: {
+    backgroundColor: colors.background.secondary,
+  },
+  countryFlag: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  countryName: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text.primary,
+  },
+  countryDialCode: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    fontWeight: "500",
   },
 });
 
