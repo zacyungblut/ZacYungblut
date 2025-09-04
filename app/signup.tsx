@@ -35,6 +35,12 @@ export default function SignupScreen() {
     setPhoneNumber(value);
   };
 
+  const handleCountryChange = (country: CountryCode) => {
+    setSelectedCountry(country);
+    // Clear phone number when country changes since format/length may differ
+    setPhoneNumber("");
+  };
+
   const isValidNumber = (number: string) => {
     const expectedLength = selectedCountry.numberLength ?? 10;
     return number.length === expectedLength;
@@ -68,6 +74,7 @@ export default function SignupScreen() {
             label="Phone Number"
             phoneNumber={phoneNumber}
             onPhoneNumberChange={handlePhoneNumberChange}
+            onCountryChange={handleCountryChange}
             selectedCountry={selectedCountry}
             placeholder="Phone number"
             autoFocus={true}
