@@ -45,6 +45,7 @@
     "react-native-svg": "15.11.2",
     "react-native-web": "~0.20.0",
     "react-redux": "^9.2.0",
+    "reanimated": "^0.0.1-alpha",
     "redux-logger": "^3.0.6"
   },
   "devDependencies": {

@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   continueButton: {
-    backgroundColor: colors.signup,
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

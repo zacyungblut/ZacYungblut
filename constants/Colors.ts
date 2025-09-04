@@ -11,7 +11,6 @@ export const colors = {
   white: "#FFFFFF",
   red: "red",
   blue: "blue",
-  signup: "#34c6ff", // Slightly brighter vibrant blue for signup button
 
   // Secondary colors
   secondary: "#ff6b00",

@@ -31,7 +31,7 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <TopBar title="Search" onPremiumPress={handlePremiumPress} />
+      <TopBar title="Search" />
 
       {/* Search bar at the very top */}
       <View style={styles.searchHeaderContainer}>

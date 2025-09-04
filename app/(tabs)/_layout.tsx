@@ -42,6 +42,7 @@ export default function TabLayout() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
+        bounces={true}
         onScroll={scrollHandler}
         style={[
           styles.scrollView,
@@ -49,7 +50,6 @@ export default function TabLayout() {
             backgroundColor: colors.background.primary,
           },
         ]}
-        bounces={false}
         decelerationRate="fast">
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
           <RelationshipScreen />

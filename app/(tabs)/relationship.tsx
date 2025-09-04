@@ -2,11 +2,13 @@ import { StyleSheet, TouchableOpacity, Dimensions, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
+import { router } from "expo-router";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import { colors } from "@/constants/Colors";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
+import InviteButton from "@/components/InviteButton";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -14,7 +16,7 @@ export default function RelationshipScreen() {
   // State to determine if user is dating or single
   const [relationshipStatus, setRelationshipStatus] = useState<
     "single" | "dating"
-  >("dating");
+  >("single");
 
   const { user } = useUserRedux();
 
@@ -24,7 +26,7 @@ export default function RelationshipScreen() {
   };
 
   const handleEditProfile = () => {
-    console.log("Edit profile pressed");
+    router.push("/settings");
   };
 
   const handleMessagePartner = () => {
@@ -37,30 +39,30 @@ export default function RelationshipScreen() {
 
   const handleInvite = () => {
     console.log("Invite pressed");
-    // This would open invite flow
+    router.push("/invite");
   };
 
   const handleSearchedYou = () => {
-    console.log("Searched You pressed");
+    router.push("/searched-you");
   };
 
   const handleWatchlist = () => {
-    console.log("Watchlist pressed");
+    router.push("/watchlist");
   };
 
   const handleManage = () => {
-    console.log("Manage pressed");
+    router.push("/manage");
   };
 
   const handleAlerts = () => {
-    console.log("Alerts pressed");
+    router.push("/alerts");
   };
 
   // Single state render
   if (relationshipStatus === "single") {
     return (
       <View style={styles.container}>
-        <TopBar title="Relationship" onPremiumPress={handlePremiumPress} />
+        <TopBar title="Relationship" />
 
         <View style={styles.content}>
           {/* Single Profile Section */}
@@ -68,7 +70,7 @@ export default function RelationshipScreen() {
             <View style={styles.singleImageContainer}>
               <View style={styles.imagePlaceholder}>
                 <Image
-                  source={require("@/assets/images/icon.png")} // Placeholder - replace with hand with naked finger image
+                  source={require("@/assets/images/official.png")} // Placeholder - replace with hand with naked finger image
                   style={styles.singleImage}
                   resizeMode="contain"
                 />
@@ -76,45 +78,67 @@ export default function RelationshipScreen() {
             </View>
 
             <View style={styles.relationshipInfo}>
-              <Text style={styles.singleStatusText}>Single</Text>
-              <Text style={styles.singleSubText}>Ready to connect</Text>
+              <Text style={styles.statusText}>Single</Text>
+              <Text style={styles.partnerText}>Ready to connect</Text>
             </View>
           </View>
 
-          {/* Invite Button */}
+          {/* Invite Button - replaces Stats Section */}
           <View style={styles.inviteContainer}>
+            <InviteButton onPress={handleInvite} />
+          </View>
+
+          {/* Action Buttons - same as dating */}
+          <View style={styles.actionsContainer}>
             <TouchableOpacity
-              style={styles.inviteButton}
-              onPress={handleInvite}
+              style={[styles.actionButton, styles.primaryButton]}
+              onPress={handleWatchlist}
               activeOpacity={0.8}>
-              <LinearGradient
-                colors={[colors.primary, colors.hero]}
-                style={styles.inviteButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}>
-                <Ionicons
-                  name="add-circle"
-                  size={24}
-                  color={colors.heroSecondary}
-                />
-                <Text style={styles.inviteButtonText}>Tap to invite</Text>
-              </LinearGradient>
+              <Ionicons
+                name="bookmark"
+                size={20}
+                color={colors.heroSecondary}
+              />
+              <Text style={styles.primaryButtonText}>Watchlist</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={handleSearchedYou}
+              activeOpacity={0.8}>
+              <Ionicons name="search" size={20} color={colors.heroSecondary} />
+              <Text style={styles.secondaryButtonText}>Searched You</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Single Quick Actions */}
+          {/* Quick Actions - same as dating */}
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.quickActionItem}
+              onPress={handleManage}
               activeOpacity={0.7}>
               <View style={styles.quickActionIcon}>
                 <Ionicons
-                  name="share-social"
+                  name="construct"
                   size={24}
-                  color={colors.heroSecondary}
+                  color={colors.text.secondary}
                 />
               </View>
-              <Text style={styles.quickActionText}>Share Code</Text>
+              <Text style={styles.quickActionText}>Manage</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionItem}
+              onPress={handleAlerts}
+              activeOpacity={0.7}>
+              <View style={styles.quickActionIcon}>
+                <Ionicons
+                  name="notifications"
+                  size={24}
+                  color={colors.text.secondary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Alerts</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -125,7 +149,7 @@ export default function RelationshipScreen() {
                 <Ionicons
                   name="settings"
                   size={24}
-                  color={colors.heroSecondary}
+                  color={colors.text.secondary}
                 />
               </View>
               <Text style={styles.quickActionText}>Settings</Text>
@@ -139,7 +163,7 @@ export default function RelationshipScreen() {
   // Dating state render (existing functionality with dark theme)
   return (
     <View style={styles.container}>
-      <TopBar title="Relationship" onPremiumPress={handlePremiumPress} />
+      <TopBar title="Relationship" />
 
       <View style={styles.content}>
         {/* Profile Section */}
@@ -182,18 +206,18 @@ export default function RelationshipScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={[styles.actionButton, styles.primaryButton]}
-            onPress={handleSearchedYou}
+            onPress={handleWatchlist}
             activeOpacity={0.8}>
-            <Ionicons name="search" size={20} color={colors.heroSecondary} />
-            <Text style={styles.primaryButtonText}>Searched You</Text>
+            <Ionicons name="bookmark" size={20} color={colors.heroSecondary} />
+            <Text style={styles.primaryButtonText}>Watchlist</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryButton]}
-            onPress={handleWatchlist}
+            onPress={handleSearchedYou}
             activeOpacity={0.8}>
-            <Ionicons name="bookmark" size={20} color={colors.heroSecondary} />
-            <Text style={styles.secondaryButtonText}>Watchlist</Text>
+            <Ionicons name="search" size={20} color={colors.heroSecondary} />
+            <Text style={styles.secondaryButtonText}>Searched You</Text>
           </TouchableOpacity>
         </View>
 
@@ -207,7 +231,7 @@ export default function RelationshipScreen() {
               <Ionicons
                 name="construct"
                 size={24}
-                color={colors.heroSecondary}
+                color={colors.text.secondary}
               />
             </View>
             <Text style={styles.quickActionText}>Manage</Text>
@@ -221,7 +245,7 @@ export default function RelationshipScreen() {
               <Ionicons
                 name="notifications"
                 size={24}
-                color={colors.heroSecondary}
+                color={colors.text.secondary}
               />
             </View>
             <Text style={styles.quickActionText}>Alerts</Text>
@@ -235,7 +259,7 @@ export default function RelationshipScreen() {
               <Ionicons
                 name="settings"
                 size={24}
-                color={colors.heroSecondary}
+                color={colors.text.secondary}
               />
             </View>
             <Text style={styles.quickActionText}>Settings</Text>
@@ -263,11 +287,10 @@ const styles = StyleSheet.create({
 
   // Image placeholder styles
   imagePlaceholder: {
-    backgroundColor: colors.background.secondary,
+    // backgroundColor: colors.background.secondary,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderStyle: "dashed",
+    borderWidth: 1,
+    borderColor: colors.border.medium,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -293,18 +316,21 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   inviteContainer: {
-    marginBottom: 40,
-    paddingHorizontal: 20,
+    marginBottom: 32,
+    // Remove paddingHorizontal completely to match statsContainer width
   },
   inviteButton: {
     borderRadius: 16,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   inviteButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 20,
+    paddingHorizontal: 16,
     gap: 12,
   },
   inviteButtonText: {
@@ -376,7 +402,7 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
     marginBottom: 32,
   },
   actionButton: {
@@ -419,12 +445,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.hero,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.border.dark,
   },
   quickActionText: {
     fontSize: 12,

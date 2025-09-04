@@ -142,8 +142,17 @@ function RootLayoutNav() {
           name="verification"
           options={{ headerShown: false, presentation: "modal" }}
         />
+        <Stack.Screen
+          name="invite"
+          options={{ headerShown: false, presentation: "modal" }}
+        />
+        <Stack.Screen name="watchlist" options={{ headerShown: false }} />
+        <Stack.Screen name="searched-you" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
+        <Stack.Screen name="alerts" options={{ headerShown: false }} />
+        <Stack.Screen name="manage" options={{ headerShown: false }} />
+        <Stack.Screen name="premium" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
     </ThemeProvider>

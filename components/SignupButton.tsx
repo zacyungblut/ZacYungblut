@@ -60,7 +60,7 @@ export default function SignupButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.signup,
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

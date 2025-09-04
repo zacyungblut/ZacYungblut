@@ -6,17 +6,19 @@ import { Text, View } from "@/components/Themed";
 
 interface TopBarProps {
   title: string;
-  onPremiumPress?: () => void;
   showBackButton?: boolean;
   onBackPress?: () => void;
 }
 
 export default function TopBar({
   title,
-  onPremiumPress,
   showBackButton = false,
   onBackPress,
 }: TopBarProps) {
+  const handlePremiumPress = () => {
+    router.push("/premium");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
@@ -43,9 +45,13 @@ export default function TopBar({
       <View style={styles.rightSection}>
         <TouchableOpacity
           style={styles.premiumButton}
-          onPress={onPremiumPress}
+          onPress={handlePremiumPress}
           activeOpacity={0.7}>
-          <Text style={styles.premiumText}>🔮</Text>
+          <Image
+            source={require("@/assets/images/premium.png")}
+            style={styles.premiumImage}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -98,7 +104,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 8,
   },
-  premiumText: {
-    fontSize: 20,
+  premiumImage: {
+    width: 40,
+    height: 40,
   },
 });
