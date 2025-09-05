@@ -185,7 +185,7 @@ const relationshipOptions: { type: RelationshipType; image: any }[] = [
 
 function Invite() {
   const router = useRouter();
-  const { sendUserInvite } = useUserRedux();
+  const { sendUserInvite, fetchUser } = useUserRedux();
   const { addNotification } = useNotification();
   const [selectedRelationship, setSelectedRelationship] =
     useState<RelationshipType | null>(null);
@@ -233,8 +233,12 @@ function Invite() {
         Alert.alert("Share Error", "Failed to share the invite link");
       }
 
-      // Navigate back after sharing
-      router.back();
+      // Refresh user data to get the latest state
+      await fetchUser();
+
+      // Navigate back to the relationship tab
+      // This will trigger the auto-detection logic if a relationship was created
+      router.replace("/(tabs)/relationship");
     } catch (error: any) {
       console.error("Error creating invite:", error);
       const errorMessage =
@@ -243,7 +247,13 @@ function Invite() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedRelationship, router, sendUserInvite, addNotification]);
+  }, [
+    selectedRelationship,
+    router,
+    sendUserInvite,
+    addNotification,
+    fetchUser,
+  ]);
 
   const isValidSelection = selectedRelationship !== null;
 

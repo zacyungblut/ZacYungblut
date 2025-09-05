@@ -14,6 +14,7 @@ import {
   removeCancelledInvite,
   addRelationship,
   updateRelationship,
+  editRelationship,
   selectUser,
   selectUserInvites,
   selectUserRelationships,
@@ -90,6 +91,21 @@ export const useUserRedux = () => {
     dispatch(updateRelationship(relationship));
   };
 
+  // New function to edit relationship via API
+  const editExistingRelationship = async (
+    relationshipId: string,
+    updateData: any
+  ) => {
+    try {
+      const result = await dispatch(
+        editRelationship({ relationshipId, updateData })
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     // User data
     user,
@@ -111,5 +127,6 @@ export const useUserRedux = () => {
     relationships,
     addNewRelationship,
     updateExistingRelationship,
+    editExistingRelationship,
   };
 };

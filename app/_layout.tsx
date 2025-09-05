@@ -133,6 +133,15 @@ function RootLayoutNav() {
           name="invite"
           options={{ headerShown: false, presentation: "modal" }}
         />
+        <Stack.Screen
+          name="date-modal"
+          options={{
+            headerShown: false,
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.5],
+            sheetGrabberVisible: true,
+          }}
+        />
         <Stack.Screen name="watchlist" options={{ headerShown: false }} />
         <Stack.Screen name="searched-you" options={{ headerShown: false }} />
         <Stack.Screen

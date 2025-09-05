@@ -89,3 +89,15 @@ export const cancelInvite = async (inviteId: string) => {
 export const searchUserByPhone = async (phone: string) => {
   return API.post("/search/user", { phone });
 };
+
+// Relationship functions
+export const editRelationship = async (
+  relationshipId: string,
+  updateData: any
+) => {
+  return API.put("/relationships/edit", { relationshipId, ...updateData });
+};
+
+export const getUserRelationships = async () => {
+  return API.get("/relationships");
+};

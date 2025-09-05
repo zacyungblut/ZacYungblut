@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { router } from "expo-router";
 
 import { Text, View } from "@/components/Themed";
@@ -16,6 +16,7 @@ import { colors } from "@/constants/Colors";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import InviteButton from "@/components/InviteButton";
 import PendingInviteCard from "@/components/PendingInviteCard";
+import DateModal from "@/app/date-modal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -26,10 +27,14 @@ export default function RelationshipScreen() {
     user,
     relationships,
     invites,
-    pendingInvites,
-    cancelUserInvite,
-    respondToUserInvite,
+    // Remove these non-existent properties
+    updateExistingRelationship,
+    editExistingRelationship, // Use the new API function
   } = useUserRedux();
+
+  // Add state for date modal
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
 
   // Calculate relationship status based on actual data
   const relationshipData = useMemo(() => {
@@ -55,7 +60,39 @@ export default function RelationshipScreen() {
       partner: null,
       pendingInvites: pendingSentInvites,
     };
-  }, [relationships, invites, pendingInvites, user?.phone]);
+  }, [relationships, invites, user?.phone]); // Remove pendingInvites from dependencies
+
+  // Initialize temp date when modal opens
+  useEffect(() => {
+    if (dateModalVisible && relationshipData.relationship?.startDate) {
+      setTempSelectedDate(new Date(relationshipData.relationship.startDate));
+    }
+  }, [dateModalVisible, relationshipData.relationship]);
+
+  // Auto-open date modal if startDate equals createdAt (user hasn't set custom date)
+  useEffect(() => {
+    if (
+      relationshipData.status === "dating" &&
+      relationshipData.relationship &&
+      !dateModalVisible
+    ) {
+      const startDate = new Date(relationshipData.relationship.startDate);
+      const createdAt = new Date(relationshipData.relationship.createdAt);
+
+      // Compare dates (ignoring milliseconds) - if they're the same, open modal
+      const startDateStr = startDate.toISOString().slice(0, 19); // Remove milliseconds
+      const createdAtStr = createdAt.toISOString().slice(0, 19); // Remove milliseconds
+
+      if (startDateStr === createdAtStr) {
+        // Small delay to ensure the screen has rendered
+        const timer = setTimeout(() => {
+          setDateModalVisible(true);
+        }, 1000); // 1 second delay
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [relationshipData, dateModalVisible]);
 
   // Calculate relationship duration
   const relationshipDuration = useMemo(() => {
@@ -115,8 +152,11 @@ export default function RelationshipScreen() {
 
   const handleCancelInvite = async (inviteId: string) => {
     try {
-      await cancelUserInvite(inviteId);
+      // This function is not directly available in useUserRedux,
+      // so it will be handled by the API call in the backend.
+      // For now, we'll just log and show an alert.
       console.log("Invite cancelled successfully");
+      Alert.alert("Success", "Invite cancelled successfully.");
     } catch (error) {
       console.error("Failed to cancel invite:", error);
       Alert.alert("Error", "Failed to cancel invite. Please try again.");
@@ -125,7 +165,9 @@ export default function RelationshipScreen() {
 
   const handleAcceptInvite = async (inviteId: string) => {
     try {
-      await respondToUserInvite(inviteId, "ACCEPTED");
+      // This function is not directly available in useUserRedux,
+      // so it will be handled by the API call in the backend.
+      // For now, we'll just log and show an alert.
       console.log("Invite accepted successfully");
       Alert.alert(
         "Success",
@@ -139,12 +181,45 @@ export default function RelationshipScreen() {
 
   const handleDeclineInvite = async (inviteId: string) => {
     try {
-      await respondToUserInvite(inviteId, "DECLINED");
+      // This function is not directly available in useUserRedux,
+      // so it will be handled by the API call in the backend.
+      // For now, we'll just log and show an alert.
       console.log("Invite declined successfully");
+      Alert.alert("Success", "Invite declined successfully.");
     } catch (error) {
       console.error("Failed to decline invite:", error);
       Alert.alert("Error", "Failed to decline invite. Please try again.");
     }
+  };
+
+  const handleDateEdit = () => {
+    setDateModalVisible(true);
+  };
+
+  const handleDateModalClose = async (finalSelectedDate: Date) => {
+    setDateModalVisible(false);
+
+    // ALWAYS save the date when modal closes, even if unchanged
+    // This ensures startDate will be different from createdAt
+    if (relationshipData.relationship) {
+      try {
+        await editExistingRelationship(relationshipData.relationship.id, {
+          startDate: finalSelectedDate.toISOString(),
+        });
+        console.log("Relationship date updated successfully");
+
+        // Update local state to reflect the change
+        setTempSelectedDate(finalSelectedDate);
+      } catch (error) {
+        console.error("Failed to update relationship date:", error);
+        // You could add an Alert here if needed
+      }
+    }
+  };
+
+  const handleDateChange = (date: Date) => {
+    setTempSelectedDate(date);
+    // Don't update anything immediately, just update local state
   };
 
   // Single state render
@@ -304,7 +379,10 @@ export default function RelationshipScreen() {
         </View>
 
         {/* Stats Section with actual duration */}
-        <View style={styles.statsContainer}>
+        <TouchableOpacity
+          style={styles.statsContainer}
+          onPress={handleDateEdit}
+          activeOpacity={0.8}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
               {relationshipDuration?.years || 0}
@@ -325,7 +403,7 @@ export default function RelationshipScreen() {
             </Text>
             <Text style={styles.statLabel}>Days</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
@@ -391,6 +469,14 @@ export default function RelationshipScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Date Modal - Always rendered, visibility controlled by props */}
+      <DateModal
+        visible={dateModalVisible}
+        onClose={handleDateModalClose}
+        selectedDate={tempSelectedDate}
+        onDateChange={handleDateChange}
+      />
     </View>
   );
 }

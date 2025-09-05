@@ -4,7 +4,7 @@ import {
   PayloadAction,
   createSelector,
 } from "@reduxjs/toolkit";
-import { getCurrentUser } from "@/api";
+import { getCurrentUser, editRelationship as editRelationshipAPI } from "@/api";
 
 // Define types based on your schema
 interface Invite {
@@ -76,6 +76,24 @@ export const loadUser = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.error || "Failed to load user"
+      );
+    }
+  }
+);
+
+// Async thunk for editing relationship
+export const editRelationship = createAsyncThunk(
+  "user/editRelationship",
+  async (
+    { relationshipId, updateData }: { relationshipId: string; updateData: any },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await editRelationshipAPI(relationshipId, updateData);
+      return response.data.relationship;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update relationship"
       );
     }
   }
@@ -169,6 +187,26 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(loadUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(editRelationship.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(editRelationship.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) {
+          const index = state.user.relationships.findIndex(
+            (rel) => rel.id === action.payload.id
+          );
+          if (index !== -1) {
+            state.user.relationships[index] = action.payload;
+          }
+        }
+        state.error = null;
+      })
+      .addCase(editRelationship.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
