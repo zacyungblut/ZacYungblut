@@ -17,8 +17,6 @@ import {
   selectUser,
   selectUserInvites,
   selectUserRelationships,
-  selectPendingReceivedInvites,
-  removeRespondedInvite,
 } from "@/store/slices/userSlice";
 import { AuthService } from "@/utils/authStorage";
 import { sendInvite, respondToInvite, cancelInvite } from "@/api";
@@ -32,7 +30,6 @@ export const useUserRedux = () => {
   const { user, loading, error } = useAppSelector((state) => state.user);
   const invites = useAppSelector(selectUserInvites);
   const relationships = useAppSelector(selectUserRelationships);
-  const pendingInvites = useAppSelector(selectPendingReceivedInvites);
 
   const fetchUser = async () => {
     const result = await dispatch(loadUser());
@@ -53,12 +50,9 @@ export const useUserRedux = () => {
   };
 
   // Invite-related functions
-  const sendUserInvite = async (
-    recipientPhone: string,
-    relationshipType: string
-  ) => {
+  const sendUserInvite = async (relationshipType: string) => {
     try {
-      const response = await sendInvite(recipientPhone, relationshipType);
+      const response = await sendInvite(relationshipType);
       const newInvite = response.data.invite;
 
       // Add the new invite to the user's sent invites
@@ -66,32 +60,10 @@ export const useUserRedux = () => {
         addSentInvite({
           ...newInvite,
           senderPhone: user?.phone || "",
-          recipientPhone,
         })
       );
 
       return response;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const respondToUserInvite = async (
-    inviteId: string,
-    response: "ACCEPTED" | "DECLINED"
-  ) => {
-    try {
-      const apiResponse = await respondToInvite(inviteId, response);
-
-      // Remove the responded invite from the store
-      dispatch(removeRespondedInvite({ inviteId }));
-
-      // If accepted and a relationship was created, add it to the store
-      if (response === "ACCEPTED" && apiResponse.data.relationship) {
-        dispatch(addRelationship(apiResponse.data.relationship));
-      }
-
-      return apiResponse;
     } catch (error) {
       throw error;
     }
@@ -132,9 +104,7 @@ export const useUserRedux = () => {
 
     // Invites data and actions
     invites,
-    pendingInvites,
     sendUserInvite,
-    respondToUserInvite,
     cancelUserInvite,
 
     // Relationships data and actions

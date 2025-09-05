@@ -7,7 +7,7 @@ import { colors } from "@/constants/Colors";
 interface PendingInviteCardProps {
   invite: {
     id: string;
-    recipientPhone: string;
+    relationshipType: string;
     createdAt: string;
   };
   onCancel: (inviteId: string) => void;
@@ -20,7 +20,7 @@ export default function PendingInviteCard({
   const handleCancelPress = () => {
     Alert.alert(
       "Cancel Invite",
-      `Are you sure you want to cancel the invite to ${invite.recipientPhone}?`,
+      `Are you sure you want to cancel this ${invite.relationshipType.toLowerCase()} invite?`,
       [
         {
           text: "No",
@@ -39,7 +39,9 @@ export default function PendingInviteCard({
     <View style={styles.pendingInviteContainer}>
       <View style={styles.pendingInviteContent}>
         <View style={styles.pendingInviteHeader}>
-          <Text style={styles.pendingInvitePhone}>{invite.recipientPhone}</Text>
+          <Text style={styles.pendingInviteType}>
+            {invite.relationshipType}
+          </Text>
           <TouchableOpacity
             onPress={handleCancelPress}
             style={styles.cancelButton}
@@ -48,7 +50,9 @@ export default function PendingInviteCard({
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.pendingInviteStatus}>Waiting for response...</Text>
+        <Text style={styles.pendingInviteStatus}>
+          Waiting for someone to accept...
+        </Text>
 
         <View style={styles.pendingInviteFooter}>
           <View style={styles.pendingInviteBadge}>
@@ -74,7 +78,7 @@ const styles = StyleSheet.create({
   pendingInviteContent: {
     paddingVertical: 20,
     paddingHorizontal: 16,
-    minHeight: 68, // Match InviteButton's paddingVertical: 20 + content height
+    minHeight: 68,
   },
   pendingInviteHeader: {
     flexDirection: "row",
@@ -82,9 +86,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 4,
   },
-  pendingInvitePhone: {
+  pendingInviteType: {
     fontSize: 18,
-    fontWeight: "600", // Match InviteButton text weight
+    fontWeight: "600",
     color: colors.primary,
     flex: 1,
   },

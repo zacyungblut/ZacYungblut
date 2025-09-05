@@ -10,7 +10,7 @@ import { getCurrentUser } from "@/api";
 interface Invite {
   id: string;
   senderPhone: string;
-  recipientPhone: string;
+  relationshipType: string;
   status: "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "CANCELLED";
   message?: string;
   createdAt: string;
@@ -52,7 +52,6 @@ interface User {
   updatedAt: string;
   relationships: Relationship[];
   sentInvites: Invite[];
-  receivedInvites: Invite[];
 }
 
 interface UserState {
@@ -107,7 +106,7 @@ const userSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
-    // New reducers for invites and relationships
+    // Invite reducers - only for sent invites now
     addSentInvite: (state, action: PayloadAction<Invite>) => {
       if (state.user) {
         state.user.sentInvites = [action.payload, ...state.user.sentInvites];
@@ -118,7 +117,7 @@ const userSlice = createSlice({
       action: PayloadAction<{ inviteId: string; status: Invite["status"] }>
     ) => {
       if (state.user) {
-        // Update in sent invites
+        // Update in sent invites only
         const sentInviteIndex = state.user.sentInvites.findIndex(
           (invite) => invite.id === action.payload.inviteId
         );
@@ -126,26 +125,6 @@ const userSlice = createSlice({
           state.user.sentInvites[sentInviteIndex].status =
             action.payload.status;
         }
-
-        // Update in received invites
-        const receivedInviteIndex = state.user.receivedInvites.findIndex(
-          (invite) => invite.id === action.payload.inviteId
-        );
-        if (receivedInviteIndex !== -1) {
-          state.user.receivedInvites[receivedInviteIndex].status =
-            action.payload.status;
-        }
-      }
-    },
-    removeRespondedInvite: (
-      state,
-      action: PayloadAction<{ inviteId: string }>
-    ) => {
-      if (state.user) {
-        // Remove from received invites after responding
-        state.user.receivedInvites = state.user.receivedInvites.filter(
-          (invite) => invite.id !== action.payload.inviteId
-        );
       }
     },
     removeCancelledInvite: (
@@ -204,7 +183,6 @@ export const {
   updateUser,
   addSentInvite,
   updateInviteStatus,
-  removeRespondedInvite,
   removeCancelledInvite,
   addRelationship,
   updateRelationship,
@@ -217,16 +195,9 @@ export const selectUser = (state: { user: UserState }) => state.user.user;
 
 export const selectUserInvites = createSelector([selectUser], (user) => ({
   sent: user?.sentInvites || [],
-  received: user?.receivedInvites || [],
 }));
 
 export const selectUserRelationships = createSelector(
   [selectUser],
   (user) => user?.relationships || []
-);
-
-export const selectPendingReceivedInvites = createSelector(
-  [selectUser],
-  (user) =>
-    user?.receivedInvites.filter((invite) => invite.status === "PENDING") || []
 );

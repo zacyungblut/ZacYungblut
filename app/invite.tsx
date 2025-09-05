@@ -190,8 +190,6 @@ function Invite() {
   const [selectedRelationship, setSelectedRelationship] =
     useState<RelationshipType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
 
   const handleRelationshipSelect = useCallback(
     (relationship: RelationshipType) => {
@@ -200,54 +198,54 @@ function Invite() {
     []
   );
 
-  const handlePhoneNumberChange = useCallback((text: string) => {
-    setPhoneNumber(text);
-  }, []);
-
-  const handleCountryChange = useCallback((country: CountryCode) => {
-    setSelectedCountry(country);
-  }, []);
-
-  const handleBackToRelationships = useCallback(() => {
-    setSelectedRelationship(null);
-    setPhoneNumber("");
-  }, []);
-
-  const handleShare = useCallback(async () => {
-    if (!selectedRelationship || !phoneNumber) return;
+  const handleCreateInvite = useCallback(async () => {
+    if (!selectedRelationship) return;
 
     setIsLoading(true);
 
     try {
-      // Format phone number with country code
-      const fullPhoneNumber = `${selectedCountry.dialCode}${phoneNumber}`;
+      // Send invite with just the relationship type - no phone number needed
+      const response = await sendUserInvite(selectedRelationship.toUpperCase());
+      const inviteId = response.data.invite.id;
 
-      // Send invite via Redux action
-      await sendUserInvite(fullPhoneNumber, selectedRelationship.toUpperCase());
+      // Create the invite link
+      const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
+      const shareMessage = `Hey! I'd like to make it official. Press this link to make us official ${inviteLink}`;
+
+      // Show native share dialog
+      try {
+        const result = await Share.share({
+          message: shareMessage,
+          url: inviteLink, // iOS will use this for the URL
+          title: "Make It Official",
+        });
+
+        if (result.action === Share.sharedAction) {
+          addNotification({
+            title: "Invite Shared",
+            description: "Your invite link has been shared successfully",
+            type: "success",
+            emoji: "🎉",
+          });
+        }
+      } catch (shareError) {
+        console.error("Error sharing:", shareError);
+        Alert.alert("Share Error", "Failed to share the invite link");
+      }
+
+      // Navigate back after sharing
+      router.back();
     } catch (error: any) {
-      console.error("Error sending invite:", error);
+      console.error("Error creating invite:", error);
       const errorMessage =
-        error.response?.data?.error || "Failed to send invitation";
+        error.response?.data?.error || "Failed to create invitation";
       Alert.alert("Error", errorMessage);
     } finally {
       setIsLoading(false);
-      addNotification({
-        title: "Invite Sent",
-        description: "Your invite has been sent successfully",
-        type: "success",
-        emoji: "🎉",
-      });
     }
-  }, [
-    selectedRelationship,
-    phoneNumber,
-    selectedCountry,
-    router,
-    sendUserInvite,
-  ]);
+  }, [selectedRelationship, router, sendUserInvite, addNotification]);
 
-  const isValidSelection =
-    selectedRelationship !== null && phoneNumber.length > 0;
+  const isValidSelection = selectedRelationship !== null;
 
   return (
     <View style={styles.container}>
@@ -260,87 +258,50 @@ function Invite() {
             <View style={styles.textContainer}>
               <Text style={styles.title}>Make It Official</Text>
               <Text style={styles.subtitle}>
-                Choose your relationship status and send an invitation to Make
-                It Official
+                Choose your relationship status to create and share an
+                invitation link
               </Text>
             </View>
 
-            {!selectedRelationship ? (
-              // Show relationship options when none selected
-              <View style={styles.relationshipContainer}>
-                <View style={styles.relationshipRow}>
-                  {relationshipOptions.map((option) => (
-                    <TouchableOpacity
-                      key={option.type}
-                      style={[
-                        styles.relationshipOption,
-                        styles.relationshipOptionUnselected,
-                      ]}
-                      onPress={() => handleRelationshipSelect(option.type)}
-                      activeOpacity={0.7}>
-                      <Image
-                        source={option.image}
-                        style={styles.relationshipIcon}
-                        resizeMode="contain"
-                      />
-                      <Text
-                        style={[
-                          styles.relationshipText,
-                          styles.relationshipTextUnselected,
-                        ]}>
-                        {option.type}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            ) : (
-              // Show phone input when relationship is selected
-              <View style={styles.phoneInputSection}>
-                {/* Selected relationship display */}
-                <View style={styles.selectedRelationshipContainer}>
-                  <View style={styles.selectedRelationshipBadge}>
+            {/* Show relationship options */}
+            <View style={styles.relationshipContainer}>
+              <View style={styles.relationshipRow}>
+                {relationshipOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.type}
+                    style={[
+                      styles.relationshipOption,
+                      selectedRelationship === option.type
+                        ? styles.relationshipOptionSelected
+                        : styles.relationshipOptionUnselected,
+                    ]}
+                    onPress={() => handleRelationshipSelect(option.type)}
+                    activeOpacity={0.7}>
                     <Image
-                      source={
-                        relationshipOptions.find(
-                          (opt) => opt.type === selectedRelationship
-                        )?.image
-                      }
-                      style={styles.selectedRelationshipIcon}
+                      source={option.image}
+                      style={styles.relationshipIcon}
                       resizeMode="contain"
                     />
-                    <Text style={styles.selectedRelationshipText}>
-                      {selectedRelationship}
+                    <Text
+                      style={[
+                        styles.relationshipText,
+                        selectedRelationship === option.type
+                          ? styles.relationshipTextSelected
+                          : styles.relationshipTextUnselected,
+                      ]}>
+                      {option.type}
                     </Text>
-                    <TouchableOpacity
-                      onPress={handleBackToRelationships}
-                      style={styles.changeButton}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                      <Text style={styles.changeButtonText}>Change</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Phone input */}
-                <PhoneTextInput
-                  label="Partner's Phone Number"
-                  phoneNumber={phoneNumber}
-                  onPhoneNumberChange={handlePhoneNumberChange}
-                  selectedCountry={selectedCountry}
-                  onCountryChange={handleCountryChange}
-                  placeholder="Enter phone number"
-                  autoFocus={true}
-                  containerStyle={styles.phoneInputContainer}
-                />
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
+            </View>
           </View>
         </View>
 
         <View style={styles.keyboardStickyContainer}>
           <SignupButton
-            title="SEND"
-            onPress={handleShare}
+            title="CREATE & SHARE INVITE"
+            onPress={handleCreateInvite}
             isLoading={isLoading}
             isEnabled={isValidSelection}
             containerStyle={styles.submitButtonContainer}

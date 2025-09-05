@@ -66,11 +66,8 @@ export const getCurrentUser = async () => {
 };
 
 // Invite functions
-export const sendInvite = async (
-  recipientPhone: string,
-  relationshipType: string
-) => {
-  return API.post("/invites/send", { recipientPhone, relationshipType });
+export const sendInvite = async (relationshipType: string) => {
+  return API.post("/invites/send", { relationshipType });
 };
 
 export const getInvites = async () => {

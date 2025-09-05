@@ -16,7 +16,6 @@ import { colors } from "@/constants/Colors";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import InviteButton from "@/components/InviteButton";
 import PendingInviteCard from "@/components/PendingInviteCard";
-import ReceivedInviteCard from "@/components/ReceivedInviteCard";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -42,20 +41,6 @@ export default function RelationshipScreen() {
         status: "dating" as const,
         relationship: activeRelationship,
         partner: activeRelationship.users.find((u) => u.phone !== user?.phone),
-      };
-    }
-
-    // Check for pending received invites (priority over sent invites)
-    const pendingReceivedInvites = pendingInvites.filter(
-      (invite) => invite.status === "PENDING"
-    );
-
-    if (pendingReceivedInvites.length > 0) {
-      return {
-        status: "invited" as const,
-        relationship: null,
-        partner: null,
-        receivedInvites: pendingReceivedInvites,
       };
     }
 
@@ -161,121 +146,6 @@ export default function RelationshipScreen() {
       Alert.alert("Error", "Failed to decline invite. Please try again.");
     }
   };
-
-  // Invited state render (new)
-  if (relationshipData.status === "invited") {
-    return (
-      <View style={styles.container}>
-        <TopBar title="Relationship" />
-
-        <View style={styles.content}>
-          {/* Single Profile Section */}
-          <View style={styles.profileSection}>
-            <View style={styles.singleImageContainer}>
-              <View style={styles.imagePlaceholder}>
-                <Image
-                  source={require("@/assets/images/official.png")}
-                  style={styles.singleImage}
-                  resizeMode="contain"
-                />
-              </View>
-            </View>
-
-            <View style={styles.relationshipInfo}>
-              <Text style={styles.statusText}>You've Been Invited!</Text>
-              <Text style={styles.partnerText}>
-                Someone wants to make it official
-              </Text>
-            </View>
-          </View>
-
-          {/* Received Invites */}
-          <View style={styles.inviteContainer}>
-            <View style={styles.pendingInvitesContainer}>
-              <ReceivedInviteCard
-                invite={relationshipData.receivedInvites![0]}
-                onAccept={handleAcceptInvite}
-                onDecline={handleDeclineInvite}
-              />
-              {relationshipData.receivedInvites!.length > 1 && (
-                <Text style={styles.moreInvitesText}>
-                  +{relationshipData.receivedInvites!.length - 1} more invites
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.primaryButton]}
-              onPress={handleWatchlist}
-              activeOpacity={0.8}>
-              <Ionicons
-                name="bookmark"
-                size={20}
-                color={colors.heroSecondary}
-              />
-              <Text style={styles.primaryButtonText}>Watchlist</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.secondaryButton]}
-              onPress={handleSearchedYou}
-              activeOpacity={0.8}>
-              <Ionicons name="search" size={20} color={colors.heroSecondary} />
-              <Text style={styles.secondaryButtonText}>Searched You</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              onPress={handleManage}
-              activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="construct"
-                  size={iconSize}
-                  color={colors.text.secondary}
-                />
-              </View>
-              <Text style={styles.quickActionText}>Manage</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              onPress={handleAlerts}
-              activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="notifications"
-                  size={iconSize}
-                  color={colors.text.secondary}
-                />
-              </View>
-              <Text style={styles.quickActionText}>Alerts</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              onPress={handleEditProfile}
-              activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="settings"
-                  size={iconSize}
-                  color={colors.text.secondary}
-                />
-              </View>
-              <Text style={styles.quickActionText}>Settings</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
-  }
 
   // Single state render
   if (relationshipData.status === "single") {
