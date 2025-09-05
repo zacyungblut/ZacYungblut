@@ -1,5 +1,12 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Image,
+  Linking,
+} from "react-native";
 import { useRouter } from "expo-router";
 
 // Using your existing icon as a placeholder for the logo
@@ -8,6 +15,7 @@ import LogoPlaceholder from "@/assets/images/official.png";
 // Colors matching the modern design
 const colors = {
   background: "#F8F9FA",
+  lightGrey: "#F5F5F7", // Light grey for top texture
   white: "#FFFFFF",
   text: "#2D3748",
   subtext: "#718096",
@@ -22,31 +30,28 @@ export default function Auth() {
 
   return (
     <View style={styles.container}>
-      {/* Decorative background elements */}
-      <View style={styles.decorativeElements}>
-        <View style={[styles.circle, styles.circle1]} />
-        <View style={[styles.circle, styles.circle2]} />
-        <View style={[styles.shape, styles.triangle]} />
-        <View style={[styles.shape, styles.star]} />
-        <View style={[styles.shape, styles.plus]} />
+      {/* Background with light grey texture at top */}
+      <View style={styles.backgroundContainer}>
+        <View style={styles.greyBackground} />
+
+        {/* Curved white mask using border radius */}
+        <View style={styles.curvedMask} />
       </View>
 
       {/* Main content container */}
       <View style={styles.contentContainer}>
         {/* Logo and app icon */}
         <View style={styles.logoContainer}>
-          <View style={styles.iconContainer}>
-            <Image
-              source={LogoPlaceholder}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={LogoPlaceholder}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
           {/* Welcome text */}
           <View style={styles.textContainer}>
-            <Text style={styles.welcomeText}>Make it</Text>
-            <Text style={styles.welcomeText}>Official</Text>
+            <Text style={styles.makeItText}>let's make it</Text>
+            <Text style={styles.officialText}>Official</Text>
           </View>
 
           {/* Tagline */}
@@ -75,6 +80,25 @@ export default function Auth() {
               Log In
             </Text>
           </TouchableOpacity>
+
+          {/* Terms and Privacy Policy */}
+          <View style={styles.termsContainer}>
+            <Text style={styles.termsText}>
+              By continuing, you agree to Official's{" "}
+              <Text
+                style={styles.linkText}
+                onPress={() => Linking.openURL("https://your-terms-url.com")}>
+                Terms & Conditions
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={styles.linkText}
+                onPress={() => Linking.openURL("https://your-privacy-url.com")}>
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -84,88 +108,64 @@ export default function Auth() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.white,
   },
-  decorativeElements: {
+  backgroundContainer: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: 300,
     zIndex: 0,
   },
-  circle: {
+  greyBackground: {
     position: "absolute",
-    borderRadius: 999,
-    backgroundColor: colors.border,
-    opacity: 0.3,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: colors.lightGrey,
   },
-  circle1: {
-    width: 120,
-    height: 120,
-    top: "15%",
-    left: "10%",
-  },
-  circle2: {
-    width: 80,
-    height: 80,
-    bottom: "25%",
-    right: "15%",
-  },
-  shape: {
+  curvedMask: {
     position: "absolute",
-    opacity: 0.2,
-  },
-  triangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 25,
-    borderRightWidth: 25,
-    borderBottomWidth: 40,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: colors.border,
-    top: "70%",
-    left: "20%",
-  },
-  star: {
-    width: 30,
-    height: 30,
-    backgroundColor: colors.border,
-    top: "25%",
-    right: "25%",
-    transform: [{ rotate: "45deg" }],
-  },
-  plus: {
-    width: 20,
-    height: 20,
-    backgroundColor: colors.border,
-    bottom: "45%",
-    left: "25%",
+    top: 160,
+    left: -50,
+    right: -50,
+    height: 300,
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 120,
+    borderTopRightRadius: 120,
   },
   contentContainer: {
     flex: 1,
-    zIndex: 1,
     paddingHorizontal: 24,
+    zIndex: 1,
   },
   logoContainer: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingTop: 60,
+    marginTop: 80,
   },
   iconContainer: {
     width: 80,
     height: 80,
     borderRadius: 16,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.white,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 40,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3, // For Android shadow
   },
   logo: {
-    width: 50,
-    height: 50,
+    width: 160,
+    height: 160,
+    marginBottom: 0,
   },
   textContainer: {
     alignItems: "center",
@@ -179,17 +179,18 @@ const styles = StyleSheet.create({
   },
   taglineContainer: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 140,
+    marginBottom: 40,
   },
   taglineText: {
-    fontSize: 18,
-    color: colors.subtext,
+    fontSize: 14,
+    color: colors.primary,
     fontWeight: "400",
-    lineHeight: 26,
+    lineHeight: 20,
   },
   buttonContainer: {
-    paddingBottom: 50,
     gap: 12,
+    marginHorizontal: 16,
   },
   button: {
     height: 56,
@@ -215,5 +216,33 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: colors.text,
+  },
+  makeItText: {
+    fontSize: 28,
+    fontWeight: "300",
+    color: colors.primary,
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  officialText: {
+    fontSize: 72,
+    fontWeight: "600",
+    color: colors.primary,
+    letterSpacing: -1,
+  },
+  termsContainer: {
+    marginTop: 20,
+    marginHorizontal: 16,
+    alignItems: "center",
+  },
+  termsText: {
+    fontSize: 12,
+    color: colors.subtext,
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  linkText: {
+    color: colors.primary,
+    fontWeight: "500",
   },
 });

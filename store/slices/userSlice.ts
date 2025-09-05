@@ -1,14 +1,58 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  PayloadAction,
+  createSelector,
+} from "@reduxjs/toolkit";
 import { getCurrentUser } from "@/api";
 
-// Define the user type based on your schema
+// Define types based on your schema
+interface Invite {
+  id: string;
+  senderPhone: string;
+  recipientPhone: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "CANCELLED";
+  message?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RelationshipUser {
+  id: string;
+  phone: string;
+  name?: string;
+}
+
+interface Relationship {
+  id: string;
+  status:
+    | "DATING"
+    | "ENGAGED"
+    | "MARRIED"
+    | "SEPARATED"
+    | "WIDOWED"
+    | "SITUATIONSHIP"
+    | "FRIENDS_WITH_BENEFITS"
+    | "ON_A_BREAK"
+    | "OPEN_RELATIONSHIP"
+    | "POLYAMOROUS";
+  startDate: string;
+  endDate?: string;
+  users: RelationshipUser[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface User {
   id: string;
   phone: string;
   name?: string;
-  relationshipStatus: "SINGLE" | "RELATIONSHIP" | "SITUATIONSHIP";
+  verified: boolean;
   createdAt: string;
   updatedAt: string;
+  relationships: Relationship[];
+  sentInvites: Invite[];
+  receivedInvites: Invite[];
 }
 
 interface UserState {
@@ -63,6 +107,76 @@ const userSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+    // New reducers for invites and relationships
+    addSentInvite: (state, action: PayloadAction<Invite>) => {
+      if (state.user) {
+        state.user.sentInvites = [action.payload, ...state.user.sentInvites];
+      }
+    },
+    updateInviteStatus: (
+      state,
+      action: PayloadAction<{ inviteId: string; status: Invite["status"] }>
+    ) => {
+      if (state.user) {
+        // Update in sent invites
+        const sentInviteIndex = state.user.sentInvites.findIndex(
+          (invite) => invite.id === action.payload.inviteId
+        );
+        if (sentInviteIndex !== -1) {
+          state.user.sentInvites[sentInviteIndex].status =
+            action.payload.status;
+        }
+
+        // Update in received invites
+        const receivedInviteIndex = state.user.receivedInvites.findIndex(
+          (invite) => invite.id === action.payload.inviteId
+        );
+        if (receivedInviteIndex !== -1) {
+          state.user.receivedInvites[receivedInviteIndex].status =
+            action.payload.status;
+        }
+      }
+    },
+    removeRespondedInvite: (
+      state,
+      action: PayloadAction<{ inviteId: string }>
+    ) => {
+      if (state.user) {
+        // Remove from received invites after responding
+        state.user.receivedInvites = state.user.receivedInvites.filter(
+          (invite) => invite.id !== action.payload.inviteId
+        );
+      }
+    },
+    removeCancelledInvite: (
+      state,
+      action: PayloadAction<{ inviteId: string }>
+    ) => {
+      if (state.user) {
+        // Remove from sent invites if cancelled
+        state.user.sentInvites = state.user.sentInvites.filter(
+          (invite) => invite.id !== action.payload.inviteId
+        );
+      }
+    },
+    addRelationship: (state, action: PayloadAction<Relationship>) => {
+      if (state.user) {
+        state.user.relationships = [
+          action.payload,
+          ...state.user.relationships,
+        ];
+      }
+    },
+    updateRelationship: (state, action: PayloadAction<Relationship>) => {
+      if (state.user) {
+        const index = state.user.relationships.findIndex(
+          (rel) => rel.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.user.relationships[index] = action.payload;
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -82,6 +196,37 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser, setUserLoading, setUserError, updateUser } =
-  userSlice.actions;
+export const {
+  setUser,
+  clearUser,
+  setUserLoading,
+  setUserError,
+  updateUser,
+  addSentInvite,
+  updateInviteStatus,
+  removeRespondedInvite,
+  removeCancelledInvite,
+  addRelationship,
+  updateRelationship,
+} = userSlice.actions;
+
 export default userSlice.reducer;
+
+// Memoized selectors for optimal performance
+export const selectUser = (state: { user: UserState }) => state.user.user;
+
+export const selectUserInvites = createSelector([selectUser], (user) => ({
+  sent: user?.sentInvites || [],
+  received: user?.receivedInvites || [],
+}));
+
+export const selectUserRelationships = createSelector(
+  [selectUser],
+  (user) => user?.relationships || []
+);
+
+export const selectPendingReceivedInvites = createSelector(
+  [selectUser],
+  (user) =>
+    user?.receivedInvites.filter((invite) => invite.status === "PENDING") || []
+);

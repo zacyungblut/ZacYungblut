@@ -47,7 +47,6 @@ function AppContent() {
   const fetchCurrentUser = async () => {
     try {
       const response = await getCurrentUser();
-      console.log("Current user data:", response.data.user);
       saveUser(response.data.user);
       return response.data.user;
     } catch (error) {
@@ -57,7 +56,6 @@ function AppContent() {
         error instanceof AxiosError &&
         (error.response?.status === 401 || error.response?.status === 403)
       ) {
-        console.log("Invalid token detected, clearing auth");
         AuthService.removeAuthToken();
         logoutUser();
       }
@@ -70,23 +68,11 @@ function AppContent() {
     const checkAuthAndFetchUser = async () => {
       if (loaded) {
         const token = AuthService.getAuthToken();
-        console.log(
-          "Auth token check:",
-          token
-            ? `Token exists: ${token.substring(0, 20)}...`
-            : "No token found"
-        );
 
         if (token) {
           // Token exists, try to fetch user
           const userData = await fetchCurrentUser();
-          if (userData) {
-            console.log("User authenticated successfully:", userData);
-          } else {
-            console.log("Failed to fetch user data, redirecting to auth");
-          }
         } else {
-          console.log("No auth token found, redirecting to auth");
           logoutUser(); // Clear any existing user state
         }
 
@@ -105,11 +91,9 @@ function AppContent() {
 
       if (token && user) {
         // Has valid token and user data
-        console.log("Navigating to main app");
         router.replace("/(tabs)");
       } else {
         // No token or no user data
-        console.log("Navigating to auth screen");
         router.replace("/auth");
       }
     }
@@ -148,7 +132,10 @@ function RootLayoutNav() {
         />
         <Stack.Screen name="watchlist" options={{ headerShown: false }} />
         <Stack.Screen name="searched-you" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false, animation: "none" }}
+        />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="alerts" options={{ headerShown: false }} />
         <Stack.Screen name="manage" options={{ headerShown: false }} />

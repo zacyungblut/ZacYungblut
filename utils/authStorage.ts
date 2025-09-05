@@ -11,10 +11,6 @@ export class AuthService {
   static getAuthToken(): string | undefined {
     try {
       const token = authStorage.getString(AUTH_TOKEN_KEY);
-      console.log(
-        "Retrieved auth token:",
-        token ? "Token exists" : "No token found"
-      );
       return token;
     } catch (error) {
       console.error("Error retrieving auth token:", error);

@@ -64,3 +64,26 @@ export const resendVerification = async (phone: string, type: string) => {
 export const getCurrentUser = async () => {
   return API.get("/auth/me");
 };
+
+// Invite functions
+export const sendInvite = async (
+  recipientPhone: string,
+  relationshipType: string
+) => {
+  return API.post("/invites/send", { recipientPhone, relationshipType });
+};
+
+export const getInvites = async () => {
+  return API.get("/invites");
+};
+
+export const respondToInvite = async (
+  inviteId: string,
+  response: "ACCEPTED" | "DECLINED"
+) => {
+  return API.post("/invites/respond", { inviteId, response });
+};
+
+export const cancelInvite = async (inviteId: string) => {
+  return API.delete(`/invites/${inviteId}`);
+};

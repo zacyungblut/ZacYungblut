@@ -13,7 +13,10 @@ import {
 import { useRouter } from "expo-router";
 
 import SignupButton from "@/components/SignupButton";
+import PhoneTextInput from "@/components/PhoneTextInput";
 import { colors } from "@/constants/Colors";
+import { DEFAULT_COUNTRY, CountryCode } from "@/constants/countryCodes";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -56,7 +59,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 0,
   },
   title: {
     fontSize: 28,
@@ -126,6 +129,48 @@ const styles = StyleSheet.create({
   submitButtonContainer: {
     marginBottom: 0,
   },
+  phoneInputContainer: {
+    marginBottom: 20,
+    width: "100%",
+  },
+  phoneInputSection: {
+    width: "100%",
+    marginBottom: 40,
+  },
+  selectedRelationshipContainer: {
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  selectedRelationshipBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary + "10",
+    borderColor: colors.primary,
+    borderWidth: 2,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  selectedRelationshipIcon: {
+    width: 24,
+    height: 24,
+  },
+  selectedRelationshipText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.primary,
+  },
+  changeButton: {
+    marginLeft: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  changeButtonText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textDecorationLine: "underline",
+  },
 });
 
 const relationshipOptions: { type: RelationshipType; image: any }[] = [
@@ -139,9 +184,12 @@ const relationshipOptions: { type: RelationshipType; image: any }[] = [
 
 function Invite() {
   const router = useRouter();
+  const { sendUserInvite } = useUserRedux();
   const [selectedRelationship, setSelectedRelationship] =
     useState<RelationshipType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
 
   const handleRelationshipSelect = useCallback(
     (relationship: RelationshipType) => {
@@ -150,32 +198,48 @@ function Invite() {
     []
   );
 
+  const handlePhoneNumberChange = useCallback((text: string) => {
+    setPhoneNumber(text);
+  }, []);
+
+  const handleCountryChange = useCallback((country: CountryCode) => {
+    setSelectedCountry(country);
+  }, []);
+
+  const handleBackToRelationships = useCallback(() => {
+    setSelectedRelationship(null);
+    setPhoneNumber("");
+  }, []);
+
   const handleShare = useCallback(async () => {
-    if (!selectedRelationship) return;
+    if (!selectedRelationship || !phoneNumber) return;
 
     setIsLoading(true);
 
     try {
-      const shareMessage = `Hey! Connect with me on Official so everyone knows we're together. Tap this link and let's make it official! 💕`;
+      // Format phone number with country code
+      const fullPhoneNumber = `${selectedCountry.dialCode}${phoneNumber}`;
 
-      const result = await Share.share({
-        message: shareMessage,
-        title: "Join me on Official",
-      });
-
-      if (result.action === Share.sharedAction) {
-        // Successfully shared
-        router.back();
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-      Alert.alert("Error", "Failed to share invitation");
+      // Send invite via Redux action
+      await sendUserInvite(fullPhoneNumber, selectedRelationship.toUpperCase());
+    } catch (error: any) {
+      console.error("Error sending invite:", error);
+      const errorMessage =
+        error.response?.data?.error || "Failed to send invitation";
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedRelationship, router]);
+  }, [
+    selectedRelationship,
+    phoneNumber,
+    selectedCountry,
+    router,
+    sendUserInvite,
+  ]);
 
-  const isValidSelection = selectedRelationship !== null;
+  const isValidSelection =
+    selectedRelationship !== null && phoneNumber.length > 0;
 
   return (
     <View style={styles.container}>
@@ -193,37 +257,75 @@ function Invite() {
               </Text>
             </View>
 
-            <View style={styles.relationshipContainer}>
-              <View style={styles.relationshipRow}>
-                {relationshipOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option.type}
-                    style={[
-                      styles.relationshipOption,
-                      selectedRelationship === option.type
-                        ? styles.relationshipOptionSelected
-                        : styles.relationshipOptionUnselected,
-                    ]}
-                    onPress={() => handleRelationshipSelect(option.type)}
-                    activeOpacity={0.7}>
+            {!selectedRelationship ? (
+              // Show relationship options when none selected
+              <View style={styles.relationshipContainer}>
+                <View style={styles.relationshipRow}>
+                  {relationshipOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.type}
+                      style={[
+                        styles.relationshipOption,
+                        styles.relationshipOptionUnselected,
+                      ]}
+                      onPress={() => handleRelationshipSelect(option.type)}
+                      activeOpacity={0.7}>
+                      <Image
+                        source={option.image}
+                        style={styles.relationshipIcon}
+                        resizeMode="contain"
+                      />
+                      <Text
+                        style={[
+                          styles.relationshipText,
+                          styles.relationshipTextUnselected,
+                        ]}>
+                        {option.type}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              // Show phone input when relationship is selected
+              <View style={styles.phoneInputSection}>
+                {/* Selected relationship display */}
+                <View style={styles.selectedRelationshipContainer}>
+                  <View style={styles.selectedRelationshipBadge}>
                     <Image
-                      source={option.image}
-                      style={styles.relationshipIcon}
+                      source={
+                        relationshipOptions.find(
+                          (opt) => opt.type === selectedRelationship
+                        )?.image
+                      }
+                      style={styles.selectedRelationshipIcon}
                       resizeMode="contain"
                     />
-                    <Text
-                      style={[
-                        styles.relationshipText,
-                        selectedRelationship === option.type
-                          ? styles.relationshipTextSelected
-                          : styles.relationshipTextUnselected,
-                      ]}>
-                      {option.type}
+                    <Text style={styles.selectedRelationshipText}>
+                      {selectedRelationship}
                     </Text>
-                  </TouchableOpacity>
-                ))}
+                    <TouchableOpacity
+                      onPress={handleBackToRelationships}
+                      style={styles.changeButton}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                      <Text style={styles.changeButtonText}>Change</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Phone input */}
+                <PhoneTextInput
+                  label="Partner's Phone Number"
+                  phoneNumber={phoneNumber}
+                  onPhoneNumberChange={handlePhoneNumberChange}
+                  selectedCountry={selectedCountry}
+                  onCountryChange={handleCountryChange}
+                  placeholder="Enter phone number"
+                  autoFocus={true}
+                  containerStyle={styles.phoneInputContainer}
+                />
               </View>
-            </View>
+            )}
           </View>
         </View>
 

@@ -1,7 +1,13 @@
-import { StyleSheet, TouchableOpacity, Dimensions, Image } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  Image,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { router } from "expo-router";
 
 import { Text, View } from "@/components/Themed";
@@ -9,19 +15,81 @@ import TopBar from "@/components/TopBar";
 import { colors } from "@/constants/Colors";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import InviteButton from "@/components/InviteButton";
+import PendingInviteCard from "@/components/PendingInviteCard";
+import ReceivedInviteCard from "@/components/ReceivedInviteCard";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function RelationshipScreen() {
-  // State to determine if user is dating or single
-  const [relationshipStatus, setRelationshipStatus] = useState<
-    "single" | "dating"
-  >("single");
+  const {
+    user,
+    relationships,
+    invites,
+    pendingInvites,
+    cancelUserInvite,
+    respondToUserInvite,
+  } = useUserRedux();
 
-  const { user } = useUserRedux();
+  // Calculate relationship status based on actual data
+  const relationshipData = useMemo(() => {
+    // Check if user has any active relationships
+    const activeRelationship = relationships.find((rel) => !rel.endDate);
+
+    if (activeRelationship) {
+      return {
+        status: "dating" as const,
+        relationship: activeRelationship,
+        partner: activeRelationship.users.find((u) => u.phone !== user?.phone),
+      };
+    }
+
+    // Check for pending received invites (priority over sent invites)
+    const pendingReceivedInvites = pendingInvites.filter(
+      (invite) => invite.status === "PENDING"
+    );
+
+    if (pendingReceivedInvites.length > 0) {
+      return {
+        status: "invited" as const,
+        relationship: null,
+        partner: null,
+        receivedInvites: pendingReceivedInvites,
+      };
+    }
+
+    // Check for pending sent invites
+    const pendingSentInvites = invites.sent.filter(
+      (invite) => invite.status === "PENDING"
+    );
+
+    return {
+      status: "single" as const,
+      relationship: null,
+      partner: null,
+      pendingInvites: pendingSentInvites,
+    };
+  }, [relationships, invites, pendingInvites, user?.phone]);
+
+  // Calculate relationship duration
+  const relationshipDuration = useMemo(() => {
+    if (!relationshipData.relationship) return null;
+
+    const startDate = new Date(relationshipData.relationship.startDate);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - startDate.getTime());
+
+    const years = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
+    const months = Math.floor(
+      (diffTime % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24 * 30)
+    );
+    const days = Math.floor(
+      (diffTime % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24)
+    );
+
+    return { years, months, days };
+  }, [relationshipData.relationship]);
 
   const handlePremiumPress = () => {
-    // Handle premium upsell navigation
     console.log("Premium pressed");
   };
 
@@ -58,8 +126,42 @@ export default function RelationshipScreen() {
     router.push("/alerts");
   };
 
-  // Single state render
-  if (relationshipStatus === "single") {
+  const handleCancelInvite = async (inviteId: string) => {
+    try {
+      await cancelUserInvite(inviteId);
+      console.log("Invite cancelled successfully");
+    } catch (error) {
+      console.error("Failed to cancel invite:", error);
+      Alert.alert("Error", "Failed to cancel invite. Please try again.");
+    }
+  };
+
+  const handleAcceptInvite = async (inviteId: string) => {
+    try {
+      await respondToUserInvite(inviteId, "ACCEPTED");
+      console.log("Invite accepted successfully");
+      Alert.alert(
+        "Success",
+        "Relationship confirmed! You are now officially connected."
+      );
+    } catch (error) {
+      console.error("Failed to accept invite:", error);
+      Alert.alert("Error", "Failed to accept invite. Please try again.");
+    }
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    try {
+      await respondToUserInvite(inviteId, "DECLINED");
+      console.log("Invite declined successfully");
+    } catch (error) {
+      console.error("Failed to decline invite:", error);
+      Alert.alert("Error", "Failed to decline invite. Please try again.");
+    }
+  };
+
+  // Invited state render (new)
+  if (relationshipData.status === "invited") {
     return (
       <View style={styles.container}>
         <TopBar title="Relationship" />
@@ -70,7 +172,7 @@ export default function RelationshipScreen() {
             <View style={styles.singleImageContainer}>
               <View style={styles.imagePlaceholder}>
                 <Image
-                  source={require("@/assets/images/official.png")} // Placeholder - replace with hand with naked finger image
+                  source={require("@/assets/images/official.png")}
                   style={styles.singleImage}
                   resizeMode="contain"
                 />
@@ -78,17 +180,30 @@ export default function RelationshipScreen() {
             </View>
 
             <View style={styles.relationshipInfo}>
-              <Text style={styles.statusText}>Single</Text>
-              <Text style={styles.partnerText}>Ready to connect</Text>
+              <Text style={styles.statusText}>You've Been Invited!</Text>
+              <Text style={styles.partnerText}>
+                Someone wants to make it official
+              </Text>
             </View>
           </View>
 
-          {/* Invite Button - replaces Stats Section */}
+          {/* Received Invites */}
           <View style={styles.inviteContainer}>
-            <InviteButton onPress={handleInvite} />
+            <View style={styles.pendingInvitesContainer}>
+              <ReceivedInviteCard
+                invite={relationshipData.receivedInvites![0]}
+                onAccept={handleAcceptInvite}
+                onDecline={handleDeclineInvite}
+              />
+              {relationshipData.receivedInvites!.length > 1 && (
+                <Text style={styles.moreInvitesText}>
+                  +{relationshipData.receivedInvites!.length - 1} more invites
+                </Text>
+              )}
+            </View>
           </View>
 
-          {/* Action Buttons - same as dating */}
+          {/* Action Buttons */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
               style={[styles.actionButton, styles.primaryButton]}
@@ -111,7 +226,7 @@ export default function RelationshipScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Quick Actions - same as dating */}
+          {/* Quick Actions */}
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.quickActionItem}
@@ -160,7 +275,129 @@ export default function RelationshipScreen() {
     );
   }
 
-  // Dating state render (existing functionality with dark theme)
+  // Single state render
+  if (relationshipData.status === "single") {
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+
+    return (
+      <View style={styles.container}>
+        <TopBar title="Relationship" />
+
+        <View style={styles.content}>
+          {/* Single Profile Section */}
+          <View style={styles.profileSection}>
+            <View style={styles.singleImageContainer}>
+              <View style={styles.imagePlaceholder}>
+                <Image
+                  source={require("@/assets/images/official.png")}
+                  style={styles.singleImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
+
+            <View style={styles.relationshipInfo}>
+              <Text style={styles.statusText}>Single</Text>
+              <Text style={styles.partnerText}>
+                {hasPendingInvites ? "Invite pending..." : "Ready to connect"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Invite Button or Pending Invites */}
+          <View style={styles.inviteContainer}>
+            {hasPendingInvites ? (
+              <View style={styles.pendingInvitesContainer}>
+                <PendingInviteCard
+                  invite={relationshipData.pendingInvites![0]}
+                  onCancel={handleCancelInvite}
+                />
+                {relationshipData.pendingInvites!.length > 1 && (
+                  <Text style={styles.moreInvitesText}>
+                    +{relationshipData.pendingInvites!.length - 1} more invites
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <InviteButton onPress={handleInvite} />
+            )}
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.primaryButton]}
+              onPress={handleWatchlist}
+              activeOpacity={0.8}>
+              <Ionicons
+                name="bookmark"
+                size={20}
+                color={colors.heroSecondary}
+              />
+              <Text style={styles.primaryButtonText}>Watchlist</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={handleSearchedYou}
+              activeOpacity={0.8}>
+              <Ionicons name="search" size={20} color={colors.heroSecondary} />
+              <Text style={styles.secondaryButtonText}>Searched You</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity
+              style={styles.quickActionItem}
+              onPress={handleManage}
+              activeOpacity={0.7}>
+              <View style={styles.quickActionIcon}>
+                <Ionicons
+                  name="construct"
+                  size={24}
+                  color={colors.text.secondary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Manage</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionItem}
+              onPress={handleAlerts}
+              activeOpacity={0.7}>
+              <View style={styles.quickActionIcon}>
+                <Ionicons
+                  name="notifications"
+                  size={24}
+                  color={colors.text.secondary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Alerts</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionItem}
+              onPress={handleEditProfile}
+              activeOpacity={0.7}>
+              <View style={styles.quickActionIcon}>
+                <Ionicons
+                  name="settings"
+                  size={24}
+                  color={colors.text.secondary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Settings</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Dating state render (existing functionality with actual data)
   return (
     <View style={styles.container}>
       <TopBar title="Relationship" />
@@ -171,7 +408,7 @@ export default function RelationshipScreen() {
           <View style={styles.datingImageContainer}>
             <View style={styles.imagePlaceholder}>
               <Image
-                source={require("@/assets/images/dating.png")} // Placeholder - replace with two rings image
+                source={require("@/assets/images/dating.png")}
                 style={styles.datingImage}
                 resizeMode="contain"
               />
@@ -179,25 +416,41 @@ export default function RelationshipScreen() {
           </View>
 
           <View style={styles.relationshipInfo}>
-            <Text style={styles.statusText}>Dating</Text>
-            <Text style={styles.partnerText}>{user?.phone}</Text>
+            <Text style={styles.statusText}>
+              {relationshipData.relationship?.status === "DATING"
+                ? "Dating"
+                : relationshipData.relationship?.status === "MARRIED"
+                ? "Married"
+                : relationshipData.relationship?.status || "In Relationship"}
+            </Text>
+            <Text style={styles.partnerText}>
+              {relationshipData.partner?.name ||
+                relationshipData.partner?.phone ||
+                "Partner"}
+            </Text>
           </View>
         </View>
 
-        {/* Stats Section */}
+        {/* Stats Section with actual duration */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>
+              {relationshipDuration?.years || 0}
+            </Text>
             <Text style={styles.statLabel}>Years</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>
+              {relationshipDuration?.months || 0}
+            </Text>
             <Text style={styles.statLabel}>Months</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>42</Text>
+            <Text style={styles.statNumber}>
+              {relationshipDuration?.days || 0}
+            </Text>
             <Text style={styles.statLabel}>Days</Text>
           </View>
         </View>
@@ -287,7 +540,6 @@ const styles = StyleSheet.create({
 
   // Image placeholder styles
   imagePlaceholder: {
-    // backgroundColor: colors.background.secondary,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border.medium,
@@ -304,39 +556,20 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
   },
-  singleStatusText: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.primary,
-    marginBottom: 8,
-  },
-  singleSubText: {
-    fontSize: 16,
-    color: colors.text.tertiary,
-    fontWeight: "400",
-  },
   inviteContainer: {
     marginBottom: 32,
-    // Remove paddingHorizontal completely to match statsContainer width
   },
-  inviteButton: {
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  inviteButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 16,
+
+  // Pending invite styles
+  pendingInvitesContainer: {
     gap: 12,
   },
-  inviteButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.heroSecondary,
+  moreInvitesText: {
+    textAlign: "center",
+    fontSize: 14,
+    color: colors.text.secondary,
+    fontStyle: "italic",
+    marginTop: 8,
   },
 
   // Dating state styles
