@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   logo: {
-    width: 48,
-    height: 48,
+    width: 38,
+    height: 38,
   },
   backButton: {
     width: 32,

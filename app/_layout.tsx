@@ -18,6 +18,7 @@ import { getCurrentUser } from "@/api";
 import { AxiosError } from "axios";
 import { store } from "@/store";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -109,7 +110,9 @@ function AppContent() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <AppContent />
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </Provider>
   );
 }

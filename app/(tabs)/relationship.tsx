@@ -20,6 +20,8 @@ import ReceivedInviteCard from "@/components/ReceivedInviteCard";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+const iconSize = 28;
+
 export default function RelationshipScreen() {
   const {
     user,
@@ -235,7 +237,7 @@ export default function RelationshipScreen() {
               <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="construct"
-                  size={24}
+                  size={iconSize}
                   color={colors.text.secondary}
                 />
               </View>
@@ -249,7 +251,7 @@ export default function RelationshipScreen() {
               <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="notifications"
-                  size={24}
+                  size={iconSize}
                   color={colors.text.secondary}
                 />
               </View>
@@ -263,7 +265,7 @@ export default function RelationshipScreen() {
               <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="settings"
-                  size={24}
+                  size={iconSize}
                   color={colors.text.secondary}
                 />
               </View>
@@ -357,7 +359,7 @@ export default function RelationshipScreen() {
               <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="construct"
-                  size={24}
+                  size={iconSize}
                   color={colors.text.secondary}
                 />
               </View>
@@ -371,7 +373,7 @@ export default function RelationshipScreen() {
               <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="notifications"
-                  size={24}
+                  size={iconSize}
                   color={colors.text.secondary}
                 />
               </View>
@@ -385,7 +387,7 @@ export default function RelationshipScreen() {
               <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="settings"
-                  size={24}
+                  size={iconSize}
                   color={colors.text.secondary}
                 />
               </View>
@@ -483,7 +485,7 @@ export default function RelationshipScreen() {
             <View style={styles.quickActionIcon}>
               <Ionicons
                 name="construct"
-                size={24}
+                size={iconSize}
                 color={colors.text.secondary}
               />
             </View>
@@ -497,7 +499,7 @@ export default function RelationshipScreen() {
             <View style={styles.quickActionIcon}>
               <Ionicons
                 name="notifications"
-                size={24}
+                size={iconSize}
                 color={colors.text.secondary}
               />
             </View>
@@ -511,7 +513,7 @@ export default function RelationshipScreen() {
             <View style={styles.quickActionIcon}>
               <Ionicons
                 name="settings"
-                size={24}
+                size={iconSize}
                 color={colors.text.secondary}
               />
             </View>
@@ -682,8 +684,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
-    borderWidth: 2,
-    borderColor: colors.border.dark,
   },
   quickActionText: {
     fontSize: 12,

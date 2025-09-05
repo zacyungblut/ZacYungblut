@@ -17,6 +17,7 @@ import PhoneTextInput from "@/components/PhoneTextInput";
 import { colors } from "@/constants/Colors";
 import { DEFAULT_COUNTRY, CountryCode } from "@/constants/countryCodes";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { useNotification } from "@/contexts/NotificationContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -185,6 +186,7 @@ const relationshipOptions: { type: RelationshipType; image: any }[] = [
 function Invite() {
   const router = useRouter();
   const { sendUserInvite } = useUserRedux();
+  const { addNotification } = useNotification();
   const [selectedRelationship, setSelectedRelationship] =
     useState<RelationshipType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -229,6 +231,12 @@ function Invite() {
       Alert.alert("Error", errorMessage);
     } finally {
       setIsLoading(false);
+      addNotification({
+        title: "Invite Sent",
+        description: "Your invite has been sent successfully",
+        type: "success",
+        emoji: "🎉",
+      });
     }
   }, [
     selectedRelationship,

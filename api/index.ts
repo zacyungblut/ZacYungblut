@@ -1,7 +1,7 @@
 import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
-export const baseURL = "http://localhost:4000"; // Updated to match backend port
+export const baseURL = "http://localhost:3000"; // Updated to match backend port
 
 let API = createAPIInstance();
 
@@ -86,4 +86,9 @@ export const respondToInvite = async (
 
 export const cancelInvite = async (inviteId: string) => {
   return API.delete(`/invites/${inviteId}`);
+};
+
+// Search functions
+export const searchUserByPhone = async (phone: string) => {
+  return API.post("/search/user", { phone });
 };
