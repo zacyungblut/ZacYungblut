@@ -16,12 +16,15 @@ import {
   DEFAULT_COUNTRY,
 } from "@/constants/countryCodes";
 import PhoneTextInput from "@/components/PhoneTextInput";
+import { usePostHog } from "posthog-react-native";
 import { signup } from "@/api";
 
 const { height } = Dimensions.get("window");
 
 export default function SignupScreen() {
   const router = useRouter();
+
+  const posthog = usePostHog();
 
   // Phone number state - store as raw numeric string
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -59,6 +62,9 @@ export default function SignupScreen() {
 
         // Call signup API
         await signup(fullNumberWithCountryCode);
+        posthog.capture("signup", {
+          phone: fullNumberWithCountryCode,
+        });
 
         // Navigate to verification screen with phone number
         router.push({

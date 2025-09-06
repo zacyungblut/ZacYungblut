@@ -20,6 +20,7 @@ import { store } from "@/store";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { SocketProvider } from "@/contexts/SocketContext";
+import { PostHogProvider } from "posthog-react-native";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -111,11 +112,27 @@ function AppContent() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <NotificationProvider>
-        <SocketProvider>
-          <AppContent />
-        </SocketProvider>
-      </NotificationProvider>
+      <PostHogProvider
+        apiKey="phc_PslcpS6T5uuhlbXlk8N40CX8a9baZ9ZTr6mmjkJB0Wd"
+        options={{
+          host: "https://us.i.posthog.com",
+          enableSessionReplay: true,
+          sessionReplayConfig: {
+            maskAllTextInputs: false,
+            maskAllImages: true,
+            maskAllSandboxedViews: false,
+            captureLog: true,
+            captureNetworkTelemetry: true,
+            androidDebouncerDelayMs: 1000,
+            iOSdebouncerDelayMs: 1000,
+          },
+        }}>
+        <NotificationProvider>
+          <SocketProvider>
+            <AppContent />
+          </SocketProvider>
+        </NotificationProvider>
+      </PostHogProvider>
     </Provider>
   );
 }
