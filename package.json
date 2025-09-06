@@ -18,6 +18,7 @@
     "@react-native-community/datetimepicker": "^8.4.4",
     "@react-navigation/native": "^7.1.6",
     "@reduxjs/toolkit": "^2.9.0",
+    "@types/socket.io-client": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",
     "axios": "^1.11.0",
@@ -47,7 +48,8 @@
     "react-native-web": "~0.20.0",
     "react-redux": "^9.2.0",
     "reanimated": "^0.0.1-alpha",
-    "redux-logger": "^3.0.6"
+    "redux-logger": "^3.0.6",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

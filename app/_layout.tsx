@@ -19,6 +19,7 @@ import { AxiosError } from "axios";
 import { store } from "@/store";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { SocketProvider } from "@/contexts/SocketContext";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -111,7 +112,9 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <NotificationProvider>
-        <AppContent />
+        <SocketProvider>
+          <AppContent />
+        </SocketProvider>
       </NotificationProvider>
     </Provider>
   );

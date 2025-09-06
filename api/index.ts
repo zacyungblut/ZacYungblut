@@ -2,6 +2,7 @@ import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
 export const baseURL = "http://localhost:3000"; // Updated to match backend port
+export const socketURL = baseURL; // Export socket URL for SocketContext
 
 let API = createAPIInstance();
 
