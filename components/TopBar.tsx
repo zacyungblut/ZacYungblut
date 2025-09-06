@@ -3,17 +3,22 @@ import { StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Text, View } from "@/components/Themed";
+import { colors } from "@/constants/Colors";
 
 interface TopBarProps {
   title: string;
   showBackButton?: boolean;
   onBackPress?: () => void;
+  showAddButton?: boolean;
+  onAddPress?: () => void;
 }
 
 export default function TopBar({
   title,
   showBackButton = false,
   onBackPress,
+  showAddButton = false,
+  onAddPress,
 }: TopBarProps) {
   const handlePremiumPress = () => {
     router.push("/premium");
@@ -43,16 +48,25 @@ export default function TopBar({
       </View>
 
       <View style={styles.rightSection}>
-        <TouchableOpacity
-          style={styles.premiumButton}
-          onPress={handlePremiumPress}
-          activeOpacity={0.7}>
-          <Image
-            source={require("@/assets/images/premium.png")}
-            style={styles.premiumImage}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        {showAddButton && onAddPress ? (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={onAddPress}
+            activeOpacity={0.7}>
+            <Ionicons name="add" size={28} color={colors.text.primary} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.premiumButton}
+            onPress={handlePremiumPress}
+            activeOpacity={0.7}>
+            <Image
+              source={require("@/assets/images/premium.png")}
+              style={styles.premiumImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -79,7 +93,7 @@ const styles = StyleSheet.create({
   rightSection: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "flex-end",
   },
   logo: {
@@ -97,12 +111,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
+  addButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   premiumButton: {
     width: 32,
     height: 32,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
   },
   premiumImage: {
     width: 40,

@@ -15,9 +15,11 @@ import {
   addRelationship,
   updateRelationship,
   editRelationship,
+  addUnlockTransaction,
   selectUser,
   selectUserInvites,
   selectUserRelationships,
+  selectUserUnlockTransactions,
 } from "@/store/slices/userSlice";
 import { AuthService } from "@/utils/authStorage";
 import { sendInvite, respondToInvite, cancelInvite } from "@/api";
@@ -31,6 +33,7 @@ export const useUserRedux = () => {
   const { user, loading, error } = useAppSelector((state) => state.user);
   const invites = useAppSelector(selectUserInvites);
   const relationships = useAppSelector(selectUserRelationships);
+  const unlockTransactions = useAppSelector(selectUserUnlockTransactions);
 
   const fetchUser = async () => {
     const result = await dispatch(loadUser());
@@ -106,6 +109,10 @@ export const useUserRedux = () => {
     }
   };
 
+  const addNewUnlockTransaction = (transaction: any) => {
+    dispatch(addUnlockTransaction(transaction));
+  };
+
   return {
     // User data
     user,
@@ -128,5 +135,9 @@ export const useUserRedux = () => {
     addNewRelationship,
     updateExistingRelationship,
     editExistingRelationship,
+
+    // Unlock transactions data and actions
+    unlockTransactions,
+    addNewUnlockTransaction,
   };
 };

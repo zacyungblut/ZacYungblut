@@ -163,13 +163,17 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="watchlist" options={{ headerShown: false }} />
-        <Stack.Screen name="searched-you" options={{ headerShown: false }} />
+        <Stack.Screen name="past-searches" options={{ headerShown: false }} />
         <Stack.Screen
           name="(tabs)"
           options={{ headerShown: false, animation: "none" }}
         />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="alerts" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="add-alert"
+          options={{ headerShown: false, presentation: "formSheet" }}
+        />
         <Stack.Screen name="manage" options={{ headerShown: false }} />
         <Stack.Screen name="premium" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />

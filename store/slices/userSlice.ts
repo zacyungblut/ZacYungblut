@@ -43,6 +43,14 @@ interface Relationship {
   updatedAt: string;
 }
 
+interface UnlockTransaction {
+  id: string;
+  userId: string;
+  targetPhone: string;
+  targetStatus: string;
+  createdAt: string;
+}
+
 interface User {
   id: string;
   phone: string;
@@ -52,6 +60,7 @@ interface User {
   updatedAt: string;
   relationships: Relationship[];
   sentInvites: Invite[];
+  unlockTransactions: UnlockTransaction[];
 }
 
 interface UserState {
@@ -122,6 +131,15 @@ const userSlice = createSlice({
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
+      }
+    },
+    // Add new unlock transaction to the list
+    addUnlockTransaction: (state, action: PayloadAction<UnlockTransaction>) => {
+      if (state.user) {
+        state.user.unlockTransactions = [
+          action.payload,
+          ...state.user.unlockTransactions,
+        ];
       }
     },
     // Invite reducers - only for sent invites now
@@ -219,6 +237,7 @@ export const {
   setUserLoading,
   setUserError,
   updateUser,
+  addUnlockTransaction,
   addSentInvite,
   updateInviteStatus,
   removeCancelledInvite,
@@ -238,4 +257,10 @@ export const selectUserInvites = createSelector([selectUser], (user) => ({
 export const selectUserRelationships = createSelector(
   [selectUser],
   (user) => user?.relationships || []
+);
+
+// Add new selector for unlock transactions
+export const selectUserUnlockTransactions = createSelector(
+  [selectUser],
+  (user) => user?.unlockTransactions || []
 );

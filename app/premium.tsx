@@ -169,7 +169,9 @@ export default function PremiumScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        <Text style={styles.trialText}>Cancel anytime.</Text>
+        <Text style={styles.trialText}>
+          Cancel anytime. Fully confidential.
+        </Text>
       </View>
     </LinearGradient>
   );

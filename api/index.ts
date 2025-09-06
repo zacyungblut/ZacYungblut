@@ -91,6 +91,14 @@ export const searchUserByPhone = async (phone: string) => {
   return API.post("/search/user", { phone });
 };
 
+export const unlockUserStatus = async (phone: string) => {
+  return API.post("/search/unlock", { phone });
+};
+
+export const getUserUnlockHistory = async () => {
+  return API.get("/search/unlocks");
+};
+
 // Relationship functions
 export const editRelationship = async (
   relationshipId: string,

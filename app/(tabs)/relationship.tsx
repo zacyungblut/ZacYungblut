@@ -134,8 +134,8 @@ export default function RelationshipScreen() {
     router.push("/invite");
   };
 
-  const handleSearchedYou = () => {
-    router.push("/searched-you");
+  const handlePastSearches = () => {
+    router.push("/past-searches");
   };
 
   const handleWatchlist = () => {
@@ -288,10 +288,10 @@ export default function RelationshipScreen() {
 
             <TouchableOpacity
               style={[styles.actionButton, styles.secondaryButton]}
-              onPress={handleSearchedYou}
+              onPress={handlePastSearches}
               activeOpacity={0.8}>
               <Ionicons name="search" size={20} color={colors.heroSecondary} />
-              <Text style={styles.secondaryButtonText}>Searched You</Text>
+              <Text style={styles.secondaryButtonText}>Searches</Text>
             </TouchableOpacity>
           </View>
 
@@ -417,10 +417,10 @@ export default function RelationshipScreen() {
 
           <TouchableOpacity
             style={[styles.actionButton, styles.secondaryButton]}
-            onPress={handleSearchedYou}
+            onPress={handlePastSearches}
             activeOpacity={0.8}>
             <Ionicons name="search" size={20} color={colors.heroSecondary} />
-            <Text style={styles.secondaryButtonText}>Searched You</Text>
+            <Text style={styles.secondaryButtonText}>Past Searches</Text>
           </TouchableOpacity>
         </View>
 

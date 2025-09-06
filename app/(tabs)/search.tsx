@@ -6,15 +6,22 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import PhoneTextInput from "@/components/PhoneTextInput";
+import SearchResultCard from "@/components/SearchResultCard";
+import AnimatedSearchEmptyState from "@/components/AnimatedSearchEmptyState";
 import { DEFAULT_COUNTRY } from "@/constants/countryCodes";
 import { colors } from "@/constants/Colors";
-import { searchUserByPhone } from "@/api";
+import { searchUserByPhone, unlockUserStatus } from "@/api";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 const { width } = Dimensions.get("window");
+
+// Tab bar height from TabBar.tsx
+const TAB_BAR_HEIGHT = 120;
 
 interface SearchResult {
   phone: string;
@@ -25,10 +32,14 @@ interface SearchResult {
 
 export default function SearchScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedCountry] = useState(DEFAULT_COUNTRY);
+  const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  // Get user data and unlock transaction function from Redux
+  const { user, addNewUnlockTransaction } = useUserRedux();
 
   const handlePremiumPress = () => {
     // Handle premium upsell navigation
@@ -52,8 +63,9 @@ export default function SearchScreen() {
     setSearchError(null);
 
     try {
-      // Combine country code with phone number
-      const fullPhoneNumber = selectedCountry.code + phone;
+      // Combine country code with phone number - ensure proper formatting
+      const fullPhoneNumber = selectedCountry.dialCode + phone;
+      console.log("Searching for phone number:", fullPhoneNumber); // Debug log
       const response = await searchUserByPhone(fullPhoneNumber);
 
       if (response.data.success) {
@@ -73,93 +85,102 @@ export default function SearchScreen() {
     }
   };
 
+  const handleUnlockStatus = async () => {
+    if (!searchResult || isUnlocking) return;
+
+    setIsUnlocking(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    try {
+      const response = await unlockUserStatus(searchResult.phone);
+
+      if (response.data.success) {
+        setSearchResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                relationshipStatus: response.data.result.relationshipStatus,
+              }
+            : null
+        );
+
+        // Add the new unlock transaction to Redux store
+        addNewUnlockTransaction({
+          id: response.data.result.transactionId,
+          userId: user?.id || "",
+          targetPhone: response.data.result.phone,
+          targetStatus: response.data.result.relationshipStatus,
+          createdAt: new Date().toISOString(),
+        });
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        setSearchError("Failed to unlock status. Please try again.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } catch (error: any) {
+      console.error("Unlock error:", error);
+      if (error.response?.status === 401) {
+        setSearchError("Please log in to unlock status.");
+      } else if (error.response?.status === 404) {
+        setSearchError("User status not available.");
+      } else {
+        setSearchError("Failed to unlock status. Please try again.");
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
+
+  const handleAddToWatchlist = () => {
+    if (!searchResult) return;
+
+    // TODO: Implement add to watchlist functionality
+    console.log("Adding to watchlist:", searchResult.phone);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // You could show a toast or navigation here
+    // For now, just log it
+  };
+
   const clearSearch = () => {
     setPhoneNumber("");
     setSearchResult(null);
     setSearchError(null);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "single":
-        return colors.status.success || "#4CAF50";
-      case "dating":
-      case "engaged":
-      case "married":
-        return colors.status.error || "#F44336";
-      case "unknown":
-        return colors.text.tertiary;
-      default:
-        return colors.text.secondary;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "single":
-        return "checkmark-circle";
-      case "dating":
-      case "engaged":
-      case "married":
-        return "heart";
-      case "unknown":
-        return "help-circle";
-      default:
-        return "information-circle";
-    }
-  };
+  // Determine what to show in the content area
+  const showEmptyState = !isSearching && !searchResult && !searchError;
+  const showSearchResults = !isSearching && (searchResult || searchError);
 
   return (
     <View style={styles.container}>
       <TopBar title="Search" />
 
-      {/* Search bar at the very top */}
-      <View style={styles.searchHeaderContainer}>
-        <View style={styles.searchInputContainer}>
-          <PhoneTextInput
-            label=""
-            phoneNumber={phoneNumber}
-            onPhoneNumberChange={handlePhoneNumberChange}
-            selectedCountry={selectedCountry}
-            placeholder="Search by phone number"
-            autoFocus={false}
-            onCountryChange={() => {}}
-            containerStyle={styles.phoneInputContainer}
-          />
-        </View>
-      </View>
-
-      {/* Content area */}
+      {/* Content area - now takes up most of the screen */}
       <View style={styles.contentContainer}>
-        {phoneNumber.length === 0 ? (
-          // Empty state when no search input
-          <View style={styles.emptyStateContainer}>
-            <View style={styles.searchIconContainer}>
-              <Ionicons
-                name="search"
-                size={80}
-                color={colors.text.quaternary}
-              />
-            </View>
+        {/* Always show animated empty state unless we have search results */}
+        {showEmptyState && (
+          <AnimatedSearchEmptyState phoneNumberLength={phoneNumber.length} />
+        )}
 
-            <Text style={styles.emptyStateTitle}>Search anyone</Text>
-            <Text style={styles.emptyStateSubtitle}>
-              Search a phone number to see their relationship status.
+        {/* Loading state */}
+        {isSearching && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.text.primary} />
+            <Text style={styles.searchingText}>Searching...</Text>
+            <Text style={styles.searchingSubtext}>
+              Looking for "{selectedCountry.dialCode}
+              {phoneNumber}"
             </Text>
           </View>
-        ) : (
-          // Search results area
+        )}
+
+        {/* Search results or error */}
+        {showSearchResults && (
           <View style={styles.searchResultsContainer}>
-            {isSearching ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.text.primary} />
-                <Text style={styles.searchingText}>Searching...</Text>
-                <Text style={styles.searchingSubtext}>
-                  Looking for "{selectedCountry.code}
-                  {phoneNumber}"
-                </Text>
-              </View>
-            ) : searchError ? (
+            {searchError ? (
               <View style={styles.errorContainer}>
                 <Ionicons
                   name="alert-circle"
@@ -174,49 +195,31 @@ export default function SearchScreen() {
                 </TouchableOpacity>
               </View>
             ) : searchResult ? (
-              <View style={styles.resultContainer}>
-                <View style={styles.resultCard}>
-                  <View style={styles.resultHeader}>
-                    <Ionicons
-                      name={getStatusIcon(searchResult.relationshipStatus)}
-                      size={40}
-                      color={getStatusColor(searchResult.relationshipStatus)}
-                    />
-                    <Text style={styles.phoneResultText}>
-                      {searchResult.phone}
-                    </Text>
-                  </View>
-
-                  {searchResult.name && (
-                    <Text style={styles.nameText}>{searchResult.name}</Text>
-                  )}
-
-                  <View style={styles.statusContainer}>
-                    <Text style={styles.statusLabel}>Relationship Status</Text>
-                    <Text
-                      style={[
-                        styles.statusText,
-                        {
-                          color: getStatusColor(
-                            searchResult.relationshipStatus
-                          ),
-                        },
-                      ]}>
-                      {searchResult.relationshipStatus}
-                    </Text>
-                  </View>
-
-                  {searchResult.relationshipStatus === "Unknown" && (
-                    <Text style={styles.unknownSubtext}>
-                      This person hasn't joined Official yet or hasn't set their
-                      status.
-                    </Text>
-                  )}
-                </View>
-              </View>
+              <SearchResultCard
+                searchResult={searchResult}
+                isUnlocking={isUnlocking}
+                onUnlockStatus={handleUnlockStatus}
+                onAddToWatchlist={handleAddToWatchlist}
+              />
             ) : null}
           </View>
         )}
+      </View>
+
+      {/* Search bar moved to the bottom for better thumb accessibility */}
+      <View style={styles.searchBottomContainer}>
+        <View style={styles.searchInputContainer}>
+          <PhoneTextInput
+            label=""
+            phoneNumber={phoneNumber}
+            onPhoneNumberChange={handlePhoneNumberChange}
+            selectedCountry={selectedCountry}
+            placeholder="Search by phone number"
+            autoFocus={false}
+            onCountryChange={setSelectedCountry}
+            containerStyle={styles.phoneInputContainer}
+          />
+        </View>
       </View>
     </View>
   );
@@ -228,11 +231,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
   },
 
-  // Search header styles
-  searchHeaderContainer: {
+  // Content area styles - now takes up most of the screen with bottom padding for search input
+  contentContainer: {
+    flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 120, // Add padding to account for search input + tab bar
+    position: "relative",
+  },
+
+  // Search bar at the bottom styles - positioned above tab bar
+  searchBottomContainer: {
+    position: "absolute",
+    bottom: TAB_BAR_HEIGHT, // Position above the tab bar
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
     backgroundColor: colors.background.primary,
+    borderTopWidth: 0,
+    borderTopColor: colors.border.light,
   },
   searchInputContainer: {
     position: "relative",
@@ -241,49 +257,23 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
 
-  // Content area styles
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-
-  // Empty state styles
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 100,
-  },
-  searchIconContainer: {
-    marginBottom: 24,
-    opacity: 0.6,
-  },
-  emptyStateTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.text.primary,
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  emptyStateSubtitle: {
-    fontSize: 16,
-    color: colors.text.tertiary,
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 32,
-  },
-
   // Search results styles
   searchResultsContainer: {
     flex: 1,
     paddingTop: 16,
+    paddingBottom: 16,
   },
 
   // Loading styles
   loadingContainer: {
-    paddingTop: 100,
+    position: "absolute",
+    top: 0,
+    left: 16,
+    right: 16,
+    bottom: 120, // Account for search input space
+    justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.background.primary,
   },
   searchingText: {
     fontSize: 20,
@@ -303,6 +293,7 @@ const styles = StyleSheet.create({
     paddingTop: 100,
     alignItems: "center",
     paddingHorizontal: 24,
+    paddingBottom: 16,
   },
   errorText: {
     fontSize: 16,
@@ -321,54 +312,5 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: 16,
     fontWeight: "600",
-  },
-
-  // Result styles
-  resultContainer: {
-    paddingTop: 32,
-  },
-  resultCard: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
-  },
-  resultHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  phoneResultText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginLeft: 12,
-    flex: 1,
-  },
-  nameText: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  statusContainer: {
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: colors.text.tertiary,
-    marginBottom: 4,
-  },
-  statusText: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  unknownSubtext: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    textAlign: "center",
-    marginTop: 8,
-    fontStyle: "italic",
   },
 });
