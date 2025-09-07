@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
 
 import { verifyCode, resendVerification } from "@/api";
 import SignupButton from "@/components/SignupButton";
@@ -353,7 +354,7 @@ function Verification() {
           </View>
         </TouchableWithoutFeedback>
 
-        <View style={styles.keyboardStickyContainer}>
+        <KeyboardStickyView offset={{ closed: -32, opened: -40 }}>
           <SignupButton
             title="Submit"
             onPress={handleSubmit}
@@ -361,7 +362,7 @@ function Verification() {
             isEnabled={isValidCode}
             containerStyle={styles.submitButtonContainer}
           />
-        </View>
+        </KeyboardStickyView>
       </SafeAreaView>
     </View>
   );

@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { router } from "expo-router";
 import { Provider } from "react-redux";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthService } from "@/utils/authStorage";
@@ -39,7 +40,14 @@ function AppContent() {
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
   // Use Redux for user state management
-  const { user, saveUser, logoutUser } = useUserRedux();
+  const {
+    user,
+    saveUser,
+    logoutUser,
+    unlockTransactions,
+    reviewRequests,
+    saveUserReviewRequest,
+  } = useUserRedux();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -63,6 +71,75 @@ function AppContent() {
         logoutUser();
       }
       return null;
+    }
+  };
+
+  // Function to handle review request logic - now with safe loading
+  const handleReviewRequest = async () => {
+    try {
+      // Dynamically import ReviewService to avoid native module loading issues
+      const { ReviewService } = await import("@/utils/reviewService");
+
+      // Check if we should request a review
+      if (
+        !ReviewService.shouldRequestReview(unlockTransactions, reviewRequests)
+      ) {
+        return;
+      }
+
+      // Log metrics for debugging
+      ReviewService.logReviewMetrics(unlockTransactions, reviewRequests);
+
+      // Small delay to ensure the app has fully loaded
+      setTimeout(async () => {
+        console.log("Attempting to request review...");
+
+        try {
+          const reviewMetadata = await ReviewService.requestReview();
+
+          // Save the review request to the backend
+          try {
+            await saveUserReviewRequest({
+              platform: reviewMetadata.platform,
+              appVersion: reviewMetadata.appVersion,
+              buildVersion: reviewMetadata.buildVersion,
+              unlockCount: unlockTransactions.length,
+              wasDisplayed: reviewMetadata.wasDisplayed,
+              userInteracted: false, // Will be updated later if user interacts
+              deviceModel: reviewMetadata.deviceModel,
+              osVersion: reviewMetadata.osVersion,
+            });
+
+            if (reviewMetadata.wasDisplayed) {
+              console.log(
+                "Review dialog was displayed to user and saved to backend"
+              );
+            } else {
+              console.log(
+                "Review request logged to backend (dialog not displayed)"
+              );
+            }
+          } catch (saveError) {
+            console.error(
+              "Failed to save review request to backend:",
+              saveError
+            );
+            // Still log success if the review was shown, even if save failed
+            if (reviewMetadata.wasDisplayed) {
+              console.log(
+                "Review dialog was displayed but failed to save to backend"
+              );
+            }
+          }
+        } catch (reviewError) {
+          console.log(
+            "Review request failed (likely platform not supported):",
+            reviewError
+          );
+        }
+      }, 2000); // 2 second delay after app loads
+    } catch (error) {
+      console.error("Error in review request process:", error);
     }
   };
 
@@ -95,12 +172,29 @@ function AppContent() {
       if (token && user) {
         // Has valid token and user data
         router.replace("/(tabs)");
+
+        // Check if we should request a review after successful login
+        if (user.unlockTransactions && user.reviewRequests) {
+          handleReviewRequest();
+        }
       } else {
         // No token or no user data
         router.replace("/auth");
       }
     }
   }, [authCheckComplete, user]);
+
+  // Also check for review request when user data changes (e.g., after unlock)
+  useEffect(() => {
+    if (user && unlockTransactions.length === 1) {
+      // Don't immediately request on data change, wait a bit
+      const timeoutId = setTimeout(() => {
+        handleReviewRequest();
+      }, 5000); // 5 second delay
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [unlockTransactions.length]); // Only trigger when unlock count changes
 
   if (!loaded || !authCheckComplete) {
     return null;
@@ -109,30 +203,33 @@ function AppContent() {
   return <RootLayoutNav />;
 }
 
+// Default export for the main layout
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <PostHogProvider
-        apiKey="phc_PslcpS6T5uuhlbXlk8N40CX8a9baZ9ZTr6mmjkJB0Wd"
-        options={{
-          host: "https://us.i.posthog.com",
-          enableSessionReplay: true,
-          sessionReplayConfig: {
-            maskAllTextInputs: false,
-            maskAllImages: true,
-            maskAllSandboxedViews: false,
-            captureLog: true,
-            captureNetworkTelemetry: true,
-            androidDebouncerDelayMs: 1000,
-            iOSdebouncerDelayMs: 1000,
-          },
-        }}>
-        <NotificationProvider>
-          <SocketProvider>
-            <AppContent />
-          </SocketProvider>
-        </NotificationProvider>
-      </PostHogProvider>
+      <KeyboardProvider>
+        <PostHogProvider
+          apiKey="phc_PslcpS6T5uuhlbXlk8N40CX8a9baZ9ZTr6mmjkJB0Wd"
+          options={{
+            host: "https://us.i.posthog.com",
+            enableSessionReplay: true,
+            sessionReplayConfig: {
+              maskAllTextInputs: false,
+              maskAllImages: true,
+              maskAllSandboxedViews: false,
+              captureLog: true,
+              captureNetworkTelemetry: true,
+              androidDebouncerDelayMs: 1000,
+              iOSdebouncerDelayMs: 1000,
+            },
+          }}>
+          <NotificationProvider>
+            <SocketProvider>
+              <AppContent />
+            </SocketProvider>
+          </NotificationProvider>
+        </PostHogProvider>
+      </KeyboardProvider>
     </Provider>
   );
 }
@@ -166,7 +263,11 @@ function RootLayoutNav() {
         <Stack.Screen name="past-searches" options={{ headerShown: false }} />
         <Stack.Screen
           name="(tabs)"
-          options={{ headerShown: false, animation: "none" }}
+          options={{
+            headerShown: false,
+            animation: "none",
+            gestureEnabled: false,
+          }}
         />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="alerts" options={{ headerShown: false }} />

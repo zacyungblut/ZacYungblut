@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { colors } from "@/constants/Colors";
 import {
   CountryCode,
@@ -115,8 +116,10 @@ export default function SignupScreen() {
             We'll send an SMS verification code.
           </Text>
         </View>
+      </View>
 
-        {/* Continue Button */}
+      {/* Continue Button in KeyboardStickyView */}
+      <KeyboardStickyView offset={{ closed: -32, opened: 16 }}>
         <TouchableOpacity
           style={[
             styles.continueButton,
@@ -135,7 +138,7 @@ export default function SignupScreen() {
             {isLoading ? "Sending..." : "Continue"}
           </Text>
         </TouchableOpacity>
-      </View>
+      </KeyboardStickyView>
     </SafeAreaView>
   );
 }
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    justifyContent: "space-between",
+    // Remove justifyContent: "space-between" since button is now in KeyboardStickyView
   },
   formContainer: {
     paddingTop: 40,
@@ -196,7 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginBottom: 32,
+    marginHorizontal: 20, // Add horizontal margin since it's now outside content container
   },
   continueButtonDisabled: {
     backgroundColor: colors.border.medium,

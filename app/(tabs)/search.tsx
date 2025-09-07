@@ -151,7 +151,7 @@ export default function SearchScreen() {
   };
 
   // Determine what to show in the content area
-  const showEmptyState = !isSearching && !searchResult && !searchError;
+  const showAnimatedState = !searchResult && !searchError; // Show animated state when no results and no errors
   const showSearchResults = !isSearching && (searchResult || searchError);
 
   return (
@@ -160,20 +160,13 @@ export default function SearchScreen() {
 
       {/* Content area - now takes up most of the screen */}
       <View style={styles.contentContainer}>
-        {/* Always show animated empty state unless we have search results */}
-        {showEmptyState && (
-          <AnimatedSearchEmptyState phoneNumberLength={phoneNumber.length} />
-        )}
-
-        {/* Loading state */}
-        {isSearching && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.text.primary} />
-            <Text style={styles.searchingText}>Searching...</Text>
-            <Text style={styles.searchingSubtext}>
-              Looking for "{selectedCountry.dialCode}
-              {phoneNumber}"
-            </Text>
+        {/* Always show animated empty state unless we have search results or errors */}
+        {showAnimatedState && (
+          <View style={styles.emptyStateWrapper}>
+            <AnimatedSearchEmptyState
+              phoneNumberLength={phoneNumber.length}
+              isSearching={isSearching}
+            />
           </View>
         )}
 
@@ -239,6 +232,15 @@ const styles = StyleSheet.create({
     position: "relative",
   },
 
+  // New wrapper for empty state positioning
+  emptyStateWrapper: {
+    position: "absolute",
+    top: 40, // Position higher up from the top
+    left: 16,
+    right: 16,
+    // bottom: 120, // Keep bottom padding for search input
+  },
+
   // Search bar at the bottom styles - positioned above tab bar
   searchBottomContainer: {
     position: "absolute",
@@ -262,30 +264,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 16,
     paddingBottom: 16,
-  },
-
-  // Loading styles
-  loadingContainer: {
-    position: "absolute",
-    top: 0,
-    left: 16,
-    right: 16,
-    bottom: 120, // Account for search input space
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.background.primary,
-  },
-  searchingText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  searchingSubtext: {
-    fontSize: 14,
-    color: colors.text.tertiary,
-    textAlign: "center",
   },
 
   // Error styles

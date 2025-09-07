@@ -51,6 +51,21 @@ interface UnlockTransaction {
   createdAt: string;
 }
 
+interface ReviewRequest {
+  id: string;
+  userId: string;
+  platform: string;
+  appVersion?: string;
+  buildVersion?: string;
+  unlockCount: number;
+  wasDisplayed: boolean;
+  userInteracted: boolean;
+  deviceModel?: string;
+  osVersion?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface User {
   id: string;
   phone: string;
@@ -61,6 +76,7 @@ interface User {
   relationships: Relationship[];
   sentInvites: Invite[];
   unlockTransactions: UnlockTransaction[];
+  reviewRequests: ReviewRequest[];
 }
 
 interface UserState {
@@ -140,6 +156,37 @@ const userSlice = createSlice({
           action.payload,
           ...state.user.unlockTransactions,
         ];
+      }
+    },
+    // Add new review request to the list
+    addReviewRequest: (state, action: PayloadAction<ReviewRequest>) => {
+      if (state.user) {
+        state.user.reviewRequests = [
+          action.payload,
+          ...state.user.reviewRequests,
+        ];
+      }
+    },
+    // Update review request (e.g., when user interacts with it)
+    updateReviewRequest: (
+      state,
+      action: PayloadAction<{
+        id: string;
+        wasDisplayed?: boolean;
+        userInteracted?: boolean;
+      }>
+    ) => {
+      if (state.user) {
+        const index = state.user.reviewRequests.findIndex(
+          (req) => req.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.user.reviewRequests[index] = {
+            ...state.user.reviewRequests[index],
+            ...action.payload,
+            updatedAt: new Date().toISOString(),
+          };
+        }
       }
     },
     // Invite reducers - only for sent invites now
@@ -238,6 +285,8 @@ export const {
   setUserError,
   updateUser,
   addUnlockTransaction,
+  addReviewRequest,
+  updateReviewRequest,
   addSentInvite,
   updateInviteStatus,
   removeCancelledInvite,
@@ -263,4 +312,9 @@ export const selectUserRelationships = createSelector(
 export const selectUserUnlockTransactions = createSelector(
   [selectUser],
   (user) => user?.unlockTransactions || []
+);
+
+export const selectUserReviewRequests = createSelector(
+  [selectUser],
+  (user) => user?.reviewRequests || []
 );

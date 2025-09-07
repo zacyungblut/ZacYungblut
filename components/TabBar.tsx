@@ -9,8 +9,6 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
-import { useColorScheme } from "@/components/useColorScheme";
-
 const TAB_BAR_HEIGHT = 90;
 
 interface TabBarProps {
@@ -19,15 +17,10 @@ interface TabBarProps {
 }
 
 const TabBar: React.FC<TabBarProps> = ({ currentPage, onTabPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  // Animated styles for the tab bar background
+  // Animated styles for the tab bar background - always light mode
   const animatedTabBarStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: isDark
-        ? "rgba(0, 0, 0, 0.9)"
-        : "rgba(255, 255, 255, 0.95)",
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
     };
   });
 
@@ -91,11 +84,11 @@ const TabBar: React.FC<TabBarProps> = ({ currentPage, onTabPress }) => {
 
   return (
     <View style={styles.container}>
-      {/* Background with blur effect */}
+      {/* Background with blur effect - always light mode */}
       <Animated.View style={[styles.tabBar, animatedTabBarStyle]}>
         <BlurView
           intensity={80}
-          tint={isDark ? "dark" : "light"}
+          tint="light"
           style={StyleSheet.absoluteFillObject}
         />
 

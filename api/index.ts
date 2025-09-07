@@ -1,7 +1,10 @@
 import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
-export const baseURL = "http://localhost:3000"; // Updated to match backend port
+// export const baseURL = "http://localhost:3000"; // Updated to match backend port
+export const baseURL = "http://192.168.86.43:3000"; // 34 craigleith
+// export const baseURL = "http://10.0.0.143:3000"; // 450 Front st west, toronto
+
 export const socketURL = baseURL; // Export socket URL for SocketContext
 
 let API = createAPIInstance();
@@ -64,6 +67,20 @@ export const resendVerification = async (phone: string, type: string) => {
 // Add this new function to get the current authenticated user
 export const getCurrentUser = async () => {
   return API.get("/auth/me");
+};
+
+// Add this new function for saving review requests
+export const saveReviewRequest = async (reviewData: {
+  platform: string;
+  appVersion?: string;
+  buildVersion?: string;
+  unlockCount: number;
+  wasDisplayed: boolean;
+  userInteracted?: boolean;
+  deviceModel?: string;
+  osVersion?: string;
+}) => {
+  return API.post("/auth/review-request", reviewData);
 };
 
 // Invite functions
