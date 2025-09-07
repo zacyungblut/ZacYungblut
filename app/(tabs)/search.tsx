@@ -136,12 +136,9 @@ export default function SearchScreen() {
   const handleAddToWatchlist = () => {
     if (!searchResult) return;
 
-    // TODO: Implement add to watchlist functionality
-    console.log("Adding to watchlist:", searchResult.phone);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    // You could show a toast or navigation here
-    // For now, just log it
+    // The actual watchlist functionality is now handled in SearchResultCard
+    // This callback can be used for additional UI feedback if needed
+    console.log("Added to watchlist:", searchResult.phone);
   };
 
   const clearSearch = () => {

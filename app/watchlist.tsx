@@ -1,38 +1,105 @@
-import React, { useState, useRef } from "react";
-import { StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   LegendList,
   LegendListRef,
   LegendListRenderItemProps,
 } from "@legendapp/list";
+import * as Haptics from "expo-haptics";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import PhoneTextInput from "@/components/PhoneTextInput";
 import { DEFAULT_COUNTRY } from "@/constants/countryCodes";
 import { colors } from "@/constants/Colors";
-
-const { width } = Dimensions.get("window");
+import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { searchUserByPhone } from "@/api";
 
 interface WatchlistItem {
-  id: string;
   phone: string;
   name?: string;
   relationshipStatus: string;
+  exists: boolean;
   addedDate: string;
 }
 
 export default function WatchlistScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry] = useState(DEFAULT_COUNTRY);
+  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const listRef = useRef<LegendListRef | null>(null);
 
-  // Mock data for now - replace with actual watchlist data from your store
-  const [watchlistItems] = useState<WatchlistItem[]>([
-    // Empty for now as requested
-  ]);
+  // Get watchlist data and functions from Redux
+  const { watchlist, removePhoneFromWatchlist, fetchUserWatchlist, user } =
+    useUserRedux();
+
+  // Fetch watchlist data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWatchlistData();
+    }, [])
+  );
+
+  // Update watchlist items when Redux watchlist changes
+  useEffect(() => {
+    if (watchlist.length > 0) {
+      loadWatchlistData();
+    } else {
+      setWatchlistItems([]);
+    }
+  }, [watchlist]);
+
+  const loadWatchlistData = async () => {
+    if (watchlist.length === 0) {
+      setWatchlistItems([]);
+      return;
+    }
+
+    setIsRefreshing(true);
+    const items: WatchlistItem[] = [];
+
+    // Load data for each phone number in the watchlist
+    for (const phone of watchlist) {
+      try {
+        const response = await searchUserByPhone(phone);
+        if (response.data.success) {
+          items.push({
+            phone,
+            name: response.data.result.name,
+            relationshipStatus:
+              response.data.result.relationshipStatus || "UNKNOWN",
+            exists: response.data.result.exists,
+            addedDate: new Date().toISOString(), // We don't have the actual added date, so use current
+          });
+        } else {
+          // If search fails, still show the phone number
+          items.push({
+            phone,
+            relationshipStatus: "UNKNOWN",
+            exists: false,
+            addedDate: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to load data for ${phone}:`, error);
+        // Add as unknown if API call fails
+        items.push({
+          phone,
+          relationshipStatus: "UNKNOWN",
+          exists: false,
+          addedDate: new Date().toISOString(),
+        });
+      }
+    }
+
+    setWatchlistItems(items);
+    setIsRefreshing(false);
+  };
 
   const handleBackPress = () => {
     router.back();
@@ -40,19 +107,41 @@ export default function WatchlistScreen() {
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
-    // TODO: Implement search filtering logic here
   };
 
   const clearSearch = () => {
     setSearchQuery("");
   };
 
-  const removeFromWatchlist = (itemId: string) => {
-    // TODO: Implement remove from watchlist logic
-    console.log("Remove from watchlist:", itemId);
+  const removeFromWatchlist = async (phoneNumber: string) => {
+    // Add to loading set
+    setLoadingItems((prev) => new Set(prev).add(phoneNumber));
+
+    try {
+      await removePhoneFromWatchlist(phoneNumber);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Remove from local state immediately for better UX
+      setWatchlistItems((prev) =>
+        prev.filter((item) => item.phone !== phoneNumber)
+      );
+    } catch (error) {
+      console.error("Failed to remove from watchlist:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      // Remove from loading set
+      setLoadingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(phoneNumber);
+        return newSet;
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
+    if (status === "KNOWN") return colors.status.warning || "#FF9800";
+    if (status === "UNKNOWN") return colors.text.tertiary;
+
     switch (status.toLowerCase()) {
       case "single":
         return colors.status.success || "#4CAF50";
@@ -60,14 +149,15 @@ export default function WatchlistScreen() {
       case "engaged":
       case "married":
         return colors.status.error || "#F44336";
-      case "unknown":
-        return colors.text.tertiary;
       default:
         return colors.text.secondary;
     }
   };
 
   const getStatusIcon = (status: string) => {
+    if (status === "KNOWN") return "lock-closed";
+    if (status === "UNKNOWN") return "help-circle";
+
     switch (status.toLowerCase()) {
       case "single":
         return "checkmark-circle";
@@ -75,8 +165,6 @@ export default function WatchlistScreen() {
       case "engaged":
       case "married":
         return "heart";
-      case "unknown":
-        return "help-circle";
       default:
         return "information-circle";
     }
@@ -84,47 +172,66 @@ export default function WatchlistScreen() {
 
   const renderWatchlistItem = ({
     item,
-  }: LegendListRenderItemProps<WatchlistItem>) => (
-    <View style={styles.watchlistItem}>
-      <View style={styles.itemHeader}>
-        <View style={styles.itemInfo}>
-          <Text style={styles.phoneText}>{item.phone}</Text>
-          {item.name && <Text style={styles.nameText}>{item.name}</Text>}
+  }: LegendListRenderItemProps<WatchlistItem>) => {
+    const isRemoving = loadingItems.has(item.phone);
+
+    return (
+      <View style={styles.watchlistItem}>
+        <View style={styles.itemHeader}>
+          <View style={styles.itemInfo}>
+            <Text style={styles.phoneText}>{item.phone}</Text>
+            {item.name && <Text style={styles.nameText}>{item.name}</Text>}
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.removeButton,
+              isRemoving && styles.removeButtonDisabled,
+            ]}
+            onPress={() => removeFromWatchlist(item.phone)}
+            disabled={isRemoving}
+            activeOpacity={0.7}>
+            {isRemoving ? (
+              <ActivityIndicator size="small" color={colors.text.tertiary} />
+            ) : (
+              <Ionicons name="close" size={20} color={colors.text.tertiary} />
+            )}
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => removeFromWatchlist(item.id)}
-          activeOpacity={0.7}>
-          <Ionicons name="close" size={20} color={colors.text.tertiary} />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.statusContainer}>
-        <Ionicons
-          name={getStatusIcon(item.relationshipStatus)}
-          size={16}
-          color={getStatusColor(item.relationshipStatus)}
-        />
-        <Text
-          style={[
-            styles.statusText,
-            { color: getStatusColor(item.relationshipStatus) },
-          ]}>
-          {item.relationshipStatus}
-        </Text>
-      </View>
+        <View style={styles.statusContainer}>
+          <Ionicons
+            name={getStatusIcon(item.relationshipStatus)}
+            size={16}
+            color={getStatusColor(item.relationshipStatus)}
+          />
+          <Text
+            style={[
+              styles.statusText,
+              { color: getStatusColor(item.relationshipStatus) },
+            ]}>
+            {item.relationshipStatus === "UNKNOWN"
+              ? "Status Unknown"
+              : item.relationshipStatus === "KNOWN"
+              ? "Status Available"
+              : item.relationshipStatus}
+          </Text>
+        </View>
 
-      <Text style={styles.addedDateText}>
-        Added {new Date(item.addedDate).toLocaleDateString()}
-      </Text>
-    </View>
-  );
+        {!item.exists && (
+          <Text style={styles.notFoundText}>User not found on Official</Text>
+        )}
+      </View>
+    );
+  };
 
   const filteredItems = watchlistItems.filter(
     (item) =>
       item.phone.includes(searchQuery) ||
       (item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const showEmptyState = !isRefreshing && filteredItems.length === 0;
+  const showWatchlistData = !isRefreshing && filteredItems.length > 0;
 
   return (
     <View style={styles.container}>
@@ -160,11 +267,32 @@ export default function WatchlistScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Refresh button */}
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={loadWatchlistData}
+          disabled={isRefreshing}
+          activeOpacity={0.7}>
+          {isRefreshing ? (
+            <ActivityIndicator size="small" color={colors.text.secondary} />
+          ) : (
+            <Ionicons name="refresh" size={20} color={colors.text.secondary} />
+          )}
+          <Text style={styles.refreshButtonText}>
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Content area */}
       <View style={styles.contentContainer}>
-        {filteredItems.length === 0 ? (
+        {isRefreshing && watchlistItems.length === 0 ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={colors.text.secondary} />
+            <Text style={styles.loadingText}>Loading watchlist...</Text>
+          </View>
+        ) : showEmptyState ? (
           <View style={styles.emptyState}>
             <Ionicons
               name="bookmark-outline"
@@ -174,26 +302,30 @@ export default function WatchlistScreen() {
             <Text style={styles.emptyTitle}>
               {searchQuery.length > 0
                 ? "No Results Found"
-                : "No Watchlist Items"}
+                : watchlist.length === 0
+                ? "No Watchlist Items"
+                : "Loading..."}
             </Text>
             <Text style={styles.emptySubtitle}>
               {searchQuery.length > 0
                 ? `No watchlist items match "${searchQuery}"`
-                : "People you add to your watchlist will appear here"}
+                : watchlist.length === 0
+                ? "People you add to your watchlist will appear here"
+                : "Loading your watchlist..."}
             </Text>
           </View>
-        ) : (
+        ) : showWatchlistData ? (
           <LegendList
             data={filteredItems}
             renderItem={renderWatchlistItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.phone}
             recycleItems={true}
             maintainVisibleContentPosition
             ref={listRef}
             style={styles.list}
             contentContainerStyle={styles.listContent}
           />
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -213,6 +345,7 @@ const styles = StyleSheet.create({
   },
   searchInputContainer: {
     position: "relative",
+    marginBottom: 12,
   },
   phoneInputContainer: {
     marginBottom: 0,
@@ -224,11 +357,41 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -10 }],
     zIndex: 1,
   },
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border.medium,
+  },
+  refreshButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text.secondary,
+    marginLeft: 6,
+  },
 
   // Content area styles
   contentContainer: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+
+  // Loading state
+  loadingState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 100,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    marginTop: 16,
   },
 
   // List styles
@@ -271,6 +434,9 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 6,
   },
+  removeButtonDisabled: {
+    opacity: 0.6,
+  },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -281,10 +447,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 6,
   },
-  addedDateText: {
+  notFoundText: {
     fontSize: 12,
     color: colors.text.tertiary,
     fontStyle: "italic",
+    marginTop: 4,
   },
 
   // Empty state styles

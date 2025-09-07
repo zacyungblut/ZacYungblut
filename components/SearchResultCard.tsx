@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { Text, View } from "@/components/Themed";
 import { colors } from "@/constants/Colors";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 interface SearchResult {
   phone: string;
@@ -26,6 +27,12 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
   onUnlockStatus,
   onAddToWatchlist,
 }) => {
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const { watchlist, addPhoneToWatchlist } = useUserRedux();
+
+  // Check if this phone number is already in the watchlist
+  const isInWatchlist = watchlist.includes(searchResult.phone);
+
   const getStatusColor = (status: string) => {
     if (status === "KNOWN") return colors.status.warning || "#FF9800";
     if (status === "UNKNOWN") return colors.text.tertiary;
@@ -58,9 +65,27 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
     }
   };
 
-  const handleWatchlistPress = () => {
+  const handleWatchlistPress = async () => {
+    if (isInWatchlist || isAddingToWatchlist) return;
+
+    setIsAddingToWatchlist(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onAddToWatchlist();
+
+    try {
+      await addPhoneToWatchlist(searchResult.phone);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Call the parent's callback if provided
+      onAddToWatchlist();
+    } catch (error: any) {
+      console.error("Failed to add to watchlist:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+      // You could show an error toast here
+      // For now, just log the error
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
   };
 
   return (
@@ -77,12 +102,37 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
           </View>
 
           <TouchableOpacity
-            style={styles.watchlistButton}
+            style={[
+              styles.watchlistButton,
+              (isInWatchlist || isAddingToWatchlist) &&
+                styles.watchlistButtonDisabled,
+            ]}
             onPress={handleWatchlistPress}
+            disabled={isInWatchlist || isAddingToWatchlist}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="add" size={16} color={colors.text.secondary} />
-            <Text style={styles.watchlistButtonText}>Watchlist</Text>
+            {isAddingToWatchlist ? (
+              <ActivityIndicator size="small" color={colors.text.secondary} />
+            ) : (
+              <>
+                <Ionicons
+                  name={isInWatchlist ? "checkmark" : "add"}
+                  size={16}
+                  color={
+                    isInWatchlist
+                      ? colors.status.success
+                      : colors.text.secondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.watchlistButtonText,
+                    isInWatchlist && { color: colors.status.success },
+                  ]}>
+                  {isInWatchlist ? "Added" : "Watchlist"}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -271,6 +321,9 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  watchlistButtonDisabled: {
+    opacity: 0.6,
   },
 });
 

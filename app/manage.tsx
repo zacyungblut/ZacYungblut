@@ -279,11 +279,6 @@ export default function ManageScreen() {
         {/* No Relationship Message */}
         {!activeRelationship && (
           <View style={styles.noRelationshipContainer}>
-            <Ionicons
-              name="heart-outline"
-              size={64}
-              color={colors.text.tertiary}
-            />
             <Text style={styles.noRelationshipTitle}>
               No Active Relationship
             </Text>
@@ -415,6 +410,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 60,
     paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: 12,
+    marginBottom: 32,
   },
   noRelationshipTitle: {
     fontSize: 20,
