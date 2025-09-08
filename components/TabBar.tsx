@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View, Keyboard } from "react-native";
 import Animated, {
   SharedValue,
   useAnimatedStyle,
@@ -60,10 +60,16 @@ const TabBar: React.FC<TabBarProps> = ({ currentPage, onTabPress }) => {
       };
     });
 
+    const handlePress = () => {
+      // Dismiss keyboard before tab navigation
+      Keyboard.dismiss();
+      onTabPress(index);
+    };
+
     return (
       <TouchableOpacity
         style={styles.tabButton}
-        onPress={() => onTabPress(index)}
+        onPress={handlePress}
         activeOpacity={0.7}>
         <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
           <Ionicons name={name} size={26} color="#000000" />

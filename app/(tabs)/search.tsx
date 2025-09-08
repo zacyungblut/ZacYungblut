@@ -18,7 +18,9 @@ import Animated, {
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import PhoneTextInput from "@/components/PhoneTextInput";
-import SearchResultCard from "@/components/SearchResultCard";
+import SearchResultCard, {
+  SearchPlaceholderCard,
+} from "@/components/SearchResultCard";
 import { DEFAULT_COUNTRY } from "@/constants/countryCodes";
 import { colors } from "@/constants/Colors";
 import { searchUserByPhone, unlockUserStatus } from "@/api";
@@ -47,6 +49,8 @@ export default function SearchScreen() {
 
   // Animated value for focus state
   const focusAnimation = useSharedValue(0);
+  // Animated value for placeholder card
+  const placeholderAnimation = useSharedValue(0);
 
   // Get user data and unlock transaction function from Redux
   const { user, addNewUnlockTransaction } = useUserRedux();
@@ -54,11 +58,13 @@ export default function SearchScreen() {
   const handleInputFocus = () => {
     setIsInputFocused(true);
     focusAnimation.value = withTiming(1, { duration: 300 });
+    placeholderAnimation.value = withTiming(1, { duration: 400 });
   };
 
   const handleInputBlur = () => {
     setIsInputFocused(false);
     focusAnimation.value = withTiming(0, { duration: 300 });
+    placeholderAnimation.value = withTiming(0, { duration: 300 });
   };
 
   const handlePhoneNumberChange = (text: string) => {
@@ -175,10 +181,22 @@ export default function SearchScreen() {
   });
 
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(focusAnimation.value, [0, 1], [0, -180]);
+    const translateY = interpolate(focusAnimation.value, [0, 1], [0, -200]);
 
     return {
       transform: [{ translateY }],
+    };
+  });
+
+  // Animated styles for placeholder card
+  const placeholderAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(placeholderAnimation.value, [0, 1], [0, 1]);
+    const translateY = interpolate(placeholderAnimation.value, [0, 1], [30, 0]);
+    const scale = interpolate(placeholderAnimation.value, [0, 1], [0.95, 1]);
+
+    return {
+      opacity,
+      transform: [{ translateY }, { scale }],
     };
   });
 
@@ -197,7 +215,7 @@ export default function SearchScreen() {
               color={colors.primary || "#2563EB"}
             />
           </View>
-          <Text style={styles.titleText}>Check Status</Text>
+          <Text style={styles.titleText}>Search Others</Text>
         </Animated.View>
 
         {/* Animated Content */}
@@ -239,14 +257,21 @@ export default function SearchScreen() {
 
           {/* Results Section */}
           <View style={styles.resultsSection}>
-            {searchResult && (
+            {searchResult ? (
               <SearchResultCard
                 searchResult={searchResult}
                 isUnlocking={isUnlocking}
                 onUnlockStatus={() => {}} // No longer needed since we handle unlock in the button
                 onAddToWatchlist={handleAddToWatchlist}
               />
-            )}
+            ) : isInputFocused && !searchError ? (
+              <Animated.View style={placeholderAnimatedStyle}>
+                <SearchPlaceholderCard
+                  phoneNumber={phoneNumber}
+                  isInputFocused={isInputFocused}
+                />
+              </Animated.View>
+            ) : null}
 
             {searchError && (
               <View style={styles.errorCard}>
@@ -428,5 +453,46 @@ const styles = StyleSheet.create({
   premiumLink: {
     color: colors.primary || "#2563EB",
     fontWeight: "600",
+  },
+
+  // Placeholder card styles
+  placeholderCard: {
+    backgroundColor: colors.background.secondary || "#F8FAFC",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: colors.border.light || "#E2E8F0",
+    opacity: 0.7,
+  },
+
+  placeholderIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.background.primary || "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+
+  placeholderContent: {
+    alignItems: "center",
+  },
+
+  placeholderTitle: {
+    fontSize: 18,
+    color: colors.text.secondary || "#64748B",
+    marginBottom: 8,
+    textAlign: "center",
+    fontWeight: "500",
+  },
+
+  placeholderSubtitle: {
+    fontSize: 14,
+    color: colors.text.tertiary || "#94A3B8",
+    textAlign: "center",
   },
 });

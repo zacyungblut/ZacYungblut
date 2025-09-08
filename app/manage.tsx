@@ -27,12 +27,10 @@ export default function ManageScreen() {
   const { user, relationships, editExistingRelationship } = useUserRedux();
 
   // Privacy settings state
-  const [showRelationshipStatus, setShowRelationshipStatus] = useState(true);
+  const [showRelationshipStatus, setShowRelationshipStatus] = useState(false);
   const [showRelationshipDuration, setShowRelationshipDuration] =
-    useState(true);
-  const [showPartnerName, setShowPartnerName] = useState(false);
-  const [allowSearchByOthers, setAllowSearchByOthers] = useState(true);
-  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
+    useState(false);
+  const [allowSearchByOthers, setAllowSearchByOthers] = useState(false);
 
   // Date modal state
   const [dateModalVisible, setDateModalVisible] = useState(false);
@@ -135,25 +133,11 @@ export default function ManageScreen() {
       onToggle: setShowRelationshipDuration,
     },
     {
-      id: "show_partner",
-      title: "Show Partner's Name",
-      description: "Display who you're dating, not just your status",
-      value: showPartnerName,
-      onToggle: setShowPartnerName,
-    },
-    {
       id: "allow_search",
       title: "Allow Others to Search for Me",
       description: "Let people find you by searching your phone number",
       value: allowSearchByOthers,
       onToggle: setAllowSearchByOthers,
-    },
-    {
-      id: "show_online",
-      title: "Show Online Status",
-      description: "Let others see when you're active on Official",
-      value: showOnlineStatus,
-      onToggle: setShowOnlineStatus,
     },
   ];
 
@@ -245,10 +229,9 @@ export default function ManageScreen() {
                 )}
                 <View style={styles.separator} />
                 {renderRelationshipItem(
-                  "Edit Partner Information",
-                  "person-outline",
-                  handleEditPartnerInfo,
-                  partner?.name || "Add partner's name"
+                  "Go on a Break",
+                  "pause",
+                  handleEditPartnerInfo
                 )}
                 <View style={styles.separator} />
                 {renderRelationshipItem(

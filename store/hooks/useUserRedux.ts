@@ -27,6 +27,7 @@ import {
   removeFromUserWatchlist,
   setUserWatchlist,
   selectUserWatchlist,
+  addShareAttemptToInvite,
 } from "@/store/slices/userSlice";
 import { AuthService } from "@/utils/authStorage";
 import {
@@ -37,6 +38,7 @@ import {
   addToWatchlist,
   removeFromWatchlist,
   getUserWatchlist,
+  addShareAttempt,
 } from "@/api";
 
 export const useAppDispatch = () => useDispatch<AppDispatch>();
@@ -71,18 +73,23 @@ export const useUserRedux = () => {
   };
 
   // Invite-related functions
-  const sendUserInvite = async (relationshipType: string) => {
+  const sendUserInvite = async (
+    relationshipType: string,
+    updateLocalState: boolean = true
+  ) => {
     try {
       const response = await sendInvite(relationshipType);
       const newInvite = response.data.invite;
 
-      // Add the new invite to the user's sent invites
-      dispatch(
-        addSentInvite({
-          ...newInvite,
-          senderPhone: user?.phone || "",
-        })
-      );
+      // Only add the new invite to the user's sent invites if updateLocalState is true
+      if (updateLocalState) {
+        dispatch(
+          addSentInvite({
+            ...newInvite,
+            senderPhone: user?.phone || "",
+          })
+        );
+      }
 
       return response;
     } catch (error) {
@@ -217,6 +224,36 @@ export const useUserRedux = () => {
     }
   };
 
+  const recordShareAttempt = async (
+    inviteId: string,
+    shareData: {
+      shareMethod: string;
+      wasSuccessful: boolean;
+      wasAborted?: boolean;
+      errorMessage?: string;
+      platform?: string;
+      appVersion?: string;
+    }
+  ) => {
+    try {
+      const response = await addShareAttempt(inviteId, shareData);
+      const newShareAttempt = response.data.shareAttempt;
+
+      // Add the share attempt to the local invite
+      dispatch(
+        addShareAttemptToInvite({
+          inviteId,
+          shareAttempt: newShareAttempt,
+        })
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Failed to record share attempt:", error);
+      throw error;
+    }
+  };
+
   return {
     // User data
     user,
@@ -233,6 +270,7 @@ export const useUserRedux = () => {
     invites,
     sendUserInvite,
     cancelUserInvite,
+    recordShareAttempt, // Add this
 
     // Relationships data and actions
     relationships,

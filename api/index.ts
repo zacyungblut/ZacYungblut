@@ -2,9 +2,9 @@ import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
 // export const baseURL = "http://localhost:3000"; // Updated to match backend port
-// export const baseURL = "http://192.168.86.43:3000"; // 34 craigleith
+export const baseURL = "http://192.168.86.43:3000"; // 34 craigleith
 // export const baseURL = "http://10.0.0.143:3000"; // 450 Front st west, toronto
-export const baseURL = "https://mixer-backend.cfd";
+// export const baseURL = "https://mixer-backend.cfd";
 
 export const socketURL = baseURL; // Export socket URL for SocketContext
 
@@ -102,6 +102,21 @@ export const respondToInvite = async (
 
 export const cancelInvite = async (inviteId: string) => {
   return API.delete(`/invites/${inviteId}`);
+};
+
+// Add share attempt tracking
+export const addShareAttempt = async (
+  inviteId: string,
+  shareData: {
+    shareMethod: string;
+    wasSuccessful: boolean;
+    wasAborted?: boolean;
+    errorMessage?: string;
+    platform?: string;
+    appVersion?: string;
+  }
+) => {
+  return API.post(`/invites/${inviteId}/share-attempt`, shareData);
 };
 
 // Search functions

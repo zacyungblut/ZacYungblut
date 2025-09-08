@@ -1,5 +1,11 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, Alert, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  Linking,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
@@ -32,11 +38,6 @@ export default function SettingsScreen() {
     console.log("Subscription management pressed");
   };
 
-  const handlePrivacyControls = () => {
-    // TODO: Navigate to privacy controls
-    console.log("Privacy controls pressed");
-  };
-
   const handleLanguageRegion = () => {
     // TODO: Navigate to language and region settings
     console.log("Language and region pressed");
@@ -48,8 +49,13 @@ export default function SettingsScreen() {
   };
 
   const handleGetSupport = () => {
-    // TODO: Navigate to support or open support flow
-    console.log("Get support pressed");
+    Linking.openURL("https://makeitofficial.us/support").catch((err) => {
+      console.error("Failed to open support URL:", err);
+      Alert.alert(
+        "Error",
+        "Unable to open support page. Please try again later."
+      );
+    });
   };
 
   const handleDeleteAccount = () => {
@@ -109,13 +115,6 @@ export default function SettingsScreen() {
   ];
 
   const appSettings: SettingItem[] = [
-    {
-      id: "privacy",
-      title: "Privacy Controls",
-      icon: "shield-outline",
-      onPress: handlePrivacyControls,
-      showChevron: true,
-    },
     {
       id: "language",
       title: "Language & Region",
@@ -277,7 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.background.tertiary,
   },
   destructiveItem: {
     backgroundColor: colors.background.secondary,

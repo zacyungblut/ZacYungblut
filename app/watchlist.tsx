@@ -254,18 +254,6 @@ export default function WatchlistScreen() {
             onCountryChange={() => {}}
             containerStyle={styles.phoneInputContainer}
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={clearSearch}
-              activeOpacity={0.7}>
-              <Ionicons
-                name="close-circle"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Refresh button */}

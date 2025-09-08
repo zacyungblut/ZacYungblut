@@ -7,12 +7,25 @@ import {
 import { getCurrentUser, editRelationship as editRelationshipAPI } from "@/api";
 
 // Define types based on your schema
+interface ShareAttempt {
+  id: string;
+  inviteId: string;
+  shareMethod: string;
+  wasSuccessful: boolean;
+  wasAborted: boolean;
+  errorMessage?: string;
+  platform?: string;
+  appVersion?: string;
+  createdAt: string;
+}
+
 interface Invite {
   id: string;
   senderPhone: string;
   relationshipType: string;
   status: "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "CANCELLED";
   message?: string;
+  shareAttempts?: ShareAttempt[]; // Add this field
   createdAt: string;
   updatedAt: string;
 }
@@ -258,6 +271,25 @@ const userSlice = createSlice({
         state.user.watchlist = action.payload;
       }
     },
+    // Add share attempt to invite
+    addShareAttemptToInvite: (
+      state,
+      action: PayloadAction<{ inviteId: string; shareAttempt: ShareAttempt }>
+    ) => {
+      if (state.user) {
+        const sentInviteIndex = state.user.sentInvites.findIndex(
+          (invite) => invite.id === action.payload.inviteId
+        );
+        if (sentInviteIndex !== -1) {
+          if (!state.user.sentInvites[sentInviteIndex].shareAttempts) {
+            state.user.sentInvites[sentInviteIndex].shareAttempts = [];
+          }
+          state.user.sentInvites[sentInviteIndex].shareAttempts!.unshift(
+            action.payload.shareAttempt
+          );
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -314,6 +346,7 @@ export const {
   addToUserWatchlist,
   removeFromUserWatchlist,
   setUserWatchlist,
+  addShareAttemptToInvite, // Add this
 } = userSlice.actions;
 
 export default userSlice.reducer;

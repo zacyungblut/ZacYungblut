@@ -21,6 +21,70 @@ interface SearchResultCardProps {
   onAddToWatchlist: () => void;
 }
 
+// New interface for placeholder card
+interface SearchPlaceholderCardProps {
+  phoneNumber: string;
+  isInputFocused: boolean;
+}
+
+// New placeholder card component
+export const SearchPlaceholderCard: React.FC<SearchPlaceholderCardProps> = ({
+  phoneNumber,
+  isInputFocused,
+}) => {
+  const getPlaceholderContent = () => {
+    if (!isInputFocused && !phoneNumber) {
+      return {
+        title: "Enter a phone number",
+        subtitle: "Start typing to search for someone's status",
+        showSpinner: false,
+      };
+    }
+
+    if (phoneNumber.length > 0 && phoneNumber.length < 10) {
+      return {
+        title: "Keep typing to search",
+        subtitle: `${10 - phoneNumber.length} more digits needed`,
+        showSpinner: true,
+      };
+    }
+
+    return {
+      title: "Ready to search",
+      subtitle: "Enter a phone number to see their status",
+      showSpinner: false,
+    };
+  };
+
+  const content = getPlaceholderContent();
+
+  return (
+    <View style={[styles.resultCard, styles.placeholderCard]}>
+      <View style={styles.resultIconContainer}>
+        {content.showSpinner ? (
+          <ActivityIndicator size="large" color={colors.primary || "#2563EB"} />
+        ) : (
+          <Ionicons
+            name="search"
+            size={60}
+            color={colors.text.tertiary || "#94A3B8"}
+          />
+        )}
+      </View>
+
+      <View style={[styles.resultContent, styles.placeholderContent]}>
+        <Text style={styles.resultTitle}>{content.title}</Text>
+        <Text style={[styles.resultStatus, { fontWeight: "600" }]}>
+          {content.subtitle}
+        </Text>
+        <Text style={[styles.resultDate, { opacity: 0 }]}>
+          Placeholder spacing
+        </Text>
+      </View>
+    </View>
+  );
+};
+
 const SearchResultCard: React.FC<SearchResultCardProps> = ({
   searchResult,
   isUnlocking,
@@ -80,7 +144,11 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
           isSuccessfulResult() && styles.resultIconContainerSuccess,
         ]}>
         <Ionicons
-          name="shield-checkmark"
+          name={
+            searchResult.relationshipStatus === "UNKNOWN"
+              ? "help-circle"
+              : "shield-checkmark"
+          }
           size={60}
           color={isSuccessfulResult() ? "#1E40AF" : colors.primary || "#2563EB"}
         />
@@ -242,6 +310,18 @@ const styles = StyleSheet.create({
 
   watchlistButtonDisabled: {
     opacity: 0.6,
+  },
+
+  // Additional styles for placeholder to ensure full width
+  placeholderCard: {
+    opacity: 0.7,
+    minWidth: "100%",
+    flex: 0,
+  },
+
+  placeholderContent: {
+    width: "100%",
+    maxWidth: "100%",
   },
 });
 

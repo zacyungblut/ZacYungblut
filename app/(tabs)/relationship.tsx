@@ -4,6 +4,8 @@ import {
   Dimensions,
   Image,
   Alert,
+  Share,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +19,7 @@ import { useUserRedux } from "@/store/hooks/useUserRedux";
 import InviteButton from "@/components/InviteButton";
 import PendingInviteCard from "@/components/PendingInviteCard";
 import DateModal from "@/app/date-modal";
+import { useNotification } from "@/contexts/NotificationContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -27,14 +30,20 @@ export default function RelationshipScreen() {
     user,
     relationships,
     invites,
-    // Remove these non-existent properties
     updateExistingRelationship,
     editExistingRelationship, // Use the new API function
+    sendUserInvite,
+    fetchUser,
+    cancelUserInvite, // Add this
+    recordShareAttempt,
   } = useUserRedux();
+
+  const { addNotification } = useNotification();
 
   // Add state for date modal
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(false);
 
   // Calculate relationship status based on actual data
   const relationshipData = useMemo(() => {
@@ -129,9 +138,212 @@ export default function RelationshipScreen() {
     console.log("View memories pressed");
   };
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     console.log("Invite pressed");
-    router.push("/invite");
+    setIsLoading(true);
+
+    try {
+      // Send invite with default "DATING" relationship type, but don't update local state yet
+      const response = await sendUserInvite("DATING", false);
+      const inviteId = response.data.invite.id;
+
+      // Create the invite link
+      const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
+      const shareMessage = `Hey! I'd like to make it official. Press this link to make us official`;
+
+      // Show native share dialog
+      try {
+        const result = await Share.share({
+          message: shareMessage,
+          url: inviteLink, // iOS will use this for the URL
+          title: "Make It Official",
+        });
+
+        if (result.action === Share.sharedAction) {
+          // Record successful share attempt with detailed activity type
+          try {
+            const shareMethod = result.activityType
+              ? `native_share:${result.activityType}`
+              : "native_share:unknown";
+
+            await recordShareAttempt(inviteId, {
+              shareMethod,
+              wasSuccessful: true,
+              wasAborted: false,
+              platform: Platform.OS,
+              appVersion: "1.0.0", // You can get this from your app config
+            });
+
+            console.log(
+              "Share successful via:",
+              result.activityType || "unknown"
+            );
+          } catch (shareTrackingError) {
+            console.error("Failed to track share attempt:", shareTrackingError);
+            // Don't block the flow if tracking fails
+          }
+
+          addNotification({
+            title: "Invite Shared",
+            description: "Your invite link has been shared successfully",
+            type: "success",
+            emoji: "🎉",
+          });
+
+          // Only refresh user data after successful share
+          await fetchUser();
+        } else {
+          // Record aborted share attempt
+          try {
+            await recordShareAttempt(inviteId, {
+              shareMethod: "native_share:cancelled",
+              wasSuccessful: false,
+              wasAborted: true,
+              platform: Platform.OS,
+              appVersion: "1.0.0",
+            });
+
+            console.log("Share cancelled by user");
+          } catch (shareTrackingError) {
+            console.error("Failed to track aborted share:", shareTrackingError);
+          }
+
+          // User dismissed or cancelled the share dialog
+          // Cancel the invite in the backend
+          try {
+            await cancelUserInvite(inviteId);
+            console.log("Invite cancelled due to share dismissal");
+          } catch (cancelError) {
+            console.error(
+              "Failed to cancel invite after share dismissal:",
+              cancelError
+            );
+            // Don't show error to user since they dismissed the share anyway
+          }
+        }
+      } catch (shareError) {
+        console.error("Error sharing:", shareError);
+
+        // Record failed share attempt
+        try {
+          await recordShareAttempt(inviteId, {
+            shareMethod: "native_share:error",
+            wasSuccessful: false,
+            wasAborted: false,
+            errorMessage:
+              shareError instanceof Error
+                ? shareError.message
+                : String(shareError),
+            platform: Platform.OS,
+            appVersion: "1.0.0",
+          });
+        } catch (shareTrackingError) {
+          console.error("Failed to track failed share:", shareTrackingError);
+        }
+
+        // Cancel the invite since sharing failed
+        try {
+          await cancelUserInvite(inviteId);
+          console.log("Invite cancelled due to share error");
+        } catch (cancelError) {
+          console.error(
+            "Failed to cancel invite after share error:",
+            cancelError
+          );
+        }
+
+        Alert.alert("Share Error", "Failed to share the invite link");
+      }
+    } catch (error: any) {
+      console.error("Error creating invite:", error);
+      const errorMessage =
+        error.response?.data?.error || "Failed to create invitation";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleShareInvite = async (inviteId: string) => {
+    try {
+      // Create the invite link using the existing invite ID
+      const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
+      const shareMessage = `Hey! I'd like to make it official. Press this link to make us official`;
+
+      // Show native share dialog
+      const result = await Share.share({
+        message: shareMessage,
+        url: inviteLink, // iOS will use this for the URL
+        title: "Make It Official",
+      });
+
+      if (result.action === Share.sharedAction) {
+        // Record successful reshare attempt with detailed activity type
+        try {
+          const shareMethod = result.activityType
+            ? `reshare:${result.activityType}`
+            : "reshare:unknown";
+
+          await recordShareAttempt(inviteId, {
+            shareMethod,
+            wasSuccessful: true,
+            wasAborted: false,
+            platform: Platform.OS,
+            appVersion: "1.0.0",
+          });
+
+          console.log(
+            "Reshare successful via:",
+            result.activityType || "unknown"
+          );
+        } catch (shareTrackingError) {
+          console.error("Failed to track reshare attempt:", shareTrackingError);
+        }
+
+        addNotification({
+          title: "Invite Shared",
+          description: "Your invite link has been shared successfully",
+          type: "success",
+          emoji: "🎉",
+        });
+      } else {
+        // Record aborted reshare attempt
+        try {
+          await recordShareAttempt(inviteId, {
+            shareMethod: "reshare:cancelled",
+            wasSuccessful: false,
+            wasAborted: true,
+            platform: Platform.OS,
+            appVersion: "1.0.0",
+          });
+
+          console.log("Reshare cancelled by user");
+        } catch (shareTrackingError) {
+          console.error("Failed to track aborted reshare:", shareTrackingError);
+        }
+      }
+    } catch (shareError) {
+      console.error("Error sharing:", shareError);
+
+      // Record failed reshare attempt
+      try {
+        await recordShareAttempt(inviteId, {
+          shareMethod: "reshare:error",
+          wasSuccessful: false,
+          wasAborted: false,
+          errorMessage:
+            shareError instanceof Error
+              ? shareError.message
+              : String(shareError),
+          platform: Platform.OS,
+          appVersion: "1.0.0",
+        });
+      } catch (shareTrackingError) {
+        console.error("Failed to track failed reshare:", shareTrackingError);
+      }
+
+      Alert.alert("Share Error", "Failed to share the invite link");
+    }
   };
 
   const handlePastSearches = () => {
@@ -152,14 +364,22 @@ export default function RelationshipScreen() {
 
   const handleCancelInvite = async (inviteId: string) => {
     try {
-      // This function is not directly available in useUserRedux,
-      // so it will be handled by the API call in the backend.
-      // For now, we'll just log and show an alert.
-      console.log("Invite cancelled successfully");
-      Alert.alert("Success", "Invite cancelled successfully.");
-    } catch (error) {
+      await cancelUserInvite(inviteId);
+
+      addNotification({
+        title: "Invite Cancelled",
+        description: "Your invite has been cancelled successfully",
+        type: "success",
+        emoji: "✅",
+      });
+
+      // Refresh user data to update the UI
+      await fetchUser();
+    } catch (error: any) {
       console.error("Failed to cancel invite:", error);
-      Alert.alert("Error", "Failed to cancel invite. Please try again.");
+      const errorMessage =
+        error.response?.data?.error || "Failed to cancel invite";
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -301,6 +521,7 @@ export default function RelationshipScreen() {
                 <PendingInviteCard
                   invite={relationshipData.pendingInvites![0]}
                   onCancel={handleCancelInvite}
+                  onShare={handleShareInvite}
                 />
                 {relationshipData.pendingInvites!.length > 1 && (
                   <Text style={styles.moreInvitesText}>

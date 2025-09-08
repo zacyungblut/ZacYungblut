@@ -118,13 +118,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   premiumButton: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
   },
   premiumImage: {
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
   },
 });
