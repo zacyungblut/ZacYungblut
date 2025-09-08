@@ -116,11 +116,6 @@ export default function AlertsScreen() {
       <View style={styles.contentContainer}>
         {alerts.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons
-              name="notifications-outline"
-              size={64}
-              color={colors.text.tertiary}
-            />
             <Text style={styles.emptyTitle}>No Alerts</Text>
             <Text style={styles.emptySubtitle}>
               Tap + to create an alert for someone's relationship status

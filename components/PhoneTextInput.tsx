@@ -29,6 +29,8 @@ interface PhoneTextInputProps {
   labelStyle?: StyleProp<TextStyle>;
   error?: string;
   autoFocus?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
@@ -43,6 +45,8 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
   labelStyle,
   error,
   autoFocus,
+  onFocus,
+  onBlur,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showCountryModal, setShowCountryModal] = useState(false);
@@ -61,11 +65,13 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
 
   const handleFocus = () => {
     setIsFocused(true);
+    onFocus?.();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const handleBlur = () => {
     setIsFocused(false);
+    onBlur?.();
   };
 
   const handleContainerPress = () => {
@@ -336,10 +342,12 @@ const styles = StyleSheet.create({
   },
   hiddenInput: {
     position: "absolute",
-    left: -9999,
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
     opacity: 0,
-    width: 1,
-    height: 1,
+    color: "transparent",
   },
   errorText: {
     fontSize: 12,

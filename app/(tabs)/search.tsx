@@ -3,16 +3,22 @@ import {
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
+  Keyboard,
 } from "react-native";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from "react-native-reanimated";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import PhoneTextInput from "@/components/PhoneTextInput";
 import SearchResultCard from "@/components/SearchResultCard";
-import AnimatedSearchEmptyState from "@/components/AnimatedSearchEmptyState";
 import { DEFAULT_COUNTRY } from "@/constants/countryCodes";
 import { colors } from "@/constants/Colors";
 import { searchUserByPhone, unlockUserStatus } from "@/api";
@@ -37,13 +43,22 @@ export default function SearchScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
+  // Animated value for focus state
+  const focusAnimation = useSharedValue(0);
 
   // Get user data and unlock transaction function from Redux
   const { user, addNewUnlockTransaction } = useUserRedux();
 
-  const handlePremiumPress = () => {
-    // Handle premium upsell navigation
-    console.log("Premium pressed");
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+    focusAnimation.value = withTiming(1, { duration: 300 });
+  };
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
+    focusAnimation.value = withTiming(0, { duration: 300 });
   };
 
   const handlePhoneNumberChange = (text: string) => {
@@ -53,7 +68,6 @@ export default function SearchScreen() {
 
     // Perform search when user has typed a complete phone number
     if (text.length >= 10) {
-      // Adjust this based on your minimum phone number length
       performSearch(text);
     }
   };
@@ -65,7 +79,7 @@ export default function SearchScreen() {
     try {
       // Combine country code with phone number - ensure proper formatting
       const fullPhoneNumber = selectedCountry.dialCode + phone;
-      console.log("Searching for phone number:", fullPhoneNumber); // Debug log
+      console.log("Searching for phone number:", fullPhoneNumber);
       const response = await searchUserByPhone(fullPhoneNumber);
 
       if (response.data.success) {
@@ -85,14 +99,12 @@ export default function SearchScreen() {
     }
   };
 
-  const handleUnlockStatus = async () => {
-    if (!searchResult || isUnlocking) return;
-
+  const handleUnlockStatus = async (phone: string) => {
     setIsUnlocking(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
-      const response = await unlockUserStatus(searchResult.phone);
+      const response = await unlockUserStatus(phone);
 
       if (response.data.success) {
         setSearchResult((prev) =>
@@ -133,45 +145,111 @@ export default function SearchScreen() {
     }
   };
 
+  // New combined function that performs search then unlock
+  const handleCheckStatus = async () => {
+    if (!phoneNumber) return;
+
+    // First perform the search
+    await performSearch(phoneNumber);
+
+    // Then immediately unlock the status
+    const fullPhoneNumber = selectedCountry.dialCode + phoneNumber;
+    await handleUnlockStatus(fullPhoneNumber);
+  };
+
   const handleAddToWatchlist = () => {
     if (!searchResult) return;
-
-    // The actual watchlist functionality is now handled in SearchResultCard
-    // This callback can be used for additional UI feedback if needed
     console.log("Added to watchlist:", searchResult.phone);
   };
 
-  const clearSearch = () => {
-    setPhoneNumber("");
-    setSearchResult(null);
-    setSearchError(null);
-  };
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(focusAnimation.value, [0, 1], [1, 0]);
+    const scale = interpolate(focusAnimation.value, [0, 1], [1, 0.8]);
+    const translateY = interpolate(focusAnimation.value, [0, 1], [0, -100]);
 
-  // Determine what to show in the content area
-  const showAnimatedState = !searchResult && !searchError; // Show animated state when no results and no errors
-  const showSearchResults = !isSearching && (searchResult || searchError);
+    return {
+      opacity,
+      transform: [{ scale }, { translateY }],
+    };
+  });
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(focusAnimation.value, [0, 1], [0, -180]);
+
+    return {
+      transform: [{ translateY }],
+    };
+  });
 
   return (
     <View style={styles.container}>
       <TopBar title="Search" />
 
-      {/* Content area - now takes up most of the screen */}
+      {/* Main Content */}
       <View style={styles.contentContainer}>
-        {/* Always show animated empty state unless we have search results or errors */}
-        {showAnimatedState && (
-          <View style={styles.emptyStateWrapper}>
-            <AnimatedSearchEmptyState
-              phoneNumberLength={phoneNumber.length}
-              isSearching={isSearching}
+        {/* Animated Header Section */}
+        <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
+          <View style={styles.iconContainer}>
+            <Ionicons
+              name="shield-checkmark"
+              size={80}
+              color={colors.primary || "#2563EB"}
             />
           </View>
-        )}
+          <Text style={styles.titleText}>Check Status</Text>
+        </Animated.View>
 
-        {/* Search results or error */}
-        {showSearchResults && (
-          <View style={styles.searchResultsContainer}>
-            {searchError ? (
-              <View style={styles.errorContainer}>
+        {/* Animated Content */}
+        <Animated.View style={[styles.animatedContent, contentAnimatedStyle]}>
+          {/* Phone Input Section */}
+          <View style={styles.inputSection}>
+            <PhoneTextInput
+              label=""
+              phoneNumber={phoneNumber}
+              onPhoneNumberChange={handlePhoneNumberChange}
+              selectedCountry={selectedCountry}
+              placeholder="Enter phone number"
+              autoFocus={false}
+              onCountryChange={setSelectedCountry}
+              containerStyle={styles.phoneInputContainer}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+            />
+          </View>
+
+          {/* Check Status Button */}
+          <TouchableOpacity
+            style={[
+              styles.checkButton,
+              (!phoneNumber || isSearching || isUnlocking) &&
+                styles.checkButtonDisabled,
+            ]}
+            onPress={handleCheckStatus}
+            disabled={!phoneNumber || isSearching || isUnlocking}
+            activeOpacity={0.8}
+            delayPressIn={0}
+            delayPressOut={0}>
+            {isSearching || isUnlocking ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.checkButtonText}>Check Status</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Results Section */}
+          <View style={styles.resultsSection}>
+            {searchResult && (
+              <SearchResultCard
+                searchResult={searchResult}
+                isUnlocking={isUnlocking}
+                onUnlockStatus={() => {}} // No longer needed since we handle unlock in the button
+                onAddToWatchlist={handleAddToWatchlist}
+              />
+            )}
+
+            {searchError && (
+              <View style={styles.errorCard}>
                 <Ionicons
                   name="alert-circle"
                   size={60}
@@ -180,37 +258,29 @@ export default function SearchScreen() {
                 <Text style={styles.errorText}>{searchError}</Text>
                 <TouchableOpacity
                   style={styles.retryButton}
-                  onPress={() => performSearch(phoneNumber)}>
+                  onPress={handleCheckStatus}
+                  delayPressIn={0}
+                  delayPressOut={0}>
                   <Text style={styles.retryButtonText}>Try Again</Text>
                 </TouchableOpacity>
               </View>
-            ) : searchResult ? (
-              <SearchResultCard
-                searchResult={searchResult}
-                isUnlocking={isUnlocking}
-                onUnlockStatus={handleUnlockStatus}
-                onAddToWatchlist={handleAddToWatchlist}
-              />
-            ) : null}
+            )}
           </View>
-        )}
+        </Animated.View>
       </View>
 
-      {/* Search bar moved to the bottom for better thumb accessibility */}
-      <View style={styles.searchBottomContainer}>
-        <View style={styles.searchInputContainer}>
-          <PhoneTextInput
-            label=""
-            phoneNumber={phoneNumber}
-            onPhoneNumberChange={handlePhoneNumberChange}
-            selectedCountry={selectedCountry}
-            placeholder="Search by phone number"
-            autoFocus={false}
-            onCountryChange={setSelectedCountry}
-            containerStyle={styles.phoneInputContainer}
-          />
+      {/* Fixed Premium Section - Only show when no search result */}
+      {!searchResult && (
+        <View style={styles.fixedPremiumSection}>
+          <Text style={styles.premiumText}>
+            Limited to 2 free searches per week.
+          </Text>
+          <Text style={styles.premiumSubtext}>
+            Upgrade for unlimited searches +{" "}
+            <Text style={styles.premiumLink}>Go Premium</Text>
+          </Text>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -218,58 +288,96 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: colors.background.primary || "#FFFFFF",
   },
 
-  // Content area styles - now takes up most of the screen with bottom padding for search input
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 120, // Add padding to account for search input + tab bar
-    position: "relative",
+    paddingHorizontal: 20,
+    paddingBottom: TAB_BAR_HEIGHT,
   },
 
-  // New wrapper for empty state positioning
-  emptyStateWrapper: {
-    position: "absolute",
-    top: 40, // Position higher up from the top
-    left: 16,
-    right: 16,
-    // bottom: 120, // Keep bottom padding for search input
+  // Header Section - give it a fixed height initially
+  headerSection: {
+    alignItems: "center",
+    paddingTop: 20,
+    paddingBottom: 20,
+    height: 200,
+    justifyContent: "center",
   },
 
-  // Search bar at the bottom styles - positioned above tab bar
-  searchBottomContainer: {
-    position: "absolute",
-    bottom: TAB_BAR_HEIGHT, // Position above the tab bar
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    backgroundColor: colors.background.primary,
-    borderTopWidth: 0,
-    borderTopColor: colors.border.light,
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.background.secondary || "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
   },
-  searchInputContainer: {
-    position: "relative",
+
+  titleText: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: colors.text.primary || "#000000",
+    textAlign: "center",
   },
+
+  // Animated Content
+  animatedContent: {
+    flex: 1,
+  },
+
+  // Input Section
+  inputSection: {
+    marginBottom: 24,
+  },
+
   phoneInputContainer: {
     marginBottom: 0,
   },
 
-  // Search results styles
-  searchResultsContainer: {
-    flex: 1,
-    paddingTop: 16,
-    paddingBottom: 16,
+  // Check Button
+  checkButton: {
+    backgroundColor: colors.primary || "#2563EB",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+    shadowColor: colors.primary || "#2563EB",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
-  // Error styles
-  errorContainer: {
-    paddingTop: 100,
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+  checkButtonDisabled: {
+    opacity: 0.6,
   },
+
+  checkButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+
+  // Results Section
+  resultsSection: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  // Error Card
+  errorCard: {
+    alignItems: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+  },
+
   errorText: {
     fontSize: 16,
     color: colors.status.error || "#F44336",
@@ -277,15 +385,48 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 24,
   },
+
   retryButton: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.background.secondary || "#F8FAFC",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border.medium || "#CBD5E1",
   },
+
   retryButtonText: {
-    color: colors.text.primary,
+    color: colors.text.primary || "#000000",
     fontSize: 16,
+    fontWeight: "600",
+  },
+
+  // Fixed Premium Section
+  fixedPremiumSection: {
+    position: "absolute",
+    bottom: TAB_BAR_HEIGHT + 20,
+    left: 20,
+    right: 20,
+    alignItems: "center",
+    backgroundColor: colors.background.primary || "#FFFFFF",
+    paddingVertical: 16,
+  },
+
+  premiumText: {
+    fontSize: 14,
+    color: colors.text.secondary || "#64748B",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+
+  premiumSubtext: {
+    fontSize: 14,
+    color: colors.text.secondary || "#64748B",
+    textAlign: "center",
+  },
+
+  premiumLink: {
+    color: colors.primary || "#2563EB",
     fontWeight: "600",
   },
 });

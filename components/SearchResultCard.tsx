@@ -33,38 +33,6 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
   // Check if this phone number is already in the watchlist
   const isInWatchlist = watchlist.includes(searchResult.phone);
 
-  const getStatusColor = (status: string) => {
-    if (status === "KNOWN") return colors.status.warning || "#FF9800";
-    if (status === "UNKNOWN") return colors.text.tertiary;
-
-    switch (status.toLowerCase()) {
-      case "single":
-        return colors.status.success || "#4CAF50";
-      case "dating":
-      case "engaged":
-      case "married":
-        return colors.status.error || "#F44336";
-      default:
-        return colors.text.secondary;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    if (status === "KNOWN") return "lock-closed";
-    if (status === "UNKNOWN") return "help-circle";
-
-    switch (status.toLowerCase()) {
-      case "single":
-        return "checkmark-circle";
-      case "dating":
-      case "engaged":
-      case "married":
-        return "heart";
-      default:
-        return "information-circle";
-    }
-  };
-
   const handleWatchlistPress = async () => {
     if (isInWatchlist || isAddingToWatchlist) return;
 
@@ -80,248 +48,198 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
     } catch (error: any) {
       console.error("Failed to add to watchlist:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-
-      // You could show an error toast here
-      // For now, just log the error
     } finally {
       setIsAddingToWatchlist(false);
     }
   };
 
+  const getDisplayStatus = () => {
+    if (searchResult.relationshipStatus === "KNOWN") {
+      return "Known";
+    } else if (searchResult.relationshipStatus === "UNKNOWN") {
+      return "Unknown";
+    } else {
+      return searchResult.relationshipStatus;
+    }
+  };
+
+  // Helper function to determine if this is a successful result
+  const isSuccessfulResult = () => {
+    return searchResult.exists && searchResult.relationshipStatus !== "UNKNOWN";
+  };
+
   return (
-    <View style={styles.resultContainer}>
-      <View style={styles.resultCard}>
-        <View style={styles.resultHeader}>
-          <View style={styles.headerLeft}>
+    <View
+      style={[
+        styles.resultCard,
+        isSuccessfulResult() && styles.resultCardSuccess,
+      ]}>
+      <View
+        style={[
+          styles.resultIconContainer,
+          isSuccessfulResult() && styles.resultIconContainerSuccess,
+        ]}>
+        <Ionicons
+          name="shield-checkmark"
+          size={60}
+          color={isSuccessfulResult() ? "#1E40AF" : colors.primary || "#2563EB"}
+        />
+      </View>
+
+      <View style={styles.resultContent}>
+        <Text style={styles.resultTitle}>This number's status is</Text>
+        <Text
+          style={[
+            styles.resultStatus,
+            isSuccessfulResult() && styles.resultStatusSuccess,
+          ]}>
+          {getDisplayStatus()}
+        </Text>
+
+        <Text style={styles.resultDate}>
+          Confirmed on:{" "}
+          {new Date().toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </Text>
+      </View>
+
+      {/* Watchlist Button */}
+      <TouchableOpacity
+        style={[
+          styles.watchlistButton,
+          isSuccessfulResult() && styles.watchlistButtonSuccess,
+          (isInWatchlist || isAddingToWatchlist) &&
+            styles.watchlistButtonDisabled,
+        ]}
+        onPress={handleWatchlistPress}
+        disabled={isInWatchlist || isAddingToWatchlist}
+        activeOpacity={0.7}
+        delayPressIn={0}
+        delayPressOut={0}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        {isAddingToWatchlist ? (
+          <ActivityIndicator size="small" color={colors.text.secondary} />
+        ) : (
+          <>
             <Ionicons
-              name={getStatusIcon(searchResult.relationshipStatus)}
-              size={40}
-              color={getStatusColor(searchResult.relationshipStatus)}
+              name={isInWatchlist ? "checkmark" : "add"}
+              size={10}
+              color={
+                isInWatchlist ? colors.status.success : colors.text.secondary
+              }
             />
-            <Text style={styles.phoneResultText}>{searchResult.phone}</Text>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.watchlistButton,
-              (isInWatchlist || isAddingToWatchlist) &&
-                styles.watchlistButtonDisabled,
-            ]}
-            onPress={handleWatchlistPress}
-            disabled={isInWatchlist || isAddingToWatchlist}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            {isAddingToWatchlist ? (
-              <ActivityIndicator size="small" color={colors.text.secondary} />
-            ) : (
-              <>
-                <Ionicons
-                  name={isInWatchlist ? "checkmark" : "add"}
-                  size={16}
-                  color={
-                    isInWatchlist
-                      ? colors.status.success
-                      : colors.text.secondary
-                  }
-                />
-                <Text
-                  style={[
-                    styles.watchlistButtonText,
-                    isInWatchlist && { color: colors.status.success },
-                  ]}>
-                  {isInWatchlist ? "Added" : "Watchlist"}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {searchResult.name && (
-          <Text style={styles.nameText}>{searchResult.name}</Text>
-        )}
-
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusLabel}>Relationship Status</Text>
-
-          {searchResult.relationshipStatus === "KNOWN" ? (
-            <View style={styles.knownStatusContainer}>
-              <View style={styles.lockedStatusIndicator}>
-                <Ionicons
-                  name="lock-closed"
-                  size={24}
-                  color={colors.status.warning || "#FF9800"}
-                />
-                <Text style={styles.lockedStatusText}>Status Available</Text>
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.unlockButton,
-                  isUnlocking && styles.unlockButtonDisabled,
-                ]}
-                onPress={onUnlockStatus}
-                disabled={isUnlocking}
-                activeOpacity={0.8}>
-                {isUnlocking ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name="lock-open" size={20} color="white" />
-                    <Text style={styles.unlockButtonText}>Unlock Status</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : searchResult.relationshipStatus === "UNKNOWN" ? (
-            <View style={styles.unknownStatusContainer}>
-              <Text style={styles.unknownStatusText}>Unknown</Text>
-              <Text style={styles.unknownSubtext}>
-                This person hasn't hasn't set their status yet.
-              </Text>
-            </View>
-          ) : (
             <Text
               style={[
-                styles.statusText,
-                {
-                  color: getStatusColor(searchResult.relationshipStatus),
-                },
+                styles.watchlistButtonText,
+                isInWatchlist && { color: colors.status.success },
               ]}>
-              {searchResult.relationshipStatus}
+              {isInWatchlist ? "Added" : "Watchlist"}
             </Text>
-          )}
-        </View>
-      </View>
+          </>
+        )}
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Result styles
-  resultContainer: {
-    paddingTop: 32,
-  },
   resultCard: {
-    backgroundColor: colors.background.secondary,
+    backgroundColor: colors.background.secondary || "#F8FAFC",
     borderRadius: 16,
     padding: 24,
-    marginBottom: 16,
-  },
-  resultHeader: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
+    width: "100%",
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: colors.border.light || "#E2E8F0",
+    position: "relative",
   },
-  headerLeft: {
-    flexDirection: "row",
+
+  // Success variant with subtle blue tones
+  resultCardSuccess: {
+    backgroundColor: "#F8FAFF", // Very subtle blue tint
+    borderColor: "#E1E7FF", // Light blue border
+  },
+
+  resultIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.background.primary || "#FFFFFF",
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
+    marginBottom: 20,
   },
-  phoneResultText: {
+
+  // Success variant for icon container
+  resultIconContainerSuccess: {
+    backgroundColor: "#F0F4FF", // Very light blue background
+    borderWidth: 1,
+    borderColor: "#E1E7FF", // Light blue border
+  },
+
+  resultContent: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  resultTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginLeft: 12,
-    flex: 1,
+    color: colors.text.secondary || "#64748B",
+    marginBottom: 8,
+    textAlign: "center",
   },
+
+  resultStatus: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.text.primary || "#000000",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+
+  // Success variant for status text
+  resultStatusSuccess: {
+    color: "#1E40AF", // Blue tone for successful status
+  },
+
+  resultDate: {
+    fontSize: 14,
+    color: colors.text.tertiary || "#94A3B8",
+    textAlign: "center",
+  },
+
+  // Watchlist Button
   watchlistButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.background.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    backgroundColor: colors.background.primary || "#FFFFFF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border.medium,
+    borderColor: colors.border.medium || "#CBD5E1",
+    position: "absolute",
+    top: 16,
+    right: 16,
   },
+
+  // Success variant for watchlist button
+  watchlistButtonSuccess: {
+    backgroundColor: "#F8FAFF", // Subtle blue background
+    borderColor: "#C7D2FE", // Light blue border
+  },
+
   watchlistButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
-    color: colors.text.secondary,
+    color: colors.text.secondary || "#64748B",
     marginLeft: 4,
   },
-  nameText: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  statusContainer: {
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: colors.text.tertiary,
-    marginBottom: 12,
-  },
-  statusText: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
 
-  // Known status styles
-  knownStatusContainer: {
-    alignItems: "center",
-    width: "100%",
-  },
-  lockedStatusIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  lockedStatusText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.status.warning || "#FF9800",
-    marginLeft: 8,
-  },
-  unlockButton: {
-    backgroundColor: colors.status.success || "#4CAF50",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    minHeight: 56,
-    width: "100%",
-    shadowColor: colors.status.success || "#4CAF50",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  unlockButtonDisabled: {
-    opacity: 0.6,
-  },
-  unlockButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
-    marginLeft: 8,
-  },
-
-  // Unknown status styles
-  unknownStatusContainer: {
-    alignItems: "center",
-  },
-  unknownStatusText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text.tertiary,
-    marginBottom: 8,
-  },
-  unknownSubtext: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    textAlign: "center",
-    fontStyle: "italic",
-  },
   watchlistButtonDisabled: {
     opacity: 0.6,
   },

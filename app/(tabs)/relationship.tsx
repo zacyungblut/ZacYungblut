@@ -222,6 +222,47 @@ export default function RelationshipScreen() {
     // Don't update anything immediately, just update local state
   };
 
+  // Function to get the appropriate image based on relationship status
+  const getRelationshipImage = (status?: string) => {
+    switch (status) {
+      case "MARRIED":
+        return require("@/assets/images/married.png");
+      case "SITUATIONSHIP":
+        return require("@/assets/images/situationship.png");
+      case "DATING":
+      default:
+        return require("@/assets/images/dating.png");
+    }
+  };
+
+  // Function to get user-friendly status text
+  const getStatusText = (status?: string) => {
+    switch (status) {
+      case "DATING":
+        return "Dating";
+      case "ENGAGED":
+        return "Engaged";
+      case "MARRIED":
+        return "Married";
+      case "SEPARATED":
+        return "Separated";
+      case "WIDOWED":
+        return "Widowed";
+      case "SITUATIONSHIP":
+        return "Situationship";
+      case "FRIENDS_WITH_BENEFITS":
+        return "Friends with Benefits";
+      case "ON_A_BREAK":
+        return "On a Break";
+      case "OPEN_RELATIONSHIP":
+        return "Open Relationship";
+      case "POLYAMOROUS":
+        return "Polyamorous";
+      default:
+        return "In Relationship";
+    }
+  };
+
   // Single state render
   if (relationshipData.status === "single") {
     const hasPendingInvites =
@@ -238,7 +279,7 @@ export default function RelationshipScreen() {
             <View style={styles.singleImageContainer}>
               <View style={styles.imagePlaceholder}>
                 <Image
-                  source={require("@/assets/images/official.png")}
+                  source={require("@/assets/images/single.png")}
                   style={styles.singleImage}
                   resizeMode="contain"
                 />
@@ -275,23 +316,23 @@ export default function RelationshipScreen() {
           {/* Action Buttons */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.primaryButton]}
+              style={[styles.actionButton, styles.watchlistButton]}
               onPress={handleWatchlist}
               activeOpacity={0.8}>
               <Ionicons
                 name="bookmark"
                 size={20}
-                color={colors.heroSecondary}
+                color={colors.text.secondary}
               />
-              <Text style={styles.primaryButtonText}>Watchlist</Text>
+              <Text style={styles.watchlistButtonText}>Watchlist</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionButton, styles.secondaryButton]}
+              style={[styles.actionButton, styles.searchesButton]}
               onPress={handlePastSearches}
               activeOpacity={0.8}>
-              <Ionicons name="search" size={20} color={colors.heroSecondary} />
-              <Text style={styles.secondaryButtonText}>Searches</Text>
+              <Ionicons name="search" size={20} color={colors.text.secondary} />
+              <Text style={styles.searchesButtonText}>Searches</Text>
             </TouchableOpacity>
           </View>
 
@@ -344,7 +385,7 @@ export default function RelationshipScreen() {
     );
   }
 
-  // Dating state render (existing functionality with actual data)
+  // Dating state render (existing functionality with dynamic images)
   return (
     <View style={styles.container}>
       <TopBar title="Relationship" />
@@ -355,7 +396,9 @@ export default function RelationshipScreen() {
           <View style={styles.datingImageContainer}>
             <View style={styles.imagePlaceholder}>
               <Image
-                source={require("@/assets/images/dating.png")}
+                source={getRelationshipImage(
+                  relationshipData.relationship?.status
+                )}
                 style={styles.datingImage}
                 resizeMode="contain"
               />
@@ -364,11 +407,7 @@ export default function RelationshipScreen() {
 
           <View style={styles.relationshipInfo}>
             <Text style={styles.statusText}>
-              {relationshipData.relationship?.status === "DATING"
-                ? "Dating"
-                : relationshipData.relationship?.status === "MARRIED"
-                ? "Married"
-                : relationshipData.relationship?.status || "In Relationship"}
+              {getStatusText(relationshipData.relationship?.status)}
             </Text>
             <Text style={styles.partnerText}>
               {relationshipData.partner?.name ||
@@ -408,19 +447,19 @@ export default function RelationshipScreen() {
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.primaryButton]}
+            style={[styles.actionButton, styles.watchlistButton]}
             onPress={handleWatchlist}
             activeOpacity={0.8}>
-            <Ionicons name="bookmark" size={20} color={colors.heroSecondary} />
-            <Text style={styles.primaryButtonText}>Watchlist</Text>
+            <Ionicons name="bookmark" size={20} color={colors.text.secondary} />
+            <Text style={styles.watchlistButtonText}>Watchlist</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
+            style={[styles.actionButton, styles.searchesButton]}
             onPress={handlePastSearches}
             activeOpacity={0.8}>
-            <Ionicons name="search" size={20} color={colors.heroSecondary} />
-            <Text style={styles.secondaryButtonText}>Past Searches</Text>
+            <Ionicons name="search" size={20} color={colors.text.secondary} />
+            <Text style={styles.searchesButtonText}>Past Searches</Text>
           </TouchableOpacity>
         </View>
 
@@ -499,7 +538,7 @@ const styles = StyleSheet.create({
   // Image placeholder styles
   imagePlaceholder: {
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border.medium,
     alignItems: "center",
     justifyContent: "center",
@@ -533,11 +572,11 @@ const styles = StyleSheet.create({
   // Dating state styles
   datingImageContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   datingImage: {
-    width: 140,
-    height: 100,
+    width: 120,
+    height: 120,
   },
   relationshipInfo: {
     alignItems: "center",
@@ -556,15 +595,13 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: colors.background.primary,
+    backgroundColor: colors.primary,
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 16,
-    marginBottom: 32,
+    marginBottom: 20,
     alignItems: "center",
     justifyContent: "space-around",
-    borderWidth: 1,
-    borderColor: colors.primary,
   },
   statItem: {
     flex: 1,
@@ -573,12 +610,12 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.text.primary,
+    color: colors.white,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: colors.white,
     fontWeight: "500",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -587,7 +624,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: colors.text.tertiary,
+    backgroundColor: colors.white,
     marginHorizontal: 16,
     opacity: 0.5,
   },
@@ -646,5 +683,25 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontWeight: "500",
     textAlign: "center",
+  },
+  watchlistButton: {
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1,
+    borderColor: colors.text.secondary,
+  },
+  searchesButton: {
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1,
+    borderColor: colors.text.secondary,
+  },
+  watchlistButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.secondary,
+  },
+  searchesButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.secondary,
   },
 });

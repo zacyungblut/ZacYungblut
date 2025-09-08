@@ -182,19 +182,7 @@ function AppContent() {
         router.replace("/auth");
       }
     }
-  }, [authCheckComplete, user]);
-
-  // Also check for review request when user data changes (e.g., after unlock)
-  useEffect(() => {
-    if (user && unlockTransactions.length === 1) {
-      // Don't immediately request on data change, wait a bit
-      const timeoutId = setTimeout(() => {
-        handleReviewRequest();
-      }, 5000); // 5 second delay
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [unlockTransactions.length]); // Only trigger when unlock count changes
+  }, [authCheckComplete]);
 
   if (!loaded || !authCheckComplete) {
     return null;
