@@ -8,6 +8,8 @@ import {
   TouchableWithoutFeedback,
   View,
   StyleSheet,
+  Keyboard,
+  Platform,
 } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -122,6 +124,12 @@ const styles = StyleSheet.create({
   submitButtonContainer: {
     marginBottom: 0,
   },
+  iPadButtonContainer: {
+    width: "100%",
+    maxWidth: 400,
+    paddingHorizontal: 20,
+    paddingBottom: 20, // Adjust as needed for spacing
+  },
 });
 
 const codeInputStyles = StyleSheet.create({
@@ -184,6 +192,9 @@ function Verification() {
   const [canResend, setCanResend] = useState(true);
   const [countdown, setCountdown] = useState(30);
   const [isResending, setIsResending] = useState(false);
+
+  // Add iPad detection
+  const isIPad = Platform.OS === "ios" && Platform.isPad;
 
   // Memoize the handlers to prevent recreation
   const handleSubmit = useCallback(async () => {
@@ -350,19 +361,36 @@ function Verification() {
               {errorMessage !== null && (
                 <Text style={styles.errorMessage}>{errorMessage}</Text>
               )}
+
+              {/* For iPad, show button inline instead of using KeyboardStickyView */}
+              {isIPad && (
+                <View style={styles.iPadButtonContainer}>
+                  <SignupButton
+                    title="Submit"
+                    onPress={handleSubmit}
+                    isLoading={isLoading}
+                    isEnabled={isValidCode}
+                  />
+                </View>
+              )}
             </View>
           </View>
         </TouchableWithoutFeedback>
 
-        <KeyboardStickyView offset={{ closed: -32, opened: -40 }}>
-          <SignupButton
-            title="Submit"
-            onPress={handleSubmit}
-            isLoading={isLoading}
-            isEnabled={isValidCode}
-            containerStyle={styles.submitButtonContainer}
-          />
-        </KeyboardStickyView>
+        {/* For iPhone, use KeyboardStickyView */}
+        {!isIPad && (
+          <KeyboardStickyView offset={{ closed: -32, opened: -40 }}>
+            <View style={styles.keyboardStickyContainer}>
+              <SignupButton
+                title="Submit"
+                onPress={handleSubmit}
+                isLoading={isLoading}
+                isEnabled={isValidCode}
+                containerStyle={styles.submitButtonContainer}
+              />
+            </View>
+          </KeyboardStickyView>
+        )}
       </SafeAreaView>
     </View>
   );
