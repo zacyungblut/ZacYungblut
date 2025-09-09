@@ -491,7 +491,13 @@ export default function RelationshipScreen() {
 
     return (
       <View style={styles.container}>
-        <TopBar title="Relationship" />
+        <TopBar
+          title={
+            relationshipData?.status === "single"
+              ? "Make it Official"
+              : "It's Official"
+          }
+        />
 
         <View style={styles.content}>
           {/* Single Profile Section */}

@@ -96,6 +96,11 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleChangePhoneNumber = () => {
+    // TODO: Navigate to change phone number screen
+    console.log("Change phone number pressed");
+  };
+
   const accountSettings: SettingItem[] = [
     {
       id: "subscription",
@@ -110,6 +115,13 @@ export default function SettingsScreen() {
       icon: "star-outline",
       color: colors.primary,
       onPress: handlePremiumPress,
+      showChevron: true,
+    },
+    {
+      id: "phone",
+      title: "Change Phone Number",
+      icon: "call",
+      onPress: handleChangePhoneNumber,
       showChevron: true,
     },
   ];
