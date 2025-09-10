@@ -23,10 +23,6 @@ import {
   selectUserRelationships,
   selectUserUnlockTransactions,
   selectUserReviewRequests,
-  addToUserWatchlist,
-  removeFromUserWatchlist,
-  setUserWatchlist,
-  selectUserWatchlist,
   addShareAttemptToInvite,
 } from "@/store/slices/userSlice";
 import { AuthService } from "@/utils/authStorage";
@@ -35,9 +31,6 @@ import {
   respondToInvite,
   cancelInvite,
   saveReviewRequest,
-  addToWatchlist,
-  removeFromWatchlist,
-  getUserWatchlist,
   addShareAttempt,
 } from "@/api";
 
@@ -52,7 +45,6 @@ export const useUserRedux = () => {
   const relationships = useAppSelector(selectUserRelationships);
   const unlockTransactions = useAppSelector(selectUserUnlockTransactions);
   const reviewRequests = useAppSelector(selectUserReviewRequests);
-  const watchlist = useAppSelector(selectUserWatchlist);
 
   const fetchUser = async () => {
     const result = await dispatch(loadUser());
@@ -174,56 +166,6 @@ export const useUserRedux = () => {
     dispatch(updateReviewRequest(updates));
   };
 
-  // Watchlist-related functions
-  const addPhoneToWatchlist = async (phoneNumber: string) => {
-    try {
-      const response = await addToWatchlist(phoneNumber);
-
-      if (response.data.watchlist) {
-        // Update the entire watchlist from the server response
-        dispatch(setUserWatchlist(response.data.watchlist));
-      } else {
-        // Fallback: just add the phone number locally
-        dispatch(addToUserWatchlist(phoneNumber));
-      }
-
-      return response;
-    } catch (error) {
-      console.error("Failed to add to watchlist:", error);
-      throw error;
-    }
-  };
-
-  const removePhoneFromWatchlist = async (phoneNumber: string) => {
-    try {
-      const response = await removeFromWatchlist(phoneNumber);
-
-      if (response.data.watchlist) {
-        // Update the entire watchlist from the server response
-        dispatch(setUserWatchlist(response.data.watchlist));
-      } else {
-        // Fallback: just remove the phone number locally
-        dispatch(removeFromUserWatchlist(phoneNumber));
-      }
-
-      return response;
-    } catch (error) {
-      console.error("Failed to remove from watchlist:", error);
-      throw error;
-    }
-  };
-
-  const fetchUserWatchlist = async () => {
-    try {
-      const response = await getUserWatchlist();
-      dispatch(setUserWatchlist(response.data.watchlist));
-      return response;
-    } catch (error) {
-      console.error("Failed to fetch watchlist:", error);
-      throw error;
-    }
-  };
-
   const recordShareAttempt = async (
     inviteId: string,
     shareData: {
@@ -270,7 +212,7 @@ export const useUserRedux = () => {
     invites,
     sendUserInvite,
     cancelUserInvite,
-    recordShareAttempt, // Add this
+    recordShareAttempt,
 
     // Relationships data and actions
     relationships,
@@ -287,11 +229,5 @@ export const useUserRedux = () => {
     saveUserReviewRequest,
     addNewReviewRequest,
     updateExistingReviewRequest,
-
-    // Watchlist data and actions
-    watchlist,
-    addPhoneToWatchlist,
-    removePhoneFromWatchlist,
-    fetchUserWatchlist,
   };
 };

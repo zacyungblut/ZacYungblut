@@ -163,11 +163,6 @@ export default function SearchScreen() {
     await handleUnlockStatus(fullPhoneNumber);
   };
 
-  const handleAddToWatchlist = () => {
-    if (!searchResult) return;
-    console.log("Added to watchlist:", searchResult.phone);
-  };
-
   // Animated styles
   const headerAnimatedStyle = useAnimatedStyle(() => {
     const opacity = interpolate(focusAnimation.value, [0, 1], [1, 0]);
@@ -262,7 +257,6 @@ export default function SearchScreen() {
                 searchResult={searchResult}
                 isUnlocking={isUnlocking}
                 onUnlockStatus={() => {}} // No longer needed since we handle unlock in the button
-                onAddToWatchlist={handleAddToWatchlist}
               />
             ) : isInputFocused && !searchError ? (
               <Animated.View style={placeholderAnimatedStyle}>

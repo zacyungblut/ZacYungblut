@@ -84,7 +84,6 @@ interface User {
   phone: string;
   name?: string;
   verified: boolean;
-  watchlist: string[]; // Add watchlist array
   createdAt: string;
   updatedAt: string;
   relationships: Relationship[];
@@ -253,43 +252,6 @@ const userSlice = createSlice({
         }
       }
     },
-    // Watchlist reducers
-    addToUserWatchlist: (state, action: PayloadAction<string>) => {
-      if (state.user && !state.user.watchlist.includes(action.payload)) {
-        state.user.watchlist.push(action.payload);
-      }
-    },
-    removeFromUserWatchlist: (state, action: PayloadAction<string>) => {
-      if (state.user) {
-        state.user.watchlist = state.user.watchlist.filter(
-          (phone) => phone !== action.payload
-        );
-      }
-    },
-    setUserWatchlist: (state, action: PayloadAction<string[]>) => {
-      if (state.user) {
-        state.user.watchlist = action.payload;
-      }
-    },
-    // Add share attempt to invite
-    addShareAttemptToInvite: (
-      state,
-      action: PayloadAction<{ inviteId: string; shareAttempt: ShareAttempt }>
-    ) => {
-      if (state.user) {
-        const sentInviteIndex = state.user.sentInvites.findIndex(
-          (invite) => invite.id === action.payload.inviteId
-        );
-        if (sentInviteIndex !== -1) {
-          if (!state.user.sentInvites[sentInviteIndex].shareAttempts) {
-            state.user.sentInvites[sentInviteIndex].shareAttempts = [];
-          }
-          state.user.sentInvites[sentInviteIndex].shareAttempts!.unshift(
-            action.payload.shareAttempt
-          );
-        }
-      }
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -343,10 +305,7 @@ export const {
   removeCancelledInvite,
   addRelationship,
   updateRelationship,
-  addToUserWatchlist,
-  removeFromUserWatchlist,
-  setUserWatchlist,
-  addShareAttemptToInvite, // Add this
+  addShareAttemptToInvite,
 } = userSlice.actions;
 
 export default userSlice.reducer;
@@ -372,10 +331,4 @@ export const selectUserUnlockTransactions = createSelector(
 export const selectUserReviewRequests = createSelector(
   [selectUser],
   (user) => user?.reviewRequests || []
-);
-
-// Add new selector for watchlist
-export const selectUserWatchlist = createSelector(
-  [selectUser],
-  (user) => user?.watchlist || []
 );

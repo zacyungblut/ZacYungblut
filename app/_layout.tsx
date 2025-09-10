@@ -247,7 +247,6 @@ function RootLayoutNav() {
             sheetGrabberVisible: true,
           }}
         />
-        <Stack.Screen name="watchlist" options={{ headerShown: false }} />
         <Stack.Screen name="past-searches" options={{ headerShown: false }} />
         <Stack.Screen
           name="(tabs)"

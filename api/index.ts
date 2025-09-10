@@ -143,16 +143,3 @@ export const editRelationship = async (
 export const getUserRelationships = async () => {
   return API.get("/relationships");
 };
-
-// Watchlist functions
-export const addToWatchlist = async (phoneNumber: string) => {
-  return API.post("/relationships/watchlist/add", { phoneNumber });
-};
-
-export const removeFromWatchlist = async (phoneNumber: string) => {
-  return API.post("/relationships/watchlist/remove", { phoneNumber });
-};
-
-export const getUserWatchlist = async () => {
-  return API.get("/relationships/watchlist");
-};

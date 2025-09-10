@@ -57,14 +57,6 @@ export default function PremiumScreen() {
       icon: "notifications",
       title: "Personal Alerts",
     },
-    {
-      icon: "list",
-      title: "Watchlist Alerts",
-    },
-    {
-      icon: "people",
-      title: "Extended Watchlist",
-    },
   ];
 
   return (

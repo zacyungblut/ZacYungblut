@@ -5,7 +5,6 @@ import * as Haptics from "expo-haptics";
 
 import { Text, View } from "@/components/Themed";
 import { colors } from "@/constants/Colors";
-import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 interface SearchResult {
   phone: string;
@@ -18,7 +17,6 @@ interface SearchResultCardProps {
   searchResult: SearchResult;
   isUnlocking: boolean;
   onUnlockStatus: () => void;
-  onAddToWatchlist: () => void;
 }
 
 // New interface for placeholder card
@@ -89,34 +87,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
   searchResult,
   isUnlocking,
   onUnlockStatus,
-  onAddToWatchlist,
 }) => {
-  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
-  const { watchlist, addPhoneToWatchlist } = useUserRedux();
-
-  // Check if this phone number is already in the watchlist
-  const isInWatchlist = watchlist.includes(searchResult.phone);
-
-  const handleWatchlistPress = async () => {
-    if (isInWatchlist || isAddingToWatchlist) return;
-
-    setIsAddingToWatchlist(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    try {
-      await addPhoneToWatchlist(searchResult.phone);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      // Call the parent's callback if provided
-      onAddToWatchlist();
-    } catch (error: any) {
-      console.error("Failed to add to watchlist:", error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setIsAddingToWatchlist(false);
-    }
-  };
-
   const getDisplayStatus = () => {
     if (searchResult.relationshipStatus === "KNOWN") {
       return "Known";
@@ -173,42 +144,6 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
           })}
         </Text>
       </View>
-
-      {/* Watchlist Button */}
-      <TouchableOpacity
-        style={[
-          styles.watchlistButton,
-          isSuccessfulResult() && styles.watchlistButtonSuccess,
-          (isInWatchlist || isAddingToWatchlist) &&
-            styles.watchlistButtonDisabled,
-        ]}
-        onPress={handleWatchlistPress}
-        disabled={isInWatchlist || isAddingToWatchlist}
-        activeOpacity={0.7}
-        delayPressIn={0}
-        delayPressOut={0}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        {isAddingToWatchlist ? (
-          <ActivityIndicator size="small" color={colors.text.secondary} />
-        ) : (
-          <>
-            <Ionicons
-              name={isInWatchlist ? "checkmark" : "add"}
-              size={10}
-              color={
-                isInWatchlist ? colors.status.success : colors.text.secondary
-              }
-            />
-            <Text
-              style={[
-                styles.watchlistButtonText,
-                isInWatchlist && { color: colors.status.success },
-              ]}>
-              {isInWatchlist ? "Added" : "Watchlist"}
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
     </View>
   );
 };
@@ -278,38 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.tertiary || "#94A3B8",
     textAlign: "center",
-  },
-
-  // Watchlist Button
-  watchlistButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.background.primary || "#FFFFFF",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border.medium || "#CBD5E1",
-    position: "absolute",
-    top: 16,
-    right: 16,
-  },
-
-  // Success variant for watchlist button
-  watchlistButtonSuccess: {
-    backgroundColor: "#F8FAFF", // Subtle blue background
-    borderColor: "#C7D2FE", // Light blue border
-  },
-
-  watchlistButtonText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.text.secondary || "#64748B",
-    marginLeft: 4,
-  },
-
-  watchlistButtonDisabled: {
-    opacity: 0.6,
   },
 
   // Additional styles for placeholder to ensure full width

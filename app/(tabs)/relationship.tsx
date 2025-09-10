@@ -349,11 +349,6 @@ export default function RelationshipScreen() {
   const handlePastSearches = () => {
     router.push("/past-searches");
   };
-
-  const handleWatchlist = () => {
-    router.push("/watchlist");
-  };
-
   const handleManage = () => {
     router.push("/manage");
   };
@@ -543,23 +538,11 @@ export default function RelationshipScreen() {
           {/* Action Buttons */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.watchlistButton]}
-              onPress={handleWatchlist}
-              activeOpacity={0.8}>
-              <Ionicons
-                name="bookmark"
-                size={20}
-                color={colors.text.secondary}
-              />
-              <Text style={styles.watchlistButtonText}>Watchlist</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={[styles.actionButton, styles.searchesButton]}
               onPress={handlePastSearches}
               activeOpacity={0.8}>
               <Ionicons name="search" size={20} color={colors.text.secondary} />
-              <Text style={styles.searchesButtonText}>Searches</Text>
+              <Text style={styles.searchesButtonText}>Past Searches</Text>
             </TouchableOpacity>
           </View>
 
@@ -673,14 +656,6 @@ export default function RelationshipScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.watchlistButton]}
-            onPress={handleWatchlist}
-            activeOpacity={0.8}>
-            <Ionicons name="bookmark" size={20} color={colors.text.secondary} />
-            <Text style={styles.watchlistButtonText}>Watchlist</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.actionButton, styles.searchesButton]}
             onPress={handlePastSearches}
@@ -911,20 +886,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-  watchlistButton: {
-    backgroundColor: colors.background.secondary,
-    borderWidth: 1,
-    borderColor: colors.text.secondary,
-  },
   searchesButton: {
     backgroundColor: colors.background.secondary,
     borderWidth: 1,
     borderColor: colors.text.secondary,
-  },
-  watchlistButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text.secondary,
   },
   searchesButtonText: {
     fontSize: 16,
