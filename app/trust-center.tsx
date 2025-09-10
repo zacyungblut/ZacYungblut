@@ -5,6 +5,7 @@ import {
   View,
   Platform,
   SafeAreaView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -75,7 +76,11 @@ export default function TrustCenterScreen() {
             contentContainerStyle={styles.scrollContent}>
             {/* Header - now inside ScrollView */}
             <View style={styles.header}>
-              <Text style={styles.headerEmoji}>🔒</Text>
+              <Image
+                source={require("@/assets/images/official.png")}
+                style={styles.headerLogo}
+                resizeMode="contain"
+              />
               <Text style={styles.headerTitle}>Your Privacy Matters</Text>
               {/* <Text style={styles.headerSubtitle}>
                 Your privacy and trust matter to us
@@ -143,6 +148,11 @@ const styles = StyleSheet.create({
   },
   headerEmoji: {
     fontSize: 48,
+    marginBottom: 16,
+  },
+  headerLogo: {
+    width: 64,
+    height: 64,
     marginBottom: 16,
   },
   headerTitle: {
