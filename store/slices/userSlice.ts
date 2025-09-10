@@ -56,21 +56,13 @@ interface Relationship {
   updatedAt: string;
 }
 
-interface UnlockTransaction {
-  id: string;
-  userId: string;
-  targetPhone: string;
-  targetStatus: string;
-  createdAt: string;
-}
-
 interface ReviewRequest {
   id: string;
   userId: string;
   platform: string;
   appVersion?: string;
   buildVersion?: string;
-  unlockCount: number;
+  searchCount: number;
   wasDisplayed: boolean;
   userInteracted: boolean;
   deviceModel?: string;
@@ -88,7 +80,6 @@ interface User {
   updatedAt: string;
   relationships: Relationship[];
   sentInvites: Invite[];
-  unlockTransactions: UnlockTransaction[];
   reviewRequests: ReviewRequest[];
 }
 
@@ -160,15 +151,6 @@ const userSlice = createSlice({
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
-      }
-    },
-    // Add new unlock transaction to the list
-    addUnlockTransaction: (state, action: PayloadAction<UnlockTransaction>) => {
-      if (state.user) {
-        state.user.unlockTransactions = [
-          action.payload,
-          ...state.user.unlockTransactions,
-        ];
       }
     },
     // Add new review request to the list
@@ -252,6 +234,24 @@ const userSlice = createSlice({
         }
       }
     },
+    addShareAttemptToInvite: (
+      state,
+      action: PayloadAction<{ inviteId: string; shareAttempt: ShareAttempt }>
+    ) => {
+      if (state.user) {
+        const inviteIndex = state.user.sentInvites.findIndex(
+          (invite) => invite.id === action.payload.inviteId
+        );
+        if (inviteIndex !== -1) {
+          if (!state.user.sentInvites[inviteIndex].shareAttempts) {
+            state.user.sentInvites[inviteIndex].shareAttempts = [];
+          }
+          state.user.sentInvites[inviteIndex].shareAttempts!.push(
+            action.payload.shareAttempt
+          );
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -297,7 +297,6 @@ export const {
   setUserLoading,
   setUserError,
   updateUser,
-  addUnlockTransaction,
   addReviewRequest,
   updateReviewRequest,
   addSentInvite,
@@ -320,12 +319,6 @@ export const selectUserInvites = createSelector([selectUser], (user) => ({
 export const selectUserRelationships = createSelector(
   [selectUser],
   (user) => user?.relationships || []
-);
-
-// Add new selector for unlock transactions
-export const selectUserUnlockTransactions = createSelector(
-  [selectUser],
-  (user) => user?.unlockTransactions || []
 );
 
 export const selectUserReviewRequests = createSelector(

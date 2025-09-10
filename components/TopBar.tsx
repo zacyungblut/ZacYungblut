@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   logo: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
   },
   backButton: {
     width: 32,
@@ -118,13 +118,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   premiumButton: {
-    width: 30,
-    height: 30,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
   },
   premiumImage: {
-    width: 30,
-    height: 30,
+    width: 36,
+    height: 36,
   },
 });

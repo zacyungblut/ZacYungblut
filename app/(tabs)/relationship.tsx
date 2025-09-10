@@ -19,7 +19,9 @@ import { useUserRedux } from "@/store/hooks/useUserRedux";
 import InviteButton from "@/components/InviteButton";
 import PendingInviteCard from "@/components/PendingInviteCard";
 import DateModal from "@/app/date-modal";
+import Tutorial from "@/components/Tutorial"; // Add this import
 import { useNotification } from "@/contexts/NotificationContext";
+import TrustCenter from "@/components/TrustCenter"; // Add this import
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -44,6 +46,8 @@ export default function RelationshipScreen() {
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
+  const [tutorialVisible, setTutorialVisible] = useState(false); // Add this state
+  // Remove trustCenterVisible state since we're navigating to a page now
 
   // Calculate relationship status based on actual data
   const relationshipData = useMemo(() => {
@@ -353,10 +357,6 @@ export default function RelationshipScreen() {
     router.push("/manage");
   };
 
-  const handleAlerts = () => {
-    router.push("/alerts");
-  };
-
   const handleCancelInvite = async (inviteId: string) => {
     try {
       await cancelUserInvite(inviteId);
@@ -375,35 +375,6 @@ export default function RelationshipScreen() {
       const errorMessage =
         error.response?.data?.error || "Failed to cancel invite";
       Alert.alert("Error", errorMessage);
-    }
-  };
-
-  const handleAcceptInvite = async (inviteId: string) => {
-    try {
-      // This function is not directly available in useUserRedux,
-      // so it will be handled by the API call in the backend.
-      // For now, we'll just log and show an alert.
-      console.log("Invite accepted successfully");
-      Alert.alert(
-        "Success",
-        "Relationship confirmed! You are now officially connected."
-      );
-    } catch (error) {
-      console.error("Failed to accept invite:", error);
-      Alert.alert("Error", "Failed to accept invite. Please try again.");
-    }
-  };
-
-  const handleDeclineInvite = async (inviteId: string) => {
-    try {
-      // This function is not directly available in useUserRedux,
-      // so it will be handled by the API call in the backend.
-      // For now, we'll just log and show an alert.
-      console.log("Invite declined successfully");
-      Alert.alert("Success", "Invite declined successfully.");
-    } catch (error) {
-      console.error("Failed to decline invite:", error);
-      Alert.alert("Error", "Failed to decline invite. Please try again.");
     }
   };
 
@@ -478,6 +449,18 @@ export default function RelationshipScreen() {
     }
   };
 
+  const handleTutorial = () => {
+    setTutorialVisible(true);
+  };
+
+  const handleTutorialClose = () => {
+    setTutorialVisible(false);
+  };
+
+  // Remove handleTrustCenter function since we don't need it anymore
+
+  // Remove handleTrustCenterClose function since we don't need it anymore
+
   // Single state render
   if (relationshipData.status === "single") {
     const hasPendingInvites =
@@ -538,11 +521,23 @@ export default function RelationshipScreen() {
           {/* Action Buttons */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.searchesButton]}
-              onPress={handlePastSearches}
+              style={[styles.actionButton, styles.trustCenterButton]}
+              onPress={() => router.push("/trust-center")}
               activeOpacity={0.8}>
-              <Ionicons name="search" size={20} color={colors.text.secondary} />
-              <Text style={styles.searchesButtonText}>Past Searches</Text>
+              <Ionicons
+                name="shield-checkmark"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={styles.trustCenterButtonText}>Trust Center</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.tutorialButton]}
+              onPress={handleTutorial}
+              activeOpacity={0.8}>
+              <Ionicons name="help-circle" size={20} color={colors.primary} />
+              <Text style={styles.tutorialButtonText}>How It Works</Text>
             </TouchableOpacity>
           </View>
 
@@ -559,21 +554,7 @@ export default function RelationshipScreen() {
                   color={colors.text.secondary}
                 />
               </View>
-              <Text style={styles.quickActionText}>Manage</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              onPress={handleAlerts}
-              activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="notifications"
-                  size={iconSize}
-                  color={colors.text.secondary}
-                />
-              </View>
-              <Text style={styles.quickActionText}>Alerts</Text>
+              {/* <Text style={styles.quickActionText}>Manage</Text> */}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -587,10 +568,13 @@ export default function RelationshipScreen() {
                   color={colors.text.secondary}
                 />
               </View>
-              <Text style={styles.quickActionText}>Settings</Text>
+              {/* <Text style={styles.quickActionText}>Settings</Text> */}
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Tutorial Modal - Remove TrustCenter modal */}
+        <Tutorial visible={tutorialVisible} onClose={handleTutorialClose} />
       </View>
     );
   }
@@ -657,11 +641,23 @@ export default function RelationshipScreen() {
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.searchesButton]}
-            onPress={handlePastSearches}
+            style={[styles.actionButton, styles.trustCenterButton]}
+            onPress={() => router.push("/trust-center")}
             activeOpacity={0.8}>
-            <Ionicons name="search" size={20} color={colors.text.secondary} />
-            <Text style={styles.searchesButtonText}>Past Searches</Text>
+            <Ionicons
+              name="shield-checkmark"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={styles.trustCenterButtonText}>Trust Center</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.tutorialButton]}
+            onPress={handleTutorial}
+            activeOpacity={0.8}>
+            <Ionicons name="help-circle" size={20} color={colors.primary} />
+            <Text style={styles.tutorialButtonText}>How It Works</Text>
           </TouchableOpacity>
         </View>
 
@@ -679,20 +675,6 @@ export default function RelationshipScreen() {
               />
             </View>
             <Text style={styles.quickActionText}>Manage</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionItem}
-            onPress={handleAlerts}
-            activeOpacity={0.7}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons
-                name="notifications"
-                size={iconSize}
-                color={colors.text.secondary}
-              />
-            </View>
-            <Text style={styles.quickActionText}>Alerts</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -718,6 +700,9 @@ export default function RelationshipScreen() {
         selectedDate={tempSelectedDate}
         onDateChange={handleDateChange}
       />
+
+      {/* Tutorial Modal - Remove TrustCenter modal */}
+      <Tutorial visible={tutorialVisible} onClose={handleTutorialClose} />
     </View>
   );
 }
@@ -866,6 +851,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     paddingHorizontal: 20,
+    paddingTop: 0,
   },
   quickActionItem: {
     alignItems: "center",
@@ -886,14 +872,26 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-  searchesButton: {
-    backgroundColor: colors.background.secondary,
+  // Add tutorial button styles
+  tutorialButton: {
+    backgroundColor: colors.background.primary,
     borderWidth: 1,
-    borderColor: colors.text.secondary,
+    borderColor: colors.primary,
   },
-  searchesButtonText: {
+  tutorialButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text.secondary,
+    color: colors.primary,
+  },
+  // Replace searchesButton and searchesButtonText with trustCenterButton styles
+  trustCenterButton: {
+    backgroundColor: colors.background.primary,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  trustCenterButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.primary,
   },
 });

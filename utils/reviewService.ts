@@ -8,7 +8,6 @@ interface ReviewRequest {
   platform: string;
   appVersion?: string;
   buildVersion?: string;
-  unlockCount: number;
   wasDisplayed: boolean;
   userInteracted: boolean;
   deviceModel?: string;

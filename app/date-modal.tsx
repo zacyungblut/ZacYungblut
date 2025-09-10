@@ -193,8 +193,7 @@ export default function DateModal({
       transparent={true}
       visible={modalVisible}
       animationType="none"
-      onRequestClose={handleClose}
-      statusBarTranslucent>
+      onRequestClose={handleClose}>
       <View style={styles.modalOverlay}>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <TouchableOpacity

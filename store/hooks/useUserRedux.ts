@@ -15,13 +15,11 @@ import {
   addRelationship,
   updateRelationship,
   editRelationship,
-  addUnlockTransaction,
   addReviewRequest,
   updateReviewRequest,
   selectUser,
   selectUserInvites,
   selectUserRelationships,
-  selectUserUnlockTransactions,
   selectUserReviewRequests,
   addShareAttemptToInvite,
 } from "@/store/slices/userSlice";
@@ -43,7 +41,6 @@ export const useUserRedux = () => {
   const { user, loading, error } = useAppSelector((state) => state.user);
   const invites = useAppSelector(selectUserInvites);
   const relationships = useAppSelector(selectUserRelationships);
-  const unlockTransactions = useAppSelector(selectUserUnlockTransactions);
   const reviewRequests = useAppSelector(selectUserReviewRequests);
 
   const fetchUser = async () => {
@@ -125,16 +122,12 @@ export const useUserRedux = () => {
     }
   };
 
-  const addNewUnlockTransaction = (transaction: any) => {
-    dispatch(addUnlockTransaction(transaction));
-  };
-
   // Save review request to backend and add to Redux store
   const saveUserReviewRequest = async (reviewData: {
     platform: string;
     appVersion?: string;
     buildVersion?: string;
-    unlockCount: number;
+    searchCount: number;
     wasDisplayed: boolean;
     userInteracted?: boolean;
     deviceModel?: string;
@@ -219,10 +212,6 @@ export const useUserRedux = () => {
     addNewRelationship,
     updateExistingRelationship,
     editExistingRelationship,
-
-    // Unlock transactions data and actions
-    unlockTransactions,
-    addNewUnlockTransaction,
 
     // Review requests data and actions
     reviewRequests,

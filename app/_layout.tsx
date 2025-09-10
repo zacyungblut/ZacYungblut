@@ -40,14 +40,8 @@ function AppContent() {
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
   // Use Redux for user state management
-  const {
-    user,
-    saveUser,
-    logoutUser,
-    unlockTransactions,
-    reviewRequests,
-    saveUserReviewRequest,
-  } = useUserRedux();
+  const { user, saveUser, logoutUser, reviewRequests, saveUserReviewRequest } =
+    useUserRedux();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -80,15 +74,15 @@ function AppContent() {
       // Dynamically import ReviewService to avoid native module loading issues
       const { ReviewService } = await import("@/utils/reviewService");
 
-      // Check if we should request a review
+      // Check if we should request a review based on search count instead of unlocks
       if (
-        !ReviewService.shouldRequestReview(unlockTransactions, reviewRequests)
+        !ReviewService.shouldRequestReview([], reviewRequests) // Pass empty array for searches
       ) {
         return;
       }
 
       // Log metrics for debugging
-      ReviewService.logReviewMetrics(unlockTransactions, reviewRequests);
+      ReviewService.logReviewMetrics([], reviewRequests); // Pass empty array for searches
 
       // Small delay to ensure the app has fully loaded
       setTimeout(async () => {
@@ -103,7 +97,7 @@ function AppContent() {
               platform: reviewMetadata.platform,
               appVersion: reviewMetadata.appVersion,
               buildVersion: reviewMetadata.buildVersion,
-              unlockCount: unlockTransactions.length,
+              searchCount: 0, // We'll track this differently now
               wasDisplayed: reviewMetadata.wasDisplayed,
               userInteracted: false, // Will be updated later if user interacts
               deviceModel: reviewMetadata.deviceModel,
@@ -174,7 +168,7 @@ function AppContent() {
         router.replace("/(tabs)");
 
         // Check if we should request a review after successful login
-        if (user.unlockTransactions && user.reviewRequests) {
+        if (user.reviewRequests) {
           handleReviewRequest();
         }
       } else {
@@ -248,6 +242,7 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="past-searches" options={{ headerShown: false }} />
+        <Stack.Screen name="trust-center" options={{ headerShown: false }} />
         <Stack.Screen
           name="(tabs)"
           options={{

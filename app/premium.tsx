@@ -1,17 +1,20 @@
 import React, { useState } from "react";
-import { StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 
 import { Text, View } from "@/components/Themed";
-import TopBar from "@/components/TopBar";
 import { colors } from "@/constants/Colors";
 
-type PricingTier = "monthly" | "yearly" | "lifetime";
+type PricingTier = "monthly" | "annual";
 
 export default function PremiumScreen() {
-  const [selectedTier, setSelectedTier] = useState<PricingTier>("yearly");
+  const [selectedTier, setSelectedTier] = useState<PricingTier>("annual");
 
   const handleBackPress = () => {
     router.back();
@@ -22,79 +25,108 @@ export default function PremiumScreen() {
     // Handle subscription logic
   };
 
+  const userPhotos = [
+    require("@/assets/images/girl1.jpg"),
+    require("@/assets/images/girl2.jpg"),
+    require("@/assets/images/girl3.jpg"),
+    require("@/assets/images/girl4.jpg"),
+    require("@/assets/images/girl5.jpg"),
+  ];
+
   const pricingTiers = [
+    {
+      id: "annual" as PricingTier,
+      title: "Annual",
+      price: "$69.99",
+      subtitle: "($5.84/month) after 14 day trial",
+      savings: "Save 55%",
+      isSelected: selectedTier === "annual",
+    },
     {
       id: "monthly" as PricingTier,
       title: "Monthly",
-      price: "$18.99",
-      period: "month",
+      price: "$12.99/month",
+      subtitle: "after 7 day trial",
       isSelected: selectedTier === "monthly",
-    },
-    {
-      id: "yearly" as PricingTier,
-      title: "Yearly",
-      price: "$98.99",
-      period: "year",
-      isSelected: selectedTier === "yearly",
-    },
-  ];
-
-  const features = [
-    {
-      icon: "infinite",
-      title: "Unlimited Searches",
-    },
-    {
-      icon: "eye-off",
-      title: "Anonymous Searching",
-    },
-
-    {
-      icon: "shield-checkmark",
-      title: "See When Your Partner Is Searched",
-    },
-    {
-      icon: "notifications",
-      title: "Personal Alerts",
     },
   ];
 
   return (
-    <LinearGradient
-      colors={["#D8B4FE", "#8B5CF6", "#6B46C1", "#000000"]}
-      style={styles.gradientContainer}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}>
+    <SafeAreaView style={styles.container}>
+      {/* Header with Premium Logo */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          {/* Empty spacer to balance the close button */}
+        <View style={styles.premiumIconContainer}>
+          <Image
+            source={require("@/assets/images/premium.png")}
+            style={styles.premiumLogo}
+            resizeMode="contain"
+          />
         </View>
-
-        <View style={styles.titleContainer}>
-          <Text style={styles.appName}>Premium</Text>
-          {/* <View style={styles.proBadge}>
-            <Text style={styles.proText}>PRO</Text>
-          </View> */}
-        </View>
-
         <TouchableOpacity onPress={handleBackPress} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color={colors.white} />
+          <Ionicons name="close" size={24} color={colors.text.tertiary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContentContainer}>
-        {/* Header Section */}
-        <View style={styles.headerSection}>
-          <Text style={styles.subtitle}>
-            Experience Official with unlimited{"\n"}access to all features.
-          </Text>
+      {/* Main Content */}
+      <View style={styles.content}>
+        {/* Title */}
+        <Text style={styles.title}>Get Official Premium</Text>
+
+        {/* Social Proof */}
+        <View style={styles.socialProof}>
+          <View style={styles.userAvatars}>
+            {userPhotos.map((photo, i) => (
+              <Image
+                key={i}
+                source={photo}
+                style={[styles.avatar, { left: i * 26 }]}
+              />
+            ))}
+            <View
+              style={[styles.avatar, styles.moreUsersAvatar, { left: 5 * 26 }]}>
+              <Text style={styles.moreUsersText}>+999</Text>
+            </View>
+          </View>
+          <Text style={styles.socialProofText}>Join 10,000+ premium users</Text>
         </View>
 
-        {/* Pricing Container - Compact */}
-        <View style={styles.pricingWrapper}>
+        {/* Features */}
+        <View style={styles.featuresContainer}>
+          <View style={styles.featureItem}>
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={colors.offBlack}
+              style={styles.checkmark}
+            />
+            <Text style={styles.featureText}>
+              8 searches per month (vs 2 on free plan)
+            </Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={colors.offBlack}
+              style={styles.checkmark}
+            />
+            <Text style={styles.featureText}>
+              Searches roll over to next month
+            </Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={colors.offBlack}
+              style={styles.checkmark}
+            />
+            <Text style={styles.featureText}>Ad-free experience</Text>
+          </View>
+        </View>
+
+        {/* Pricing Options */}
+        <View style={styles.pricingContainer}>
           {pricingTiers.map((tier) => (
             <TouchableOpacity
               key={tier.id}
@@ -104,270 +136,291 @@ export default function PremiumScreen() {
               ]}
               onPress={() => setSelectedTier(tier.id)}
               activeOpacity={0.8}>
-              <View style={styles.radioContainer}>
-                <View
+              <View style={styles.pricingHeader}>
+                <Text
                   style={[
-                    styles.radioButton,
-                    tier.isSelected && styles.radioButtonSelected,
+                    styles.pricingTitle,
+                    tier.isSelected && styles.pricingTitleSelected,
                   ]}>
-                  {tier.isSelected && <View style={styles.radioInner} />}
-                </View>
+                  {tier.title}
+                </Text>
+                {tier.savings && (
+                  <View style={styles.savingsBadge}>
+                    <Text style={styles.savingsText}>{tier.savings}</Text>
+                  </View>
+                )}
               </View>
 
-              <View style={styles.pricingContent}>
-                <Text style={styles.pricingTitle}>{tier.title}</Text>
-                <Text style={styles.pricingPrice}>
-                  {tier.price}
-                  {tier.period && (
-                    <Text style={styles.pricingPeriod}> / {tier.period}</Text>
-                  )}
-                </Text>
-              </View>
+              <Text
+                style={[
+                  styles.pricingPrice,
+                  tier.isSelected && styles.pricingPriceSelected,
+                ]}>
+                {tier.price}
+              </Text>
+              <Text
+                style={[
+                  styles.pricingSubtitle,
+                  tier.isSelected && styles.pricingSubtitleSelected,
+                ]}>
+                {tier.subtitle}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Features Section */}
-        <View style={styles.featuresSection}>
-          <Text style={styles.featuresTitle}>WHAT'S INCLUDED</Text>
-
-          {features.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <Ionicons
-                name={feature.icon as any}
-                size={24}
-                color={colors.white}
-                style={styles.featureIcon}
-              />
-              <Text style={styles.featureTitle}>{feature.title}</Text>
-            </View>
-          ))}
+        {/* Trust Indicators */}
+        <View style={styles.trustIndicators}>
+          <View style={styles.trustItem}>
+            <Ionicons
+              name="shield-checkmark"
+              size={14}
+              color={colors.text.secondary}
+            />
+            <Text style={styles.trustText}>100% confidential</Text>
+          </View>
+          <Text style={styles.trustSeparator}>•</Text>
+          <View style={styles.trustItem}>
+            <Ionicons name="time" size={14} color={colors.text.secondary} />
+            <Text style={styles.trustText}>Cancel anytime</Text>
+          </View>
         </View>
-      </ScrollView>
 
-      {/* Sticky Bottom Section */}
+        {/* Footer Links */}
+        <View style={styles.footerLinks}>
+          <TouchableOpacity>
+            <Text style={styles.linkText}>Restore Purchase</Text>
+          </TouchableOpacity>
+          <Text style={styles.linkSeparator}> • </Text>
+          <TouchableOpacity>
+            <Text style={styles.linkText}>Terms & Conditions</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Subscribe Button */}
       <View style={styles.stickyBottom}>
         <TouchableOpacity
           style={styles.subscribeButton}
           onPress={handleSubscribe}
           activeOpacity={0.9}>
-          <LinearGradient
-            colors={[colors.white, "#F8F9FA"]}
-            style={styles.subscribeButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}>
-            <Ionicons name="card" size={24} color="#8B5CF6" />
-            <Text style={styles.subscribeButtonText}>Subscribe</Text>
-          </LinearGradient>
+          <Text style={styles.subscribeButtonText}>Subscribe</Text>
         </TouchableOpacity>
-
-        <Text style={styles.trialText}>
-          Cancel anytime. Fully confidential.
-        </Text>
       </View>
-    </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
-  },
-  gradientContainer: {
-    flex: 1,
+    backgroundColor: colors.white,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  headerLeft: {
-    width: 40, // To balance the close button
+  premiumIconContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  premiumLogo: {
+    width: 70,
+    height: 70,
   },
   closeButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
+    position: "absolute",
+    left: 20,
+    top: 10,
   },
-  scrollContent: {
+  content: {
     flex: 1,
+    justifyContent: "space-between",
+    paddingBottom: 100, // Space for button
   },
-  scrollContentContainer: {
-    paddingBottom: 120, // Space for sticky bottom
-  },
-  headerSection: {
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 0,
-    paddingBottom: 20,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  appName: {
-    fontSize: 36,
-    fontWeight: "700",
-    color: colors.white,
-    marginRight: 12,
-  },
-  proBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  proText: {
-    fontSize: 14,
+  title: {
+    fontSize: 28,
     fontWeight: "600",
-    color: colors.white,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: colors.text.primary,
     textAlign: "center",
-    lineHeight: 26,
-  },
-  pricingWrapper: {
-    marginHorizontal: 24,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    borderRadius: 20,
-    padding: 4,
     marginBottom: 20,
+    paddingHorizontal: 40,
   },
-  pricingCard: {
+  socialProof: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  userAvatars: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "transparent",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 0,
+    height: 40,
+    width: 160,
+    marginBottom: 8,
+  },
+  avatar: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 2,
-    borderColor: "transparent",
-  },
-  pricingCardSelected: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  radioContainer: {
-    marginRight: 16,
-  },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioButtonSelected: {
     borderColor: colors.white,
   },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  moreUsersAvatar: {
     backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    borderColor: colors.border.light,
   },
-  pricingContent: {
-    flex: 1,
-  },
-  pricingTitle: {
-    fontSize: 16,
+  moreUsersText: {
+    fontSize: 9,
     fontWeight: "600",
-    color: colors.white,
-    marginBottom: 2,
+    color: colors.text.secondary,
   },
-  pricingPrice: {
+  socialProofText: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
+    color: colors.text.tertiary,
     fontWeight: "500",
   },
-  pricingPeriod: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.6)",
-    fontWeight: "400",
-  },
-  bestValueBadge: {
-    backgroundColor: "#FF3B82",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  bestValueText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.white,
-  },
-  featuresSection: {
-    paddingHorizontal: 24,
-  },
-  featuresTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "rgba(255, 255, 255, 0.7)",
-    marginBottom: 24,
-    letterSpacing: 1,
+  featuresContainer: {
+    paddingHorizontal: 40,
+    marginBottom: 25,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 12,
   },
-  featureIcon: {
-    marginRight: 20,
-    marginLeft: 4,
+  checkmark: {
+    marginRight: 12,
   },
-  featureTitle: {
-    fontSize: 18,
+  featureText: {
+    fontSize: 15,
+    color: colors.text.secondary,
+    flex: 1,
+  },
+  pricingContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  pricingCard: {
+    backgroundColor: colors.surface.light,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: colors.border.light,
+    position: "relative",
+  },
+  pricingCardSelected: {
+    backgroundColor: colors.surface.overlaySuperLight,
+    borderColor: colors.offBlack,
+  },
+  savingsBadge: {
+    backgroundColor: "#00E676",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  savingsText: {
+    fontSize: 10,
     fontWeight: "600",
     color: colors.white,
-    flex: 1,
+  },
+  pricingHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  pricingTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  pricingTitleSelected: {
+    color: colors.text.primary,
+  },
+  pricingPrice: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.text.primary,
+    marginBottom: 2,
+  },
+  pricingPriceSelected: {
+    color: colors.text.primary,
+  },
+  pricingSubtitle: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+  },
+  pricingSubtitleSelected: {
+    color: colors.text.tertiary,
+  },
+  trustIndicators: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  trustItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  trustText: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginLeft: 4,
+    fontWeight: "500",
+  },
+  trustSeparator: {
+    fontSize: 12,
+    color: colors.text.quaternary,
+    marginHorizontal: 12,
+  },
+  footerLinks: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+    marginBottom: 10,
+  },
+  linkText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  linkSeparator: {
+    fontSize: 14,
+    color: colors.text.tertiary,
   },
   stickyBottom: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
-    backdropFilter: "blur(20px)",
-    paddingHorizontal: 24,
+    backgroundColor: colors.white,
+    paddingHorizontal: 20,
     paddingVertical: 20,
-    paddingBottom: 34, // Safe area bottom
+    paddingBottom: 34,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    borderTopColor: colors.border.medium,
   },
   subscribeButton: {
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  subscribeButtonGradient: {
-    flexDirection: "row",
+    backgroundColor: colors.offBlack,
+    borderRadius: 25,
+    paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 18,
-    gap: 12,
   },
   subscribeButtonText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#8B5CF6",
-  },
-  trialText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "center",
-    lineHeight: 20,
+    fontWeight: "600",
+    color: colors.white,
   },
 });

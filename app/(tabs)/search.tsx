@@ -23,7 +23,7 @@ import SearchResultCard, {
 } from "@/components/SearchResultCard";
 import { DEFAULT_COUNTRY } from "@/constants/countryCodes";
 import { colors } from "@/constants/Colors";
-import { searchUserByPhone, unlockUserStatus } from "@/api";
+import { searchUserByPhone } from "@/api";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 const { width } = Dimensions.get("window");
@@ -44,7 +44,6 @@ export default function SearchScreen() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   // Animated value for focus state
@@ -52,8 +51,8 @@ export default function SearchScreen() {
   // Animated value for placeholder card
   const placeholderAnimation = useSharedValue(0);
 
-  // Get user data and unlock transaction function from Redux
-  const { user, addNewUnlockTransaction } = useUserRedux();
+  // Get user data from Redux
+  const { user } = useUserRedux();
 
   const handleInputFocus = () => {
     setIsInputFocused(true);
@@ -89,7 +88,22 @@ export default function SearchScreen() {
       const response = await searchUserByPhone(fullPhoneNumber);
 
       if (response.data.success) {
-        setSearchResult(response.data.result);
+        // Immediately show the actual relationship status instead of requiring unlock
+        const result = response.data.result;
+
+        // Get the actual status if it's known
+        let actualStatus = result.relationshipStatus;
+        if (actualStatus === "KNOWN") {
+          // In the new system, we'll need to modify the backend to return the actual status
+          actualStatus = "Single"; // This will be updated when backend is modified
+        }
+
+        setSearchResult({
+          ...result,
+          relationshipStatus: actualStatus,
+        });
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         setSearchError("Search failed. Please try again.");
       }
@@ -105,62 +119,12 @@ export default function SearchScreen() {
     }
   };
 
-  const handleUnlockStatus = async (phone: string) => {
-    setIsUnlocking(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-
-    try {
-      const response = await unlockUserStatus(phone);
-
-      if (response.data.success) {
-        setSearchResult((prev) =>
-          prev
-            ? {
-                ...prev,
-                relationshipStatus: response.data.result.relationshipStatus,
-              }
-            : null
-        );
-
-        // Add the new unlock transaction to Redux store
-        addNewUnlockTransaction({
-          id: response.data.result.transactionId,
-          userId: user?.id || "",
-          targetPhone: response.data.result.phone,
-          targetStatus: response.data.result.relationshipStatus,
-          createdAt: new Date().toISOString(),
-        });
-
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else {
-        setSearchError("Failed to unlock status. Please try again.");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-    } catch (error: any) {
-      console.error("Unlock error:", error);
-      if (error.response?.status === 401) {
-        setSearchError("Please log in to unlock status.");
-      } else if (error.response?.status === 404) {
-        setSearchError("User status not available.");
-      } else {
-        setSearchError("Failed to unlock status. Please try again.");
-      }
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setIsUnlocking(false);
-    }
-  };
-
-  // New combined function that performs search then unlock
+  // New combined function that performs search
   const handleCheckStatus = async () => {
     if (!phoneNumber) return;
 
-    // First perform the search
+    // Perform the search
     await performSearch(phoneNumber);
-
-    // Then immediately unlock the status
-    const fullPhoneNumber = selectedCountry.dialCode + phoneNumber;
-    await handleUnlockStatus(fullPhoneNumber);
   };
 
   // Animated styles
@@ -205,7 +169,7 @@ export default function SearchScreen() {
         <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
           <View style={styles.iconContainer}>
             <Ionicons
-              name="shield-checkmark"
+              name="search"
               size={80}
               color={colors.primary || "#2563EB"}
             />
@@ -235,15 +199,14 @@ export default function SearchScreen() {
           <TouchableOpacity
             style={[
               styles.checkButton,
-              (!phoneNumber || isSearching || isUnlocking) &&
-                styles.checkButtonDisabled,
+              (!phoneNumber || isSearching) && styles.checkButtonDisabled,
             ]}
             onPress={handleCheckStatus}
-            disabled={!phoneNumber || isSearching || isUnlocking}
+            disabled={!phoneNumber || isSearching}
             activeOpacity={0.8}
             delayPressIn={0}
             delayPressOut={0}>
-            {isSearching || isUnlocking ? (
+            {isSearching ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
               <Text style={styles.checkButtonText}>Check Status</Text>
@@ -255,8 +218,8 @@ export default function SearchScreen() {
             {searchResult ? (
               <SearchResultCard
                 searchResult={searchResult}
-                isUnlocking={isUnlocking}
-                onUnlockStatus={() => {}} // No longer needed since we handle unlock in the button
+                isUnlocking={false}
+                onUnlockStatus={() => {}} // No longer needed
               />
             ) : isInputFocused && !searchError ? (
               <Animated.View style={placeholderAnimatedStyle}>
