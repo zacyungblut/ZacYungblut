@@ -161,7 +161,7 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <TopBar title="Search" />
+      <TopBar title="Search Others" />
 
       {/* Main Content */}
       <View style={styles.contentContainer}>
@@ -174,7 +174,7 @@ export default function SearchScreen() {
               color={colors.primary || "#2563EB"}
             />
           </View>
-          <Text style={styles.titleText}>Search Others</Text>
+          <Text style={styles.titleText}>Find a Status</Text>
         </Animated.View>
 
         {/* Animated Content */}
@@ -255,11 +255,11 @@ export default function SearchScreen() {
       {!searchResult && (
         <View style={styles.fixedPremiumSection}>
           <Text style={styles.premiumText}>
-            Limited to 2 free searches per week.
+            Limited to 2 free searches per month.
           </Text>
           <Text style={styles.premiumSubtext}>
-            Upgrade for unlimited searches +{" "}
-            <Text style={styles.premiumLink}>Go Premium</Text>
+            Upgrade for 8+ monthly searches +{" "}
+            <Text style={styles.premiumLink}>Premium</Text>
           </Text>
         </View>
       )}

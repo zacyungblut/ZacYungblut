@@ -12,6 +12,8 @@ import "react-native-reanimated";
 import { router } from "expo-router";
 import { Provider } from "react-redux";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import { Platform } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthService } from "@/utils/authStorage";
@@ -31,6 +33,37 @@ export {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+const APIKeys = {
+  apple: "appl_apvtgolBpXDmjTRmDAfLThAhLjj",
+  google: "replace_me",
+};
+
+// Initialize Purchases
+const initializePurchases = async () => {
+  try {
+    if (Platform.OS === "ios") {
+      // Replace with your actual Apple App Store API key
+      await Purchases.configure({
+        apiKey: APIKeys.apple,
+      });
+    } else if (Platform.OS === "android") {
+      // Replace with your actual Google Play Store API key
+      await Purchases.configure({
+        apiKey: APIKeys.google,
+      });
+    }
+
+    // Enable debug logs (disable in production)
+    if (__DEV__) {
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    }
+
+    console.log("Purchases configured successfully");
+  } catch (error) {
+    console.error("Error configuring Purchases:", error);
+  }
+};
+
 // Inner component that uses Redux
 function AppContent() {
   const [loaded, error] = useFonts({
@@ -38,10 +71,17 @@ function AppContent() {
     ...FontAwesome.font,
   });
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isReady, setIsReady] = useState(false);
 
   // Use Redux for user state management
-  const { user, saveUser, logoutUser, reviewRequests, saveUserReviewRequest } =
-    useUserRedux();
+  const {
+    user: userRedux,
+    saveUser,
+    logoutUser,
+    reviewRequests,
+    saveUserReviewRequest,
+  } = useUserRedux();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -137,8 +177,11 @@ function AppContent() {
     }
   };
 
-  // Check authentication and fetch user when fonts are loaded
   useEffect(() => {
+    // Initialize purchases when app starts
+    initializePurchases();
+
+    // Check authentication and fetch user when fonts are loaded
     const checkAuthAndFetchUser = async () => {
       if (loaded) {
         const token = AuthService.getAuthToken();
@@ -146,6 +189,7 @@ function AppContent() {
         if (token) {
           // Token exists, try to fetch user
           const userData = await fetchCurrentUser();
+          setUser(userData);
         } else {
           logoutUser(); // Clear any existing user state
         }
@@ -157,6 +201,32 @@ function AppContent() {
 
     checkAuthAndFetchUser();
   }, [loaded]);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        const loggedIn = AuthService.isAuthenticated();
+        if (loggedIn) {
+          try {
+            const userData = await getCurrentUser();
+            setUser(userData);
+          } catch (error) {
+            const axiosError = error as AxiosError;
+            if (axiosError.response?.status === 401) {
+              AuthService.removeAuthToken();
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setIsReady(true);
+        SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
+  }, []);
 
   // Navigate based on authentication status once check is complete
   useEffect(() => {
@@ -258,7 +328,10 @@ function RootLayoutNav() {
           options={{ headerShown: false, presentation: "formSheet" }}
         />
         <Stack.Screen name="manage" options={{ headerShown: false }} />
-        <Stack.Screen name="premium" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="premium"
+          options={{ headerShown: false, animation: "fade_from_bottom" }}
+        />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
     </ThemeProvider>

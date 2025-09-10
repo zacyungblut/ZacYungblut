@@ -23,6 +23,9 @@ export default function TopBar({
   const handlePremiumPress = () => {
     router.push("/premium");
   };
+  const handleHomePress = () => {
+    router.push("/trust-center");
+  };
 
   return (
     <View style={styles.container}>
@@ -35,11 +38,13 @@ export default function TopBar({
             <Ionicons name="chevron-back" size={24} color="#333" />
           </TouchableOpacity>
         ) : (
-          <Image
-            source={require("@/assets/images/official.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <TouchableOpacity onPress={handleHomePress}>
+            <Image
+              source={require("@/assets/images/official.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         )}
       </View>
 

@@ -160,7 +160,7 @@ export default function RelationshipScreen() {
         const result = await Share.share({
           message: shareMessage,
           url: inviteLink, // iOS will use this for the URL
-          title: "Make It Official",
+          title: "My Relationship",
         });
 
         if (result.action === Share.sharedAction) {
@@ -469,13 +469,7 @@ export default function RelationshipScreen() {
 
     return (
       <View style={styles.container}>
-        <TopBar
-          title={
-            relationshipData?.status === "single"
-              ? "Make it Official"
-              : "It's Official"
-          }
-        />
+        <TopBar title="My Relationship" />
 
         <View style={styles.content}>
           {/* Single Profile Section */}
