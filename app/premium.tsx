@@ -6,6 +6,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -19,20 +20,19 @@ import Purchases, {
 import { Text, View } from "@/components/Themed";
 import { colors } from "@/constants/Colors";
 
-type PricingTier = "monthly" | "annual";
+type PricingTier = "monthly" | "weekly";
 
 interface PricingTierData {
   id: PricingTier;
   title: string;
   price: string;
-  subtitle: string;
   savings?: string;
   isSelected: boolean;
   purchasePackage?: PurchasesPackage;
 }
 
 export default function PremiumScreen() {
-  const [selectedTier, setSelectedTier] = useState<PricingTier>("annual");
+  const [selectedTier, setSelectedTier] = useState<PricingTier>("weekly");
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -65,7 +65,7 @@ export default function PremiumScreen() {
       Alert.alert(
         "Error",
         "Unable to load purchase options. Please try again later.",
-        [{ text: "OK", onPress: () => router.back() }]
+        [{ text: "OK", onPress: () => {} }]
       );
     }
   };
@@ -79,10 +79,10 @@ export default function PremiumScreen() {
       const packages = offerings.availablePackages;
       let selectedPackage: PurchasesPackage | undefined;
 
-      if (selectedTier === "annual") {
+      if (selectedTier === "weekly") {
         selectedPackage = packages.find(
           (pkg) =>
-            pkg.identifier.includes("annual") || pkg.packageType === "ANNUAL"
+            pkg.identifier.includes("weekly") || pkg.packageType === "WEEKLY"
         );
       } else {
         selectedPackage = packages.find(
@@ -158,6 +158,28 @@ export default function PremiumScreen() {
     }
   };
 
+  const handleTermsPress = () => {
+    Linking.openURL("https://makeitofficial.us/terms").catch((err) => {
+      console.error("Failed to open Terms of Use:", err);
+      Alert.alert(
+        "Error",
+        "Unable to open Terms of Use. Please try again later.",
+        [{ text: "OK" }]
+      );
+    });
+  };
+
+  const handlePrivacyPress = () => {
+    Linking.openURL("https://makeitofficial.us/privacy").catch((err) => {
+      console.error("Failed to open Privacy Policy:", err);
+      Alert.alert(
+        "Error",
+        "Unable to open Privacy Policy. Please try again later.",
+        [{ text: "OK" }]
+      );
+    });
+  };
+
   const userPhotos = [
     require("@/assets/images/girl1.jpg"),
     require("@/assets/images/girl2.jpg"),
@@ -172,18 +194,16 @@ export default function PremiumScreen() {
       // Fallback static data
       return [
         {
-          id: "annual" as PricingTier,
-          title: "Annual",
-          price: "$69.99",
-          subtitle: "($5.84/month) after 14 day trial",
-          savings: "Save 55%",
-          isSelected: selectedTier === "annual",
+          id: "weekly" as PricingTier,
+          title: "Weekly",
+          price: "$4.99/week",
+          savings: "Most Popular",
+          isSelected: selectedTier === "weekly",
         },
         {
           id: "monthly" as PricingTier,
           title: "Monthly",
           price: "$12.99/month",
-          subtitle: "after 7 day trial",
           isSelected: selectedTier === "monthly",
         },
       ];
@@ -192,21 +212,19 @@ export default function PremiumScreen() {
     const packages = offerings.availablePackages;
     const tiers: PricingTierData[] = [];
 
-    // Find annual package
-    const annualPackage = packages.find(
-      (pkg) => pkg.identifier.includes("annual") || pkg.packageType === "ANNUAL"
+    // Find weekly package
+    const weeklyPackage = packages.find(
+      (pkg) => pkg.identifier.includes("weekly") || pkg.packageType === "WEEKLY"
     );
 
-    if (annualPackage) {
-      const monthlyPrice = annualPackage.product.price / 12;
+    if (weeklyPackage) {
       tiers.push({
-        id: "annual",
-        title: "Annual",
-        price: annualPackage.product.priceString,
-        subtitle: `($${monthlyPrice.toFixed(2)}/month) after 14 day trial`,
-        savings: "Save 55%",
-        isSelected: selectedTier === "annual",
-        purchasePackage: annualPackage,
+        id: "weekly",
+        title: "Weekly",
+        price: `${weeklyPackage.product.priceString}/week`,
+        savings: "Most Popular",
+        isSelected: selectedTier === "weekly",
+        purchasePackage: weeklyPackage,
       });
     }
 
@@ -221,7 +239,6 @@ export default function PremiumScreen() {
         id: "monthly",
         title: "Monthly",
         price: `${monthlyPackage.product.priceString}/month`,
-        subtitle: "after 7 day trial",
         isSelected: selectedTier === "monthly",
         purchasePackage: monthlyPackage,
       });
@@ -375,13 +392,6 @@ export default function PremiumScreen() {
                   ]}>
                   {tier.price}
                 </Text>
-                <Text
-                  style={[
-                    styles.pricingSubtitle,
-                    tier.isSelected && styles.pricingSubtitleSelected,
-                  ]}>
-                  {tier.subtitle}
-                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -406,12 +416,12 @@ export default function PremiumScreen() {
 
         {/* Footer Links */}
         <View style={styles.footerLinks}>
-          <TouchableOpacity onPress={handleRestorePurchases}>
-            <Text style={styles.linkText}>Restore Purchase</Text>
+          <TouchableOpacity onPress={handleTermsPress}>
+            <Text style={styles.linkText}>Terms of Use</Text>
           </TouchableOpacity>
           <Text style={styles.linkSeparator}> • </Text>
-          <TouchableOpacity>
-            <Text style={styles.linkText}>Terms & Conditions</Text>
+          <TouchableOpacity onPress={handlePrivacyPress}>
+            <Text style={styles.linkText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -608,7 +618,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: colors.text.primary,
-    marginBottom: 2,
   },
   pricingPriceSelected: {
     color: colors.text.primary,

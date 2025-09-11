@@ -7,6 +7,7 @@ import {
   View,
   Platform,
   SafeAreaView,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,6 +32,13 @@ interface TutorialProps {
 }
 
 const tutorialSteps = [
+  {
+    title: "Make It Official",
+    subtitle: 'The modern way to make your relationship "Facebook" official',
+    description: "",
+    emoji: "",
+    isLogoStep: true,
+  },
   {
     title: "Step 1: Set Your Relationship Status",
     description:
@@ -273,19 +281,33 @@ export default function Tutorial({ visible, onClose }: TutorialProps) {
                 style={styles.mainContent}
                 onPress={handleNext}
                 activeOpacity={1}>
-                {/* Emoji */}
-                <Text style={styles.emoji}>{currentStepData.emoji}</Text>
+                {/* Logo for first step, emoji for others */}
+                {currentStepData.isLogoStep ? (
+                  <Image
+                    source={require("@/assets/images/official.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Text style={styles.emoji}>{currentStepData.emoji}</Text>
+                )}
 
                 {/* Title */}
                 <Text style={styles.title}>{currentStepData.title}</Text>
 
                 {/* Subtitle */}
-                <Text style={styles.subtitle}>{currentStepData.subtitle}</Text>
+                {currentStepData.subtitle && (
+                  <Text style={styles.subtitle}>
+                    {currentStepData.subtitle}
+                  </Text>
+                )}
 
                 {/* Description */}
-                <Text style={styles.description}>
-                  {currentStepData.description}
-                </Text>
+                {currentStepData.description && (
+                  <Text style={styles.description}>
+                    {currentStepData.description}
+                  </Text>
+                )}
 
                 {/* Tap to Continue */}
                 <View style={styles.tapContainer}>
@@ -441,5 +463,10 @@ const styles = StyleSheet.create({
   fingerEmoji: {
     fontSize: 16,
     textAlign: "center",
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 32,
   },
 });

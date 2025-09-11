@@ -1,27 +1,26 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import {
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
   Dimensions,
   Image,
-  Alert,
-  Share,
   Platform,
+  Share,
+  StyleSheet,
+  TouchableOpacity,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useState, useMemo, useEffect } from "react";
-import { router } from "expo-router";
 
+import DateModal from "@/app/date-modal";
+import PendingInviteCard from "@/components/PendingInviteCard";
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
+import Tutorial from "@/components/Tutorial";
+import TapToInviteButton from "@/components/TapToInviteButton"; // Add this import
 import { colors } from "@/constants/Colors";
-import { useUserRedux } from "@/store/hooks/useUserRedux";
-import InviteButton from "@/components/InviteButton";
-import PendingInviteCard from "@/components/PendingInviteCard";
-import DateModal from "@/app/date-modal";
-import Tutorial from "@/components/Tutorial"; // Add this import
 import { useNotification } from "@/contexts/NotificationContext";
-import TrustCenter from "@/components/TrustCenter"; // Add this import
+import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { shareMessage } from "@/utils/helpers";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -34,7 +33,6 @@ export default function RelationshipScreen() {
     invites,
     updateExistingRelationship,
     editExistingRelationship, // Use the new API function
-    sendUserInvite,
     fetchUser,
     cancelUserInvite, // Add this
     recordShareAttempt,
@@ -142,137 +140,12 @@ export default function RelationshipScreen() {
     console.log("View memories pressed");
   };
 
-  const handleInvite = async () => {
-    console.log("Invite pressed");
-    setIsLoading(true);
-
-    try {
-      // Send invite with default "DATING" relationship type, but don't update local state yet
-      const response = await sendUserInvite("DATING", false);
-      const inviteId = response.data.invite.id;
-
-      // Create the invite link
-      const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
-      const shareMessage = `Hey! I'd like to make it official. Press this link to make us official`;
-
-      // Show native share dialog
-      try {
-        const result = await Share.share({
-          message: shareMessage,
-          url: inviteLink, // iOS will use this for the URL
-          title: "My Relationship",
-        });
-
-        if (result.action === Share.sharedAction) {
-          // Record successful share attempt with detailed activity type
-          try {
-            const shareMethod = result.activityType
-              ? `native_share:${result.activityType}`
-              : "native_share:unknown";
-
-            await recordShareAttempt(inviteId, {
-              shareMethod,
-              wasSuccessful: true,
-              wasAborted: false,
-              platform: Platform.OS,
-              appVersion: "1.0.0", // You can get this from your app config
-            });
-
-            console.log(
-              "Share successful via:",
-              result.activityType || "unknown"
-            );
-          } catch (shareTrackingError) {
-            console.error("Failed to track share attempt:", shareTrackingError);
-            // Don't block the flow if tracking fails
-          }
-
-          addNotification({
-            title: "Invite Shared",
-            description: "Your invite link has been shared successfully",
-            type: "success",
-            emoji: "🎉",
-          });
-
-          // Only refresh user data after successful share
-          await fetchUser();
-        } else {
-          // Record aborted share attempt
-          try {
-            await recordShareAttempt(inviteId, {
-              shareMethod: "native_share:cancelled",
-              wasSuccessful: false,
-              wasAborted: true,
-              platform: Platform.OS,
-              appVersion: "1.0.0",
-            });
-
-            console.log("Share cancelled by user");
-          } catch (shareTrackingError) {
-            console.error("Failed to track aborted share:", shareTrackingError);
-          }
-
-          // User dismissed or cancelled the share dialog
-          // Cancel the invite in the backend
-          try {
-            await cancelUserInvite(inviteId);
-            console.log("Invite cancelled due to share dismissal");
-          } catch (cancelError) {
-            console.error(
-              "Failed to cancel invite after share dismissal:",
-              cancelError
-            );
-            // Don't show error to user since they dismissed the share anyway
-          }
-        }
-      } catch (shareError) {
-        console.error("Error sharing:", shareError);
-
-        // Record failed share attempt
-        try {
-          await recordShareAttempt(inviteId, {
-            shareMethod: "native_share:error",
-            wasSuccessful: false,
-            wasAborted: false,
-            errorMessage:
-              shareError instanceof Error
-                ? shareError.message
-                : String(shareError),
-            platform: Platform.OS,
-            appVersion: "1.0.0",
-          });
-        } catch (shareTrackingError) {
-          console.error("Failed to track failed share:", shareTrackingError);
-        }
-
-        // Cancel the invite since sharing failed
-        try {
-          await cancelUserInvite(inviteId);
-          console.log("Invite cancelled due to share error");
-        } catch (cancelError) {
-          console.error(
-            "Failed to cancel invite after share error:",
-            cancelError
-          );
-        }
-
-        Alert.alert("Share Error", "Failed to share the invite link");
-      }
-    } catch (error: any) {
-      console.error("Error creating invite:", error);
-      const errorMessage =
-        error.response?.data?.error || "Failed to create invitation";
-      Alert.alert("Error", errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Remove the entire handleInvite function - it's now in TapToInviteButton
 
   const handleShareInvite = async (inviteId: string) => {
     try {
       // Create the invite link using the existing invite ID
       const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
-      const shareMessage = `Hey! I'd like to make it official. Press this link to make us official`;
 
       // Show native share dialog
       const result = await Share.share({
@@ -410,43 +283,97 @@ export default function RelationshipScreen() {
 
   // Function to get the appropriate image based on relationship status
   const getRelationshipImage = (status?: string) => {
+    if (!relationshipData.relationship) {
+      // Check if user has pending invites first
+      const hasPendingInvites =
+        relationshipData.pendingInvites &&
+        relationshipData.pendingInvites.length > 0;
+
+      if (hasPendingInvites) {
+        return require("@/assets/images/pending.png");
+      }
+
+      // User is single - check their isSingle preference
+      if (user?.isSingle === false) {
+        return require("@/assets/images/unknown.png");
+      }
+      return require("@/assets/images/single.png");
+    }
+
     switch (status) {
       case "MARRIED":
         return require("@/assets/images/married.png");
-      case "SITUATIONSHIP":
-        return require("@/assets/images/situationship.png");
+      case "ENGAGED":
+        return require("@/assets/images/engaged.png");
       case "DATING":
       default:
         return require("@/assets/images/dating.png");
     }
   };
 
-  // Function to get user-friendly status text
-  const getStatusText = (status?: string) => {
-    switch (status) {
-      case "DATING":
-        return "Dating";
-      case "ENGAGED":
-        return "Engaged";
-      case "MARRIED":
-        return "Married";
-      case "SEPARATED":
-        return "Separated";
-      case "WIDOWED":
-        return "Widowed";
-      case "SITUATIONSHIP":
-        return "Situationship";
-      case "FRIENDS_WITH_BENEFITS":
-        return "Friends with Benefits";
-      case "ON_A_BREAK":
-        return "On a Break";
-      case "OPEN_RELATIONSHIP":
-        return "Open Relationship";
-      case "POLYAMOROUS":
-        return "Polyamorous";
-      default:
-        return "In Relationship";
+  // Get current status display text
+  const getCurrentStatusText = () => {
+    if (relationshipData.relationship) {
+      switch (relationshipData.relationship.status) {
+        case "DATING":
+          return "Dating";
+        case "ENGAGED":
+          return "Engaged";
+        case "MARRIED":
+          return "Married";
+        default:
+          return "In Relationship";
+      }
     }
+
+    // Check if user has pending invites first
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+
+    if (hasPendingInvites) {
+      return "Pending";
+    }
+
+    // User is single - check their isSingle preference
+    if (user?.isSingle === false) {
+      return "Relationship Status Private";
+    }
+    return "Single";
+  };
+
+  // Function to get single user image based on their preference and invite status
+  const getSingleUserImage = () => {
+    // Check if user has pending invites first
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+
+    if (hasPendingInvites) {
+      return require("@/assets/images/pending.png");
+    }
+
+    if (user?.isSingle === false) {
+      return require("@/assets/images/unknown.png");
+    }
+    return require("@/assets/images/single.png");
+  };
+
+  // Function to get single user status text based on their preference and invite status
+  const getSingleUserStatusText = () => {
+    // Check if user has pending invites first
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+
+    if (hasPendingInvites) {
+      return "Pending";
+    }
+
+    if (user?.isSingle === false) {
+      return "Private";
+    }
+    return "Single";
   };
 
   const handleTutorial = () => {
@@ -473,24 +400,33 @@ export default function RelationshipScreen() {
 
         <View style={styles.content}>
           {/* Single Profile Section */}
-          <View style={styles.profileSection}>
+          <TouchableOpacity
+            style={styles.profileSection}
+            onPress={handleManage}
+            activeOpacity={0.8}>
             <View style={styles.singleImageContainer}>
               <View style={styles.imagePlaceholder}>
                 <Image
-                  source={require("@/assets/images/single.png")}
+                  source={getSingleUserImage()}
                   style={styles.singleImage}
                   resizeMode="contain"
                 />
               </View>
+              <TouchableOpacity
+                style={styles.manageIconContainer}
+                onPress={handleManage}
+                activeOpacity={0.8}></TouchableOpacity>
             </View>
 
             <View style={styles.relationshipInfo}>
-              <Text style={styles.statusText}>Single</Text>
+              <Text style={styles.statusText}>{getSingleUserStatusText()}</Text>
               <Text style={styles.partnerText}>
-                {hasPendingInvites ? "Invite pending..." : "Ready to connect"}
+                {hasPendingInvites
+                  ? "Waiting for confirmation"
+                  : "Ready to connect"}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Invite Button or Pending Invites */}
           <View style={styles.inviteContainer}>
@@ -508,7 +444,7 @@ export default function RelationshipScreen() {
                 )}
               </View>
             ) : (
-              <InviteButton onPress={handleInvite} />
+              <TapToInviteButton />
             )}
           </View>
 
@@ -535,34 +471,19 @@ export default function RelationshipScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Quick Actions */}
-          <View style={styles.quickActions}>
+          {/* Settings Row at Bottom */}
+          <View style={styles.bottomContainer}>
             <TouchableOpacity
-              style={styles.quickActionItem}
-              onPress={handleManage}
-              activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="construct"
-                  size={iconSize}
-                  color={colors.text.secondary}
-                />
-              </View>
-              {/* <Text style={styles.quickActionText}>Manage</Text> */}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionItem}
+              style={styles.settingsRow}
               onPress={handleEditProfile}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="settings"
-                  size={iconSize}
-                  color={colors.text.secondary}
-                />
-              </View>
-              {/* <Text style={styles.quickActionText}>Settings</Text> */}
+              <Ionicons
+                name="settings"
+                size={16}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.settingsText}>Settings</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -580,7 +501,10 @@ export default function RelationshipScreen() {
 
       <View style={styles.content}>
         {/* Profile Section */}
-        <View style={styles.profileSection}>
+        <TouchableOpacity
+          style={styles.profileSection}
+          onPress={handleManage}
+          activeOpacity={0.8}>
           <View style={styles.datingImageContainer}>
             <View style={styles.imagePlaceholder}>
               <Image
@@ -591,19 +515,21 @@ export default function RelationshipScreen() {
                 resizeMode="contain"
               />
             </View>
+            <TouchableOpacity
+              style={styles.manageIconContainer}
+              onPress={handleManage}
+              activeOpacity={0.8}></TouchableOpacity>
           </View>
 
           <View style={styles.relationshipInfo}>
-            <Text style={styles.statusText}>
-              {getStatusText(relationshipData.relationship?.status)}
-            </Text>
+            <Text style={styles.statusText}>{getCurrentStatusText()}</Text>
             <Text style={styles.partnerText}>
               {relationshipData.partner?.name ||
                 relationshipData.partner?.phone ||
                 "Partner"}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Stats Section with actual duration */}
         <TouchableOpacity
@@ -655,34 +581,15 @@ export default function RelationshipScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
+        {/* Settings Row at Bottom */}
+        <View style={styles.bottomContainer}>
           <TouchableOpacity
-            style={styles.quickActionItem}
-            onPress={handleManage}
-            activeOpacity={0.7}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons
-                name="construct"
-                size={iconSize}
-                color={colors.text.secondary}
-              />
-            </View>
-            <Text style={styles.quickActionText}>Manage</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionItem}
+            style={styles.settingsRow}
             onPress={handleEditProfile}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.7}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons
-                name="settings"
-                size={iconSize}
-                color={colors.text.secondary}
-              />
-            </View>
-            <Text style={styles.quickActionText}>Settings</Text>
+            <Ionicons name="settings" size={16} color={colors.text.secondary} />
+            <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -723,12 +630,14 @@ const styles = StyleSheet.create({
     borderColor: colors.border.medium,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
 
   // Single state styles
   singleImageContainer: {
     alignItems: "center",
     marginBottom: 24,
+    position: "relative",
   },
   singleImage: {
     width: 120,
@@ -754,6 +663,7 @@ const styles = StyleSheet.create({
   datingImageContainer: {
     alignItems: "center",
     marginBottom: 16,
+    position: "relative",
   },
   datingImage: {
     width: 120,
@@ -776,7 +686,9 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: colors.primary,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.border.medium,
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 16,
@@ -791,12 +703,12 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.white,
+    color: colors.text.primary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: colors.white,
+    color: colors.text.secondary,
     fontWeight: "500",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -805,7 +717,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: colors.white,
+    backgroundColor: colors.border.medium,
     marginHorizontal: 16,
     opacity: 0.5,
   },
@@ -843,7 +755,7 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingTop: 0,
   },
@@ -870,7 +782,7 @@ const styles = StyleSheet.create({
   tutorialButton: {
     backgroundColor: colors.background.primary,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.border.medium,
   },
   tutorialButtonText: {
     fontSize: 16,
@@ -881,11 +793,47 @@ const styles = StyleSheet.create({
   trustCenterButton: {
     backgroundColor: colors.background.primary,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.border.medium,
   },
   trustCenterButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.primary,
+  },
+  // Add manage icon styles
+  manageIconContainer: {
+    position: "absolute",
+    top: -10,
+    right: -10,
+    // backgroundColor: colors.background.primary,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Remove quickActions styles and add new bottom styles
+  bottomContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingBottom: 120,
+    alignItems: "center",
+  },
+
+  settingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: 100,
+  },
+
+  settingsText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    fontWeight: "600",
   },
 });

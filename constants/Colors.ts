@@ -4,6 +4,7 @@ export const colors = {
   // primary: "#1a2151",
   hero: "#121212",
   heroSecondary: "white",
+  logo: "#115a9f",
   offBlack: "#121212",
   primary: "#000000",
   primaryLight: "#2a3161",

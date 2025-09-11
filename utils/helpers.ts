@@ -9,3 +9,5 @@ export const playHapticDrumRoll = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 };
+
+export const shareMessage = `Hey! I'd like to make it official. Press this link to make our relationship official`;

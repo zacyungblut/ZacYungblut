@@ -255,7 +255,8 @@ export default function SearchScreen() {
       {!searchResult && (
         <View style={styles.fixedPremiumSection}>
           <Text style={styles.premiumText}>
-            Limited to 2 free searches per month.
+            <Text style={{ fontWeight: "bold" }}>2 searches</Text> left for this
+            month.
           </Text>
           <Text style={styles.premiumSubtext}>
             Upgrade for 8+ monthly searches +{" "}

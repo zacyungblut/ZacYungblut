@@ -14,6 +14,7 @@ import { Provider } from "react-redux";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { Platform } from "react-native";
+import * as Updates from "expo-updates";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthService } from "@/utils/authStorage";
@@ -34,7 +35,7 @@ export {
 SplashScreen.preventAutoHideAsync();
 
 const APIKeys = {
-  apple: "appl_apvtgolBpXDmjTRmDAfLThAhLjj",
+  apple: "appl_amcQHdadsBIISeMxUtFqoqkLVuD",
   google: "replace_me",
 };
 
@@ -61,6 +62,29 @@ const initializePurchases = async () => {
     console.log("Purchases configured successfully");
   } catch (error) {
     console.error("Error configuring Purchases:", error);
+  }
+};
+
+// Check for updates when app starts
+const checkForUpdates = async () => {
+  if (__DEV__) {
+    console.log("Skipping update check in development");
+    return;
+  }
+
+  try {
+    const update = await Updates.checkForUpdateAsync();
+
+    if (update.isAvailable) {
+      console.log("Update available, downloading...");
+      await Updates.fetchUpdateAsync();
+      console.log("Update downloaded, restarting app...");
+      await Updates.reloadAsync();
+    } else {
+      console.log("No updates available");
+    }
+  } catch (error) {
+    console.error("Error checking for updates:", error);
   }
 };
 
@@ -180,6 +204,9 @@ function AppContent() {
   useEffect(() => {
     // Initialize purchases when app starts
     initializePurchases();
+
+    // Check for updates when app starts
+    checkForUpdates();
 
     // Check authentication and fetch user when fonts are loaded
     const checkAuthAndFetchUser = async () => {

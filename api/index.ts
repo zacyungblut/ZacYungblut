@@ -135,3 +135,13 @@ export const editRelationship = async (
 export const getUserRelationships = async () => {
   return API.get("/relationships");
 };
+
+// Add this new function at the end of the file
+export const updateUserSingleStatus = async (isSingle: boolean) => {
+  return API.put("/auth/single-status", { isSingle });
+};
+
+// Add this new function at the end of the file
+export const deleteAccount = async () => {
+  return API.delete("/auth/delete-account");
+};

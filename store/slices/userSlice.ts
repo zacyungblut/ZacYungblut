@@ -4,7 +4,12 @@ import {
   PayloadAction,
   createSelector,
 } from "@reduxjs/toolkit";
-import { getCurrentUser, editRelationship as editRelationshipAPI } from "@/api";
+import {
+  getCurrentUser,
+  editRelationship as editRelationshipAPI,
+  deleteAccount as deleteAccountAPI,
+  updateUserSingleStatus as updateUserSingleStatusAPI, // Add this import
+} from "@/api";
 
 // Define types based on your schema
 interface ShareAttempt {
@@ -76,6 +81,7 @@ interface User {
   phone: string;
   name?: string;
   verified: boolean;
+  isSingle: boolean; // Add this field
   createdAt: string;
   updatedAt: string;
   relationships: Relationship[];
@@ -123,6 +129,36 @@ export const editRelationship = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.error || "Failed to update relationship"
+      );
+    }
+  }
+);
+
+// Add this new async thunk after editRelationship
+export const deleteUserAccount = createAsyncThunk(
+  "user/deleteAccount",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await deleteAccountAPI();
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to delete account"
+      );
+    }
+  }
+);
+
+// Add this new async thunk after deleteUserAccount
+export const updateSingleStatus = createAsyncThunk(
+  "user/updateSingleStatus",
+  async (isSingle: boolean, { rejectWithValue }) => {
+    try {
+      const response = await updateUserSingleStatusAPI(isSingle);
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update single status"
       );
     }
   }
@@ -285,6 +321,38 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(editRelationship.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Add delete account cases
+      .addCase(deleteUserAccount.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.fulfilled, (state) => {
+        // Clear all user data on successful deletion
+        state.loading = false;
+        state.user = null;
+        state.error = null;
+      })
+      .addCase(deleteUserAccount.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Add update single status cases
+      .addCase(updateSingleStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateSingleStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) {
+          state.user.isSingle = action.payload.isSingle;
+          state.user.updatedAt = action.payload.updatedAt;
+        }
+        state.error = null;
+      })
+      .addCase(updateSingleStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
   Alert,
   ScrollView,
   Linking,
+  Share,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -13,6 +15,9 @@ import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import { colors } from "@/constants/Colors";
 import { AuthService } from "@/utils/authStorage";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { useNotification } from "@/contexts/NotificationContext";
+import { shareMessage } from "@/utils/helpers";
 
 interface SettingItem {
   id: string;
@@ -22,9 +27,24 @@ interface SettingItem {
   onPress: () => void;
   showChevron?: boolean;
   destructive?: boolean;
+  value?: string;
+  loading?: boolean;
 }
 
 export default function SettingsScreen() {
+  const {
+    deleteUserAccountPermanently,
+    loading,
+    user,
+    invites,
+    sendUserInvite,
+    fetchUser,
+    cancelUserInvite,
+    recordShareAttempt,
+  } = useUserRedux();
+  const { addNotification } = useNotification();
+  const [isInviteLoading, setIsInviteLoading] = useState(false);
+
   const handleBackPress = () => {
     router.back();
   };
@@ -33,19 +53,8 @@ export default function SettingsScreen() {
     router.push("/premium");
   };
 
-  const handleSubscriptionManagement = () => {
-    // TODO: Navigate to subscription management
-    console.log("Subscription management pressed");
-  };
-
-  const handleLanguageRegion = () => {
-    // TODO: Navigate to language and region settings
-    console.log("Language and region pressed");
-  };
-
-  const handleThemeDisplay = () => {
-    // TODO: Navigate to theme and display settings
-    console.log("Theme and display pressed");
+  const handleManageRelationship = () => {
+    router.push("/manage");
   };
 
   const handleGetSupport = () => {
@@ -58,10 +67,151 @@ export default function SettingsScreen() {
     });
   };
 
+  const handleTermsOfService = () => {
+    Linking.openURL("https://makeitofficial.us/terms").catch((err) => {
+      console.error("Failed to open terms URL:", err);
+      Alert.alert(
+        "Error",
+        "Unable to open terms of service page. Please try again later."
+      );
+    });
+  };
+
+  const handleViewSearchHistory = () => {
+    router.push("/past-searches");
+  };
+
+  const handleViewReferrals = () => {
+    // TODO: Navigate to referrals screen
+    console.log("View referrals pressed");
+  };
+
+  const handleShareReferralLink = async () => {
+    console.log("Share referral link pressed");
+    setIsInviteLoading(true);
+
+    try {
+      // Send invite with default "DATING" relationship type
+      const response = await sendUserInvite("DATING", false);
+      const inviteId = response.data.invite.id;
+
+      // Create the invite link
+      const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
+
+      // Show native share dialog
+      try {
+        const result = await Share.share({
+          message: shareMessage,
+          url: inviteLink,
+          title: "My Relationship",
+        });
+
+        if (result.action === Share.sharedAction) {
+          // Record successful share attempt
+          try {
+            const shareMethod = result.activityType
+              ? `native_share:${result.activityType}`
+              : "native_share:unknown";
+
+            await recordShareAttempt(inviteId, {
+              shareMethod,
+              wasSuccessful: true,
+              wasAborted: false,
+              platform: Platform.OS,
+              appVersion: "1.0.0",
+            });
+
+            console.log(
+              "Share successful via:",
+              result.activityType || "unknown"
+            );
+          } catch (shareTrackingError) {
+            console.error("Failed to track share attempt:", shareTrackingError);
+          }
+
+          addNotification({
+            title: "Referral Link Shared",
+            description: "Your referral link has been shared successfully",
+            type: "success",
+            emoji: "🎉",
+          });
+
+          // Refresh user data after successful share
+          await fetchUser();
+        } else {
+          // Record aborted share attempt
+          try {
+            await recordShareAttempt(inviteId, {
+              shareMethod: "native_share:cancelled",
+              wasSuccessful: false,
+              wasAborted: true,
+              platform: Platform.OS,
+              appVersion: "1.0.0",
+            });
+
+            console.log("Share cancelled by user");
+          } catch (shareTrackingError) {
+            console.error("Failed to track aborted share:", shareTrackingError);
+          }
+
+          // Cancel the invite since user dismissed share
+          try {
+            await cancelUserInvite(inviteId);
+            console.log("Invite cancelled due to share dismissal");
+          } catch (cancelError) {
+            console.error(
+              "Failed to cancel invite after share dismissal:",
+              cancelError
+            );
+          }
+        }
+      } catch (shareError) {
+        console.error("Error sharing:", shareError);
+
+        // Record failed share attempt
+        try {
+          await recordShareAttempt(inviteId, {
+            shareMethod: "native_share:error",
+            wasSuccessful: false,
+            wasAborted: false,
+            errorMessage:
+              shareError instanceof Error
+                ? shareError.message
+                : String(shareError),
+            platform: Platform.OS,
+            appVersion: "1.0.0",
+          });
+        } catch (shareTrackingError) {
+          console.error("Failed to track failed share:", shareTrackingError);
+        }
+
+        // Cancel the invite since sharing failed
+        try {
+          await cancelUserInvite(inviteId);
+          console.log("Invite cancelled due to share error");
+        } catch (cancelError) {
+          console.error(
+            "Failed to cancel invite after share error:",
+            cancelError
+          );
+        }
+
+        Alert.alert("Share Error", "Failed to share the referral link");
+      }
+    } catch (error: any) {
+      console.error("Error creating invite:", error);
+      const errorMessage =
+        error.response?.data?.error || "Failed to create invitation";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setIsInviteLoading(false);
+    }
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
-      "Are you sure you want to permanently delete your account? This action cannot be undone.",
+      "Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data, relationships, and invites.",
       [
         {
           text: "Cancel",
@@ -70,9 +220,20 @@ export default function SettingsScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            // TODO: Implement account deletion
-            console.log("Account deletion confirmed");
+          onPress: async () => {
+            try {
+              await deleteUserAccountPermanently();
+              // On successful deletion, the user will be logged out automatically
+              // and redirected to auth screen via the Redux state change
+              router.replace("/auth");
+            } catch (error: any) {
+              console.error("Account deletion failed:", error);
+              Alert.alert(
+                "Deletion Failed",
+                error.payload ||
+                  "Failed to delete account. Please try again later."
+              );
+            }
           },
         },
       ]
@@ -96,14 +257,36 @@ export default function SettingsScreen() {
     ]);
   };
 
+  // Calculate search-related data
+  const searchData = React.useMemo(() => {
+    if (!user) return null;
+
+    // Get search transactions from user data (if available)
+    const searchTransactions = (user as any).searchTransactions || [];
+    const totalSearches = searchTransactions.length;
+
+    // For now, we'll use a simple limit system
+    // In a real app, this would be based on user's plan/subscription
+    const searchLimit = 10; // Free users get 10 searches
+    const searchesUsed = totalSearches;
+    const searchesLeft = Math.max(0, searchLimit - searchesUsed);
+
+    // Calculate referrals (users who joined through invites)
+    const acceptedInvites = invites.sent.filter(
+      (invite) => invite.status === "ACCEPTED"
+    );
+    const referralCount = acceptedInvites.length;
+
+    return {
+      searchesLeft,
+      searchesUsed,
+      searchLimit,
+      referralCount,
+      totalSearches,
+    };
+  }, [user, invites.sent]);
+
   const accountSettings: SettingItem[] = [
-    {
-      id: "subscription",
-      title: "Subscription Management",
-      icon: "card-outline",
-      onPress: handleSubscriptionManagement,
-      showChevron: true,
-    },
     {
       id: "premium",
       title: "Upgrade to Premium",
@@ -112,22 +295,56 @@ export default function SettingsScreen() {
       onPress: handlePremiumPress,
       showChevron: true,
     },
-  ];
-
-  const appSettings: SettingItem[] = [
     {
-      id: "language",
-      title: "Language & Region",
-      icon: "globe-outline",
-      onPress: handleLanguageRegion,
+      id: "relationship",
+      title: "Manage Relationship",
+      icon: "build-outline",
+      onPress: handleManageRelationship,
       showChevron: true,
     },
+  ];
+
+  const searchSettings: SettingItem[] = [
     {
-      id: "theme",
-      title: "Theme & Display",
-      icon: "color-palette-outline",
-      onPress: handleThemeDisplay,
+      id: "searches-remaining",
+      title: "Searches Remaining",
+      icon: "search-outline",
+      onPress: handleViewSearchHistory,
       showChevron: true,
+      value: searchData
+        ? `${searchData.searchesLeft} of ${searchData.searchLimit}`
+        : "0 of 10",
+    },
+    {
+      id: "search-history",
+      title: "Search History",
+      icon: "time-outline",
+      onPress: handleViewSearchHistory,
+      showChevron: true,
+      value: searchData
+        ? `${searchData.totalSearches} searches made`
+        : "0 searches made",
+    },
+  ];
+
+  const referralSettings: SettingItem[] = [
+    {
+      id: "my-referrals",
+      title: "My Referrals",
+      icon: "people-outline",
+      onPress: handleViewReferrals,
+      showChevron: true,
+      value: searchData
+        ? `${searchData.referralCount} friends joined`
+        : "0 friends joined",
+    },
+    {
+      id: "referral-link",
+      title: "My Referral Link",
+      icon: "link-outline",
+      onPress: handleShareReferralLink,
+      showChevron: true,
+      loading: isInviteLoading,
     },
   ];
 
@@ -137,6 +354,13 @@ export default function SettingsScreen() {
       title: "Get Support",
       icon: "help-circle-outline",
       onPress: handleGetSupport,
+      showChevron: true,
+    },
+    {
+      id: "terms",
+      title: "View Terms of Service",
+      icon: "document-text-outline",
+      onPress: handleTermsOfService,
       showChevron: true,
     },
   ];
@@ -166,7 +390,8 @@ export default function SettingsScreen() {
       key={item.id}
       style={[styles.settingItem, item.destructive && styles.destructiveItem]}
       onPress={item.onPress}
-      activeOpacity={0.7}>
+      activeOpacity={0.7}
+      disabled={item.loading}>
       <View style={styles.settingContent}>
         <Ionicons
           name={item.icon as any}
@@ -174,14 +399,19 @@ export default function SettingsScreen() {
           color={item.color || colors.text.secondary}
           style={styles.settingIcon}
         />
-        <Text
-          style={[
-            styles.settingText,
-            item.color && { color: item.color },
-            item.destructive && styles.destructiveText,
-          ]}>
-          {item.title}
-        </Text>
+        <View style={styles.textContainer}>
+          <Text
+            style={[
+              styles.settingText,
+              item.color && { color: item.color },
+              item.destructive && styles.destructiveText,
+              item.loading && styles.loadingText,
+            ]}>
+            {item.title}
+          </Text>
+          {item.value && <Text style={styles.valueText}>{item.value}</Text>}
+          {item.loading && <Text style={styles.statusText}>Loading...</Text>}
+        </View>
       </View>
       {item.showChevron && (
         <Ionicons
@@ -221,7 +451,8 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {renderSettingSection("Account", accountSettings)}
-        {renderSettingSection("App Settings", appSettings)}
+        {searchData && renderSettingSection("Searches", searchSettings)}
+        {searchData && renderSettingSection("Referrals", referralSettings)}
         {renderSettingSection("Support", supportSettings)}
         {renderSettingSection("Account Actions", dangerousSettings, true)}
 
@@ -275,8 +506,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 20, // Increased from 16 to match manage.tsx
     backgroundColor: colors.background.tertiary,
+    minHeight: 60, // Added minimum height for better spacing
   },
   destructiveItem: {
     backgroundColor: colors.background.secondary,
@@ -290,6 +522,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
     width: 24,
   },
+  textContainer: {
+    flex: 1,
+  },
   settingText: {
     fontSize: 16,
     fontWeight: "500",
@@ -297,6 +532,20 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: colors.status.error || "#FF3B30",
+  },
+  loadingText: {
+    color: colors.text.secondary,
+  },
+  valueText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  statusText: {
+    fontSize: 14,
+    color: colors.primary,
+    marginTop: 2,
+    fontStyle: "italic",
   },
   separator: {
     height: 1,

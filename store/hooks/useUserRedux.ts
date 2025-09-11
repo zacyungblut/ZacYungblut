@@ -15,6 +15,8 @@ import {
   addRelationship,
   updateRelationship,
   editRelationship,
+  deleteUserAccount,
+  updateSingleStatus,
   addReviewRequest,
   updateReviewRequest,
   selectUser,
@@ -189,6 +191,30 @@ export const useUserRedux = () => {
     }
   };
 
+  const deleteUserAccountPermanently = async () => {
+    try {
+      const result = await dispatch(deleteUserAccount());
+
+      // If successful, also clear the auth token
+      if (deleteUserAccount.fulfilled.match(result)) {
+        AuthService.removeAuthToken();
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const updateUserSingleStatus = async (isSingle: boolean) => {
+    try {
+      const result = await dispatch(updateSingleStatus(isSingle));
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     // User data
     user,
@@ -200,6 +226,8 @@ export const useUserRedux = () => {
     saveUser,
     logoutUser,
     updateUserData,
+    updateUserSingleStatus,
+    deleteUserAccountPermanently,
 
     // Invites data and actions
     invites,
