@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dragochar.official"
+      "bundleIdentifier": "com.dragochar.official",
+      "associatedDomains": ["applinks:makeitofficial.us"]
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +24,21 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.dragochar.official"
+      "package": "com.dragochar.official",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "makeitofficial.us",
+              "pathPrefix": "/refer"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

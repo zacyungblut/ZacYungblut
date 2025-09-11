@@ -15,6 +15,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { Platform } from "react-native";
 import * as Updates from "expo-updates";
+import * as Linking from "expo-linking";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthService } from "@/utils/authStorage";
@@ -201,6 +202,84 @@ function AppContent() {
     }
   };
 
+  // Handle deep linking for referrals
+  const handleDeepLink = (url: string) => {
+    console.log("Deep link received:", url);
+
+    // Parse the URL manually for custom schemes
+    try {
+      // Handle custom scheme URLs like "official://refer/test123"
+      if (url.startsWith("official://")) {
+        const urlWithoutScheme = url.replace("official://", "");
+        console.log("URL without scheme:", urlWithoutScheme);
+
+        if (urlWithoutScheme.startsWith("refer/")) {
+          const referrerId = urlWithoutScheme.replace("refer/", "");
+          if (referrerId) {
+            console.log("Referral ID found:", referrerId);
+            // Store the referral ID using MMKV
+            AuthService.setReferralCode(referrerId);
+
+            // If user is not authenticated, navigate to signup
+            const token = AuthService.getAuthToken();
+            if (!token) {
+              router.replace("/signup");
+            } else {
+              // User is already logged in, navigate to tabs where modal will show
+              console.log("User already authenticated, navigating to tabs");
+              router.replace("/(tabs)");
+            }
+          }
+        }
+      } else {
+        // Handle HTTP/HTTPS URLs with Linking.parse
+        const { hostname, path } = Linking.parse(url);
+        console.log("Parsed URL - hostname:", hostname, "path:", path);
+
+        if (path && path.includes("/refer/")) {
+          const referrerId = path.split("/refer/")[1];
+          if (referrerId) {
+            console.log("Referral ID found:", referrerId);
+            // Store the referral ID using MMKV
+            AuthService.setReferralCode(referrerId);
+
+            // If user is not authenticated, navigate to signup
+            const token = AuthService.getAuthToken();
+            if (!token) {
+              router.replace("/signup");
+            } else {
+              // User is already logged in, navigate to tabs where modal will show
+              console.log("User already authenticated, navigating to tabs");
+              router.replace("/(tabs)");
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing deep link:", error);
+    }
+  };
+
+  // Add this useEffect for deep link handling
+  useEffect(() => {
+    // Handle the initial URL when the app is opened via deep link
+    const getInitialURL = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleDeepLink(initialUrl);
+      }
+    };
+
+    getInitialURL();
+
+    // Handle deep links when the app is already running
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
   useEffect(() => {
     // Initialize purchases when app starts
     initializePurchases();
@@ -340,6 +419,10 @@ function RootLayoutNav() {
         />
         <Stack.Screen name="past-searches" options={{ headerShown: false }} />
         <Stack.Screen name="trust-center" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="why-limit-searches"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="(tabs)"
           options={{

@@ -23,6 +23,9 @@ import {
   selectUserInvites,
   selectUserRelationships,
   selectUserReviewRequests,
+  selectUserSearchTransactions,
+  selectUserReferrals,
+  selectUserBonusSearches,
   addShareAttemptToInvite,
 } from "@/store/slices/userSlice";
 import { AuthService } from "@/utils/authStorage";
@@ -44,6 +47,9 @@ export const useUserRedux = () => {
   const invites = useAppSelector(selectUserInvites);
   const relationships = useAppSelector(selectUserRelationships);
   const reviewRequests = useAppSelector(selectUserReviewRequests);
+  const searchTransactions = useAppSelector(selectUserSearchTransactions);
+  const referrals = useAppSelector(selectUserReferrals);
+  const bonusSearches = useAppSelector(selectUserBonusSearches);
 
   const fetchUser = async () => {
     const result = await dispatch(loadUser());
@@ -246,5 +252,14 @@ export const useUserRedux = () => {
     saveUserReviewRequest,
     addNewReviewRequest,
     updateExistingReviewRequest,
+
+    // Search transactions data
+    searchTransactions,
+
+    // Referrals data
+    referrals,
+
+    // Bonus searches data
+    bonusSearches,
   };
 };

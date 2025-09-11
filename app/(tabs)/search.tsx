@@ -4,10 +4,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Keyboard,
+  Share,
+  Alert,
+  Linking,
 } from "react-native";
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,6 +29,8 @@ import { DEFAULT_COUNTRY } from "@/constants/countryCodes";
 import { colors } from "@/constants/Colors";
 import { searchUserByPhone } from "@/api";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { calculateRemainingSearches, referralMessage } from "@/utils/helpers";
+import { useNotification } from "@/contexts/NotificationContext";
 
 const { width } = Dimensions.get("window");
 
@@ -45,6 +51,7 @@ export default function SearchScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isInviteLoading, setIsInviteLoading] = useState(false);
 
   // Animated value for focus state
   const focusAnimation = useSharedValue(0);
@@ -52,7 +59,14 @@ export default function SearchScreen() {
   const placeholderAnimation = useSharedValue(0);
 
   // Get user data from Redux
-  const { user } = useUserRedux();
+  const { user, fetchUser } = useUserRedux();
+  const { addNotification } = useNotification();
+
+  // Calculate remaining searches
+  const remainingSearches = calculateRemainingSearches(
+    user?.searchTransactions || [],
+    user?.bonusSearches || 0
+  );
 
   const handleInputFocus = () => {
     setIsInputFocused(true);
@@ -78,6 +92,12 @@ export default function SearchScreen() {
   };
 
   const performSearch = async (phone: string) => {
+    // Check if user has remaining searches
+    if (remainingSearches <= 0) {
+      setSearchError("You've used all your searches for this month.");
+      return;
+    }
+
     setIsSearching(true);
     setSearchError(null);
 
@@ -116,6 +136,7 @@ export default function SearchScreen() {
       }
     } finally {
       setIsSearching(false);
+      await fetchUser();
     }
   };
 
@@ -125,6 +146,76 @@ export default function SearchScreen() {
 
     // Perform the search
     await performSearch(phoneNumber);
+  };
+
+  const handlePremiumPress = () => {
+    router.push("/premium");
+  };
+
+  const handleShareReferralLink = async () => {
+    console.log("Share referral link pressed");
+    setIsInviteLoading(true);
+
+    try {
+      // Create the invite link
+      const inviteLink = `https://makeitofficial.us/refer/${user?.id}`;
+
+      // Show native share dialog
+      try {
+        const result = await Share.share({
+          message: referralMessage,
+          url: inviteLink,
+          title: "My Relationship",
+        });
+
+        if (result.action === Share.sharedAction) {
+          // Record successful share attempt
+          try {
+            const shareMethod = result.activityType
+              ? `native_share:${result.activityType}`
+              : "native_share:unknown";
+
+            console.log(
+              "Share successful via:",
+              result.activityType || "unknown"
+            );
+          } catch (shareTrackingError) {
+            console.error("Failed to track share attempt:", shareTrackingError);
+          }
+
+          addNotification({
+            title: "Referral Link Shared",
+            description: "Your referral link has been shared successfully",
+            type: "success",
+            emoji: "🎉",
+          });
+
+          // Refresh user data after successful share
+          await fetchUser();
+        } else {
+          // Record aborted share attempt
+          try {
+            console.log("Share cancelled by user");
+          } catch (shareTrackingError) {
+            console.error("Failed to track aborted share:", shareTrackingError);
+          }
+        }
+      } catch (shareError) {
+        console.error("Error sharing:", shareError);
+        Alert.alert("Share Error", "Failed to share the referral link");
+      }
+    } catch (error: any) {
+      console.error("Error creating invite:", error);
+      const errorMessage =
+        error.response?.data?.error || "Failed to create invitation";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setIsInviteLoading(false);
+    }
+  };
+
+  const handleLearnWhy = () => {
+    router.push("/why-limit-searches");
   };
 
   // Animated styles
@@ -199,10 +290,11 @@ export default function SearchScreen() {
           <TouchableOpacity
             style={[
               styles.checkButton,
-              (!phoneNumber || isSearching) && styles.checkButtonDisabled,
+              (!phoneNumber || isSearching || remainingSearches <= 0) &&
+                styles.checkButtonDisabled,
             ]}
             onPress={handleCheckStatus}
-            disabled={!phoneNumber || isSearching}
+            disabled={!phoneNumber || isSearching || remainingSearches <= 0}
             activeOpacity={0.8}
             delayPressIn={0}
             delayPressOut={0}>
@@ -232,19 +324,73 @@ export default function SearchScreen() {
 
             {searchError && (
               <View style={styles.errorCard}>
-                <Ionicons
-                  name="alert-circle"
-                  size={60}
-                  color={colors.status.error || "#F44336"}
-                />
                 <Text style={styles.errorText}>{searchError}</Text>
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={handleCheckStatus}
-                  delayPressIn={0}
-                  delayPressOut={0}>
-                  <Text style={styles.retryButtonText}>Try Again</Text>
-                </TouchableOpacity>
+
+                {/* Show different buttons based on error type */}
+                {searchError.includes("used all your searches") ? (
+                  <View style={styles.errorButtonsContainer}>
+                    <TouchableOpacity
+                      style={styles.premiumButton}
+                      onPress={handlePremiumPress}
+                      delayPressIn={0}
+                      delayPressOut={0}>
+                      <View style={styles.buttonContent}>
+                        <Ionicons name="star" size={20} color="white" />
+                        <Text style={styles.premiumButtonText}>
+                          Upgrade to Premium
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.referButton,
+                        isInviteLoading && styles.buttonDisabled,
+                      ]}
+                      onPress={handleShareReferralLink}
+                      disabled={isInviteLoading}
+                      delayPressIn={0}
+                      delayPressOut={0}>
+                      <View style={styles.buttonContent}>
+                        {isInviteLoading ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={colors.primary}
+                          />
+                        ) : (
+                          <>
+                            <Ionicons
+                              name="people"
+                              size={20}
+                              color={colors.primary}
+                            />
+                            <Text style={styles.referButtonText}>
+                              Refer a Friend
+                            </Text>
+                          </>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.learnWhyButton}
+                      onPress={handleLearnWhy}
+                      delayPressIn={0}
+                      delayPressOut={0}>
+                      <Text style={styles.learnWhyText}>
+                        Learn why we limit searches
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={handleCheckStatus}
+                    delayPressIn={0}
+                    delayPressOut={0}>
+                    <Text style={styles.retryButtonText}>Try Again</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -255,11 +401,14 @@ export default function SearchScreen() {
       {!searchResult && (
         <View style={styles.fixedPremiumSection}>
           <Text style={styles.premiumText}>
-            <Text style={{ fontWeight: "bold" }}>2 searches</Text> left for this
-            month.
+            <Text style={{ fontWeight: "bold" }}>
+              {remainingSearches}{" "}
+              {remainingSearches === 1 ? "search" : "searches"}
+            </Text>{" "}
+            left for this month.
           </Text>
           <Text style={styles.premiumSubtext}>
-            Upgrade for 8+ monthly searches +{" "}
+            Upgrade for 8 monthly searches +{" "}
             <Text style={styles.premiumLink}>Premium</Text>
           </Text>
         </View>
@@ -357,7 +506,7 @@ const styles = StyleSheet.create({
   // Error Card
   errorCard: {
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 0,
     paddingHorizontal: 24,
   },
 
@@ -367,6 +516,81 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 16,
     marginBottom: 24,
+  },
+
+  errorButtonsContainer: {
+    width: "100%",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  premiumButton: {
+    backgroundColor: colors.primary || "#2563EB",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.primary || "#2563EB",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  referButton: {
+    backgroundColor: colors.background.secondary || "#F8FAFC",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border.medium || "#CBD5E1",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  premiumButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  referButtonText: {
+    color: colors.primary || "#2563EB",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  buttonIcon: {
+    marginRight: 6,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  learnWhyButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+
+  learnWhyText: {
+    color: colors.text.secondary || "#64748B",
+    fontSize: 14,
+    textDecorationLine: "underline",
+    textAlign: "center",
   },
 
   retryButton: {
@@ -406,6 +630,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary || "#64748B",
     textAlign: "center",
+    marginTop: 4,
   },
 
   premiumLink: {

@@ -6,6 +6,7 @@ export const authStorage = new MMKV({
 });
 
 const AUTH_TOKEN_KEY = "authToken";
+const REFERRAL_CODE_KEY = "pendingReferralId";
 
 export class AuthService {
   static getAuthToken(): string | undefined {
@@ -39,5 +40,33 @@ export class AuthService {
   static isAuthenticated(): boolean {
     const token = this.getAuthToken();
     return !!token;
+  }
+
+  static getReferralCode(): string | undefined {
+    try {
+      const referralCode = authStorage.getString(REFERRAL_CODE_KEY);
+      return referralCode;
+    } catch (error) {
+      console.error("Error retrieving referral code:", error);
+      return undefined;
+    }
+  }
+
+  static setReferralCode(referralCode: string): void {
+    try {
+      authStorage.set(REFERRAL_CODE_KEY, referralCode);
+      console.log("Referral code saved successfully:", referralCode);
+    } catch (error) {
+      console.error("Error saving referral code:", error);
+    }
+  }
+
+  static removeReferralCode(): void {
+    try {
+      authStorage.delete(REFERRAL_CODE_KEY);
+      console.log("Referral code removed successfully");
+    } catch (error) {
+      console.error("Error removing referral code:", error);
+    }
   }
 }

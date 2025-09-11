@@ -145,3 +145,18 @@ export const updateUserSingleStatus = async (isSingle: boolean) => {
 export const deleteAccount = async () => {
   return API.delete("/auth/delete-account");
 };
+
+// Add referral claim function
+export const claimReferral = async (
+  referralCode: string,
+  platform?: string,
+  appVersion?: string,
+  buildVersion?: string
+) => {
+  return API.post("/auth/claim-referral", {
+    referralCode,
+    platform,
+    appVersion,
+    buildVersion,
+  });
+};

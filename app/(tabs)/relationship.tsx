@@ -524,6 +524,7 @@ export default function RelationshipScreen() {
           <View style={styles.relationshipInfo}>
             <Text style={styles.statusText}>{getCurrentStatusText()}</Text>
             <Text style={styles.partnerText}>
+              with{" "}
               {relationshipData.partner?.name ||
                 relationshipData.partner?.phone ||
                 "Partner"}

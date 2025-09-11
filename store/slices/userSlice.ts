@@ -76,17 +76,52 @@ interface ReviewRequest {
   updatedAt: string;
 }
 
+// Add SearchTransaction interface
+interface SearchTransaction {
+  id: string;
+  userId: string;
+  targetPhone: string;
+  targetStatus: string;
+  wasSuccessful: boolean;
+  createdAt: string;
+}
+
+// Add ReferralTransaction interfaces
+interface ReferralUser {
+  id: string;
+  phone: string;
+  name?: string;
+}
+
+interface ReferralTransaction {
+  id: string;
+  referrerId: string;
+  claimerId: string;
+  platform?: string;
+  appVersion?: string;
+  buildVersion?: string;
+  claimedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  referrer?: ReferralUser;
+  claimer?: ReferralUser;
+}
+
 interface User {
   id: string;
   phone: string;
   name?: string;
   verified: boolean;
-  isSingle: boolean; // Add this field
+  isSingle: boolean;
+  bonusSearches: number; // Add bonus searches field
   createdAt: string;
   updatedAt: string;
   relationships: Relationship[];
   sentInvites: Invite[];
   reviewRequests: ReviewRequest[];
+  searchTransactions: SearchTransaction[]; // Add search transactions field
+  referralsClaimed: ReferralTransaction[]; // Add referrals claimed
+  referralsShared: ReferralTransaction[]; // Add referrals shared
 }
 
 interface UserState {
@@ -392,4 +427,20 @@ export const selectUserRelationships = createSelector(
 export const selectUserReviewRequests = createSelector(
   [selectUser],
   (user) => user?.reviewRequests || []
+);
+
+// Add new selectors for search transactions and referrals
+export const selectUserSearchTransactions = createSelector(
+  [selectUser],
+  (user) => user?.searchTransactions || []
+);
+
+export const selectUserReferrals = createSelector([selectUser], (user) => ({
+  claimed: user?.referralsClaimed || [],
+  shared: user?.referralsShared || [],
+}));
+
+export const selectUserBonusSearches = createSelector(
+  [selectUser],
+  (user) => user?.bonusSearches || 0
 );

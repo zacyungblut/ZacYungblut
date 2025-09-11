@@ -50,13 +50,13 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showCountryModal, setShowCountryModal] = useState(false);
-  const hiddenInputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInput>(null);
 
   // Handle delayed auto focus on phone number input
   useEffect(() => {
     if (autoFocus === true) {
       const timer = setTimeout(() => {
-        hiddenInputRef.current?.focus();
+        inputRef.current?.focus();
       }, 600);
 
       return () => clearTimeout(timer);
@@ -75,7 +75,7 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
   };
 
   const handleContainerPress = () => {
-    hiddenInputRef.current?.focus();
+    inputRef.current?.focus();
   };
 
   const handleCountryPress = () => {
@@ -157,9 +157,9 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
 
   return (
     <>
-      <TouchableWithoutFeedback onPress={handleContainerPress}>
-        <View style={[styles.container, containerStyle]}>
-          <Text style={[styles.label, labelStyle]}>{label}</Text>
+      <View style={[styles.container, containerStyle]}>
+        <Text style={[styles.label, labelStyle]}>{label}</Text>
+        <TouchableWithoutFeedback onPress={handleContainerPress}>
           <View
             style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
             {/* Country Code Display - Now Touchable */}
@@ -177,7 +177,7 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
             {/* Separator */}
             <View style={styles.separator} />
 
-            {/* Phone Number Display */}
+            {/* Phone Number Display Area */}
             <View style={styles.phoneNumberContainer}>
               {showPlaceholder ? (
                 <Text style={[styles.phoneNumberText, styles.placeholderText]}>
@@ -188,6 +188,26 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
                   {displayValue}
                 </Text>
               )}
+
+              {/* Visible TextInput overlay for proper keyboard handling */}
+              <TextInput
+                ref={inputRef}
+                style={styles.overlayInput}
+                value={phoneNumber}
+                onChangeText={handlePhoneNumberChange}
+                keyboardType="number-pad"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                blurOnSubmit={false}
+                autoCorrect={false}
+                autoComplete="off"
+                textContentType="none"
+                selection={{
+                  start: phoneNumber.length,
+                  end: phoneNumber.length,
+                }}
+                caretHidden={true}
+              />
             </View>
 
             {/* Clear Button */}
@@ -200,30 +220,14 @@ const PhoneTextInput: React.FC<PhoneTextInputProps> = ({
                 <Text style={styles.clearButtonText}>✕</Text>
               </TouchableOpacity>
             )}
-
-            {/* Hidden TextInput for actual input handling */}
-            <TextInput
-              ref={hiddenInputRef}
-              style={styles.hiddenInput}
-              value={phoneNumber}
-              onChangeText={handlePhoneNumberChange}
-              keyboardType="number-pad"
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              blurOnSubmit={false}
-              autoCorrect={false}
-              autoComplete="off"
-              textContentType="none"
-              caretHidden={false}
-            />
           </View>
-          {error != null && error.length > 0 && (
-            <Text style={styles.errorText}>{error}</Text>
-          )}
-        </View>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+        {error != null && error.length > 0 && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
+      </View>
 
-      {/* Country Selector Modal */}
+      {/* Country Selector Modal - unchanged */}
       <Modal
         visible={showCountryModal}
         animationType="slide"
@@ -316,6 +320,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingLeft: 4,
     justifyContent: "center",
+    position: "relative",
   },
   phoneNumberText: {
     fontSize: 16,
@@ -325,6 +330,20 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: colors.text.placeholder,
   },
+  overlayInput: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    fontSize: 16,
+    fontWeight: "400",
+    color: "transparent",
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    padding: 0,
+    margin: 0,
+  },
   clearButton: {
     width: 18,
     height: 18,
@@ -333,6 +352,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 8,
+    zIndex: 1,
   },
   clearButtonText: {
     fontSize: 10,

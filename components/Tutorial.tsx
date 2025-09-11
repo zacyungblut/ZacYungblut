@@ -366,8 +366,8 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 24,
-    left: 24,
+    top: 8,
+    left: 8,
     zIndex: 10,
     padding: 4,
   },
@@ -375,8 +375,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 60,
-    marginBottom: 40,
+    marginTop: 0,
+    marginBottom: 20, // Reduced from 60 to 20 to move content higher
     gap: 8,
   },
   progressDot: {
@@ -386,9 +386,10 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start", // Changed from "center" to "flex-start"
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingTop: 20, // Added small top padding for breathing room
   },
   emoji: {
     fontSize: 64,

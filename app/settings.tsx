@@ -17,7 +17,7 @@ import { colors } from "@/constants/Colors";
 import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { useNotification } from "@/contexts/NotificationContext";
-import { shareMessage } from "@/utils/helpers";
+import { referralMessage } from "@/utils/helpers";
 
 interface SettingItem {
   id: string;
@@ -91,17 +91,13 @@ export default function SettingsScreen() {
     setIsInviteLoading(true);
 
     try {
-      // Send invite with default "DATING" relationship type
-      const response = await sendUserInvite("DATING", false);
-      const inviteId = response.data.invite.id;
-
       // Create the invite link
-      const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
+      const inviteLink = `https://makeitofficial.us/refer/${user?.id}`;
 
       // Show native share dialog
       try {
         const result = await Share.share({
-          message: shareMessage,
+          message: referralMessage,
           url: inviteLink,
           title: "My Relationship",
         });
@@ -112,14 +108,6 @@ export default function SettingsScreen() {
             const shareMethod = result.activityType
               ? `native_share:${result.activityType}`
               : "native_share:unknown";
-
-            await recordShareAttempt(inviteId, {
-              shareMethod,
-              wasSuccessful: true,
-              wasAborted: false,
-              platform: Platform.OS,
-              appVersion: "1.0.0",
-            });
 
             console.log(
               "Share successful via:",
@@ -141,60 +129,13 @@ export default function SettingsScreen() {
         } else {
           // Record aborted share attempt
           try {
-            await recordShareAttempt(inviteId, {
-              shareMethod: "native_share:cancelled",
-              wasSuccessful: false,
-              wasAborted: true,
-              platform: Platform.OS,
-              appVersion: "1.0.0",
-            });
-
             console.log("Share cancelled by user");
           } catch (shareTrackingError) {
             console.error("Failed to track aborted share:", shareTrackingError);
           }
-
-          // Cancel the invite since user dismissed share
-          try {
-            await cancelUserInvite(inviteId);
-            console.log("Invite cancelled due to share dismissal");
-          } catch (cancelError) {
-            console.error(
-              "Failed to cancel invite after share dismissal:",
-              cancelError
-            );
-          }
         }
       } catch (shareError) {
         console.error("Error sharing:", shareError);
-
-        // Record failed share attempt
-        try {
-          await recordShareAttempt(inviteId, {
-            shareMethod: "native_share:error",
-            wasSuccessful: false,
-            wasAborted: false,
-            errorMessage:
-              shareError instanceof Error
-                ? shareError.message
-                : String(shareError),
-            platform: Platform.OS,
-            appVersion: "1.0.0",
-          });
-        } catch (shareTrackingError) {
-          console.error("Failed to track failed share:", shareTrackingError);
-        }
-
-        // Cancel the invite since sharing failed
-        try {
-          await cancelUserInvite(inviteId);
-          console.log("Invite cancelled due to share error");
-        } catch (cancelError) {
-          console.error(
-            "Failed to cancel invite after share error:",
-            cancelError
-          );
-        }
 
         Alert.alert("Share Error", "Failed to share the referral link");
       }
@@ -275,7 +216,7 @@ export default function SettingsScreen() {
     const acceptedInvites = invites.sent.filter(
       (invite) => invite.status === "ACCEPTED"
     );
-    const referralCount = acceptedInvites.length;
+    const referralCount = 0;
 
     return {
       searchesLeft,
@@ -334,16 +275,13 @@ export default function SettingsScreen() {
       icon: "people-outline",
       onPress: handleViewReferrals,
       showChevron: true,
-      value: searchData
-        ? `${searchData.referralCount} friends joined`
-        : "0 friends joined",
     },
     {
       id: "referral-link",
-      title: "My Referral Link",
+      title: "Copy My Referral Link",
       icon: "link-outline",
       onPress: handleShareReferralLink,
-      showChevron: true,
+      showChevron: false,
       loading: isInviteLoading,
     },
   ];

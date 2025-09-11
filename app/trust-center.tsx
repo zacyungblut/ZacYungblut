@@ -17,19 +17,19 @@ import { router } from "expo-router";
 const trustPoints = [
   {
     icon: "shield-checkmark",
-    title: "Relationships are private. So is Official",
+    title: "Relationships are private.\nSo is Official",
     description:
       "Your privacy is our highest priority. We built Official with privacy-first design principles.",
   },
   {
     icon: "eye-off",
-    title: "We never share WHO you are dating",
+    title: "We never share\nWHO you are dating",
     description:
       "Only your relationship status is visible. Your partner's identity remains completely private.",
   },
   {
     icon: "lock-closed",
-    title: "We never share ANY information about you",
+    title: "We never share ANY\ninformation about you",
     description:
       "Only your phone number is used for verification. No personal data, no tracking, no profiles.",
   },
@@ -41,7 +41,7 @@ const trustPoints = [
   },
   {
     icon: "search",
-    title: "No one knows if you search for them",
+    title: "No one knows  when you\nsearch for them",
     description:
       "Searches are completely anonymous. No notifications, no traces, no digital footprints.",
   },
