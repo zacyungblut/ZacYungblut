@@ -5,6 +5,7 @@ import {
   View,
   SafeAreaView,
   Image,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -55,6 +56,10 @@ const searchLimitPoints = [
 export default function WhyLimitSearchesScreen() {
   const handleBackPress = () => {
     router.back();
+  };
+
+  const handleGetPremium = () => {
+    router.push("/premium");
   };
 
   return (
@@ -165,6 +170,22 @@ export default function WhyLimitSearchesScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Get Premium Button */}
+            <TouchableOpacity
+              style={styles.getPremiumButton}
+              onPress={handleGetPremium}
+              activeOpacity={0.8}>
+              <View style={styles.getPremiumContainer}>
+                <Image
+                  source={require("@/assets/images/premium.png")}
+                  style={styles.getPremiumIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.getPremiumText}>Get Premium</Text>
+                <Ionicons name="chevron-forward" size={20} color="#000" />
+              </View>
+            </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -342,5 +363,29 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  getPremiumButton: {
+    marginTop: 32,
+    borderRadius: 16,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#000",
+  },
+  getPremiumContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  getPremiumText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+  },
+  getPremiumIcon: {
+    width: 20,
+    height: 20,
   },
 });

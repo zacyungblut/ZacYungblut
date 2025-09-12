@@ -9,17 +9,16 @@ import {
   View,
   StyleSheet,
   Keyboard,
-  Platform,
 } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { KeyboardStickyView } from "react-native-keyboard-controller";
 
 import { verifyCode, resendVerification } from "@/api";
 import SignupButton from "@/components/SignupButton";
 import { colors } from "@/constants/Colors";
 import { Dimensions } from "react-native";
 import { AuthService } from "@/utils/authStorage";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 // Extract all styles to constants
 const styles = StyleSheet.create({
@@ -116,19 +115,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     paddingHorizontal: 20,
   },
-  keyboardStickyContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 90, // Increased bottom padding for the button area
-    backgroundColor: colors.surface.white,
-  },
-  submitButtonContainer: {
-    marginBottom: 0,
-  },
-  iPadButtonContainer: {
+  buttonContainer: {
     width: "100%",
-    maxWidth: 400,
-    paddingHorizontal: 20,
-    paddingBottom: 20, // Adjust as needed for spacing
+    marginTop: 32,
+    paddingTop: 20,
   },
 });
 
@@ -187,14 +177,11 @@ function Verification() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
-
+  const { fetchUser } = useUserRedux();
   // Add these new state variables
   const [canResend, setCanResend] = useState(true);
   const [countdown, setCountdown] = useState(30);
   const [isResending, setIsResending] = useState(false);
-
-  // Add iPad detection
-  const isIPad = Platform.OS === "ios" && Platform.isPad;
 
   // Memoize the handlers to prevent recreation
   const handleSubmit = useCallback(async () => {
@@ -222,6 +209,7 @@ function Verification() {
         error.response?.data?.error || "Invalid verification code";
       setErrorMessage(errorMessage);
     } finally {
+      await fetchUser();
       setIsLoading(false);
     }
   }, [phone, verificationCode, router]);
@@ -362,35 +350,18 @@ function Verification() {
                 <Text style={styles.errorMessage}>{errorMessage}</Text>
               )}
 
-              {/* For iPad, show button inline instead of using KeyboardStickyView */}
-              {isIPad && (
-                <View style={styles.iPadButtonContainer}>
-                  <SignupButton
-                    title="Submit"
-                    onPress={handleSubmit}
-                    isLoading={isLoading}
-                    isEnabled={isValidCode}
-                  />
-                </View>
-              )}
+              {/* Submit Button - Always inline */}
+              <View style={styles.buttonContainer}>
+                <SignupButton
+                  title="Submit"
+                  onPress={handleSubmit}
+                  isLoading={isLoading}
+                  isEnabled={isValidCode}
+                />
+              </View>
             </View>
           </View>
         </TouchableWithoutFeedback>
-
-        {/* For iPhone, use KeyboardStickyView */}
-        {!isIPad && (
-          <KeyboardStickyView offset={{ closed: -32, opened: -40 }}>
-            <View style={styles.keyboardStickyContainer}>
-              <SignupButton
-                title="Submit"
-                onPress={handleSubmit}
-                isLoading={isLoading}
-                isEnabled={isValidCode}
-                containerStyle={styles.submitButtonContainer}
-              />
-            </View>
-          </KeyboardStickyView>
-        )}
       </SafeAreaView>
     </View>
   );

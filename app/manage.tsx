@@ -65,11 +65,11 @@ export default function ManageScreen() {
     if (!activeRelationship) {
       // Check if user has pending invites first
       const hasPendingInvites = pendingSentInvites.length > 0;
-      
+
       if (hasPendingInvites) {
         return require("@/assets/images/pending.png");
       }
-      
+
       // User is single - check their isSingle preference
       if (user?.isSingle === false) {
         return require("@/assets/images/unknown.png");
@@ -102,17 +102,17 @@ export default function ManageScreen() {
           return "In Relationship";
       }
     }
-    
+
     // Check if user has pending invites first
     const hasPendingInvites = pendingSentInvites.length > 0;
-    
+
     if (hasPendingInvites) {
       return "Pending";
     }
-    
+
     // User is single - check their isSingle preference
     if (user?.isSingle === false) {
-      return "Relationship Status Private";
+      return "Status Unknown";
     }
     return "Single";
   };

@@ -23,14 +23,26 @@ interface SearchResultCardProps {
 interface SearchPlaceholderCardProps {
   phoneNumber: string;
   isInputFocused: boolean;
+  hasSearches: boolean;
+  needsStatusSet?: boolean;
 }
 
 // New placeholder card component
 export const SearchPlaceholderCard: React.FC<SearchPlaceholderCardProps> = ({
   phoneNumber,
   isInputFocused,
+  hasSearches,
+  needsStatusSet = false,
 }) => {
   const getPlaceholderContent = () => {
+    if (needsStatusSet) {
+      return {
+        title: "Set your status first",
+        subtitle: "You must set your relationship status to search others",
+        showSpinner: false,
+      };
+    }
+
     if (!isInputFocused && !phoneNumber) {
       return {
         title: "Enter a phone number",
@@ -45,6 +57,24 @@ export const SearchPlaceholderCard: React.FC<SearchPlaceholderCardProps> = ({
         subtitle: `${10 - phoneNumber.length} more digits needed`,
         showSpinner: true,
       };
+    }
+
+    // When phone is complete (10+ digits)
+    if (phoneNumber.length >= 10) {
+      if (hasSearches) {
+        return {
+          title: "Searching...",
+          subtitle: "We'll show the results in a moment",
+          showSpinner: true,
+        };
+      } else {
+        // This case shouldn't show since error will be displayed instead
+        return {
+          title: "No searches remaining",
+          subtitle: "You've used all your searches for this month",
+          showSpinner: false,
+        };
+      }
     }
 
     return {

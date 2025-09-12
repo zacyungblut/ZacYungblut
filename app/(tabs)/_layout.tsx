@@ -86,6 +86,8 @@ export default function TabLayout() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="interactive"
         bounces={true}
         onScroll={scrollHandler}
         style={[

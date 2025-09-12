@@ -8,7 +8,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -68,6 +68,9 @@ export default function SearchScreen() {
     user?.bonusSearches || 0
   );
 
+  // Check if phone number is complete (10+ digits)
+  const isPhoneComplete = phoneNumber.length >= 10;
+
   const handleInputFocus = () => {
     setIsInputFocused(true);
     focusAnimation.value = withTiming(1, { duration: 300 });
@@ -78,17 +81,6 @@ export default function SearchScreen() {
     setIsInputFocused(false);
     focusAnimation.value = withTiming(0, { duration: 300 });
     placeholderAnimation.value = withTiming(0, { duration: 300 });
-  };
-
-  const handlePhoneNumberChange = (text: string) => {
-    setPhoneNumber(text);
-    setSearchResult(null);
-    setSearchError(null);
-
-    // Perform search when user has typed a complete phone number
-    if (text.length >= 10) {
-      performSearch(text);
-    }
   };
 
   const performSearch = async (phone: string) => {
@@ -131,6 +123,10 @@ export default function SearchScreen() {
       console.error("Search error:", error);
       if (error.response?.status === 401) {
         setSearchError("Please log in to search for users.");
+      } else if (
+        error.response?.data?.error === "RELATIONSHIP_STATUS_REQUIRED"
+      ) {
+        setSearchError("RELATIONSHIP_STATUS_REQUIRED");
       } else {
         setSearchError("Unable to search at this time. Please try again.");
       }
@@ -140,13 +136,28 @@ export default function SearchScreen() {
     }
   };
 
-  // New combined function that performs search
-  const handleCheckStatus = async () => {
-    if (!phoneNumber) return;
+  const handlePhoneNumberChange = (text: string) => {
+    setPhoneNumber(text);
+    setSearchResult(null);
+    setSearchError(null);
 
-    // Perform the search
-    await performSearch(phoneNumber);
+    // Show "out of searches" error immediately when full phone number is entered
+    if (text.length >= 10 && remainingSearches <= 0) {
+      setSearchError("You've used all your searches for this month.");
+    }
   };
+
+  // Auto-search when phone number is complete
+  useEffect(() => {
+    if (isPhoneComplete && remainingSearches > 0 && !isSearching) {
+      // Add a small delay to avoid searching on every keystroke
+      const searchTimeout = setTimeout(() => {
+        performSearch(phoneNumber);
+      }, 500);
+
+      return () => clearTimeout(searchTimeout);
+    }
+  }, [phoneNumber, isPhoneComplete, remainingSearches]);
 
   const handlePremiumPress = () => {
     router.push("/premium");
@@ -286,25 +297,6 @@ export default function SearchScreen() {
             />
           </View>
 
-          {/* Check Status Button */}
-          <TouchableOpacity
-            style={[
-              styles.checkButton,
-              (!phoneNumber || isSearching || remainingSearches <= 0) &&
-                styles.checkButtonDisabled,
-            ]}
-            onPress={handleCheckStatus}
-            disabled={!phoneNumber || isSearching || remainingSearches <= 0}
-            activeOpacity={0.8}
-            delayPressIn={0}
-            delayPressOut={0}>
-            {isSearching ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <Text style={styles.checkButtonText}>Check Status</Text>
-            )}
-          </TouchableOpacity>
-
           {/* Results Section */}
           <View style={styles.resultsSection}>
             {searchResult ? (
@@ -318,59 +310,91 @@ export default function SearchScreen() {
                 <SearchPlaceholderCard
                   phoneNumber={phoneNumber}
                   isInputFocused={isInputFocused}
+                  hasSearches={remainingSearches > 0}
                 />
               </Animated.View>
             ) : null}
 
             {searchError && (
               <View style={styles.errorCard}>
-                <Text style={styles.errorText}>{searchError}</Text>
+                <Text style={styles.errorText}>
+                  {searchError === "RELATIONSHIP_STATUS_REQUIRED"
+                    ? "You must set your relationship status before searching others"
+                    : searchError}
+                </Text>
 
                 {/* Show different buttons based on error type */}
-                {searchError.includes("used all your searches") ? (
+                {searchError === "RELATIONSHIP_STATUS_REQUIRED" ? (
                   <View style={styles.errorButtonsContainer}>
                     <TouchableOpacity
-                      style={styles.premiumButton}
-                      onPress={handlePremiumPress}
+                      style={styles.setStatusButton}
+                      onPress={() => router.push("/(tabs)/relationship")}
                       delayPressIn={0}
                       delayPressOut={0}>
                       <View style={styles.buttonContent}>
-                        <Ionicons name="star" size={20} color="white" />
-                        <Text style={styles.premiumButtonText}>
-                          Upgrade to Premium
+                        <Ionicons name="heart" size={20} color="white" />
+                        <Text style={styles.setStatusButtonText}>
+                          Set Your Status
                         </Text>
                       </View>
                     </TouchableOpacity>
+                  </View>
+                ) : searchError.includes("used all your searches") ? (
+                  <View style={styles.errorButtonsContainer}>
+                    <View style={styles.buttonWithBadgeContainer}>
+                      <TouchableOpacity
+                        style={styles.premiumButton}
+                        onPress={handlePremiumPress}
+                        delayPressIn={0}
+                        delayPressOut={0}>
+                        <View style={styles.buttonContent}>
+                          <Ionicons name="star" size={20} color="white" />
+                          <Text style={styles.premiumButtonText}>
+                            Upgrade to Premium
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>+8 searches</Text>
+                      </View>
+                    </View>
 
-                    <TouchableOpacity
-                      style={[
-                        styles.referButton,
-                        isInviteLoading && styles.buttonDisabled,
-                      ]}
-                      onPress={handleShareReferralLink}
-                      disabled={isInviteLoading}
-                      delayPressIn={0}
-                      delayPressOut={0}>
-                      <View style={styles.buttonContent}>
-                        {isInviteLoading ? (
-                          <ActivityIndicator
-                            size="small"
-                            color={colors.primary}
-                          />
-                        ) : (
-                          <>
-                            <Ionicons
-                              name="people"
-                              size={20}
+                    <View style={styles.buttonWithBadgeContainer}>
+                      <TouchableOpacity
+                        style={[
+                          styles.referButton,
+                          isInviteLoading && styles.buttonDisabled,
+                        ]}
+                        onPress={handleShareReferralLink}
+                        disabled={isInviteLoading}
+                        delayPressIn={0}
+                        delayPressOut={0}>
+                        <View style={styles.buttonContent}>
+                          {isInviteLoading ? (
+                            <ActivityIndicator
+                              size="small"
                               color={colors.primary}
                             />
-                            <Text style={styles.referButtonText}>
-                              Refer a Friend
-                            </Text>
-                          </>
-                        )}
+                          ) : (
+                            <>
+                              <Ionicons
+                                name="people"
+                                size={20}
+                                color={colors.primary}
+                              />
+                              <Text style={styles.referButtonText}>
+                                Refer a Friend
+                              </Text>
+                            </>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                      <View style={styles.badgeBordered}>
+                        <Text style={styles.badgeTextBordered}>
+                          +2 searches
+                        </Text>
                       </View>
-                    </TouchableOpacity>
+                    </View>
 
                     <TouchableOpacity
                       style={styles.learnWhyButton}
@@ -385,7 +409,7 @@ export default function SearchScreen() {
                 ) : (
                   <TouchableOpacity
                     style={styles.retryButton}
-                    onPress={handleCheckStatus}
+                    onPress={() => performSearch(phoneNumber)}
                     delayPressIn={0}
                     delayPressOut={0}>
                     <Text style={styles.retryButtonText}>Try Again</Text>
@@ -397,8 +421,8 @@ export default function SearchScreen() {
         </Animated.View>
       </View>
 
-      {/* Fixed Premium Section - Only show when no search result */}
-      {!searchResult && (
+      {/* Fixed Premium Section - Only show when no digits entered */}
+      {!searchResult && phoneNumber.length === 0 && (
         <View style={styles.fixedPremiumSection}>
           <Text style={styles.premiumText}>
             <Text style={{ fontWeight: "bold" }}>
@@ -469,32 +493,20 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
 
-  // Check Button
-  checkButton: {
-    backgroundColor: colors.primary || "#2563EB",
-    paddingVertical: 16,
-    borderRadius: 12,
+  // Searching indicator
+  searchingIndicator: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
-    shadowColor: colors.primary || "#2563EB",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingVertical: 16,
+    marginBottom: 24,
   },
 
-  checkButtonDisabled: {
-    opacity: 0.6,
-  },
-
-  checkButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+  searchingText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: colors.text.secondary || "#64748B",
+    fontWeight: "500",
   },
 
   // Results Section
@@ -552,6 +564,57 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  buttonWithBadgeContainer: {
+    position: "relative",
+    width: "100%",
+  },
+
+  badge: {
+    position: "absolute",
+    top: -8,
+    right: -32,
+    backgroundColor: "#10B981",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    shadowColor: "#10B981",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  // Add a new style for the +2 searches badge
+  badgeBordered: {
+    position: "absolute",
+    top: -8,
+    right: -32,
+    backgroundColor: "white",
+    borderWidth: 2,
+    borderColor: "#10B981",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+
+  badgeText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
+  // Add a new style for the bordered badge text
+  badgeTextBordered: {
+    color: "#10B981",
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
   },
 
   buttonContent: {
@@ -677,5 +740,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.tertiary || "#94A3B8",
     textAlign: "center",
+  },
+
+  setStatusButton: {
+    backgroundColor: colors.primary || "#2563EB",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.primary || "#2563EB",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  setStatusButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

@@ -115,30 +115,30 @@ export default function SignupScreen() {
           <Text style={styles.helperText}>
             We'll send an SMS verification code.
           </Text>
+
+          {/* Continue Button - Always inline */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.continueButton,
+                (!isValidNumber(phoneNumber) || isLoading) &&
+                  styles.continueButtonDisabled,
+              ]}
+              onPress={handleContinue}
+              disabled={!isValidNumber(phoneNumber) || isLoading}
+              activeOpacity={0.8}>
+              <Text
+                style={[
+                  styles.continueButtonText,
+                  (!isValidNumber(phoneNumber) || isLoading) &&
+                    styles.continueButtonTextDisabled,
+                ]}>
+                {isLoading ? "Sending..." : "Continue"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-
-      {/* Continue Button in KeyboardStickyView */}
-      <KeyboardStickyView offset={{ closed: -32, opened: 16 }}>
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            (!isValidNumber(phoneNumber) || isLoading) &&
-              styles.continueButtonDisabled,
-          ]}
-          onPress={handleContinue}
-          disabled={!isValidNumber(phoneNumber) || isLoading}
-          activeOpacity={0.8}>
-          <Text
-            style={[
-              styles.continueButtonText,
-              (!isValidNumber(phoneNumber) || isLoading) &&
-                styles.continueButtonTextDisabled,
-            ]}>
-            {isLoading ? "Sending..." : "Continue"}
-          </Text>
-        </TouchableOpacity>
-      </KeyboardStickyView>
     </SafeAreaView>
   );
 }
@@ -175,7 +175,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    // Remove justifyContent: "space-between" since button is now in KeyboardStickyView
   },
   formContainer: {
     paddingTop: 40,
@@ -194,12 +193,15 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 8,
   },
+  buttonContainer: {
+    marginTop: 40,
+    width: "100%",
+  },
   continueButton: {
     backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginHorizontal: 20, // Add horizontal margin since it's now outside content container
   },
   continueButtonDisabled: {
     backgroundColor: colors.border.medium,

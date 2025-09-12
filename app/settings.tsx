@@ -17,7 +17,7 @@ import { colors } from "@/constants/Colors";
 import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { useNotification } from "@/contexts/NotificationContext";
-import { referralMessage } from "@/utils/helpers";
+import { referralMessage, calculateRemainingSearches } from "@/utils/helpers";
 
 interface SettingItem {
   id: string;
@@ -202,21 +202,55 @@ export default function SettingsScreen() {
   const searchData = React.useMemo(() => {
     if (!user) return null;
 
-    // Get search transactions from user data (if available)
+    // Get search transactions and bonus searches from user data
     const searchTransactions = (user as any).searchTransactions || [];
-    const totalSearches = searchTransactions.length;
+    const bonusSearches = (user as any).bonusSearches || 0;
 
-    // For now, we'll use a simple limit system
-    // In a real app, this would be based on user's plan/subscription
-    const searchLimit = 10; // Free users get 10 searches
-    const searchesUsed = totalSearches;
-    const searchesLeft = Math.max(0, searchLimit - searchesUsed);
+    // Use the helper function to calculate remaining searches
+    const searchesLeft = calculateRemainingSearches(
+      searchTransactions,
+      bonusSearches
+    );
+
+    // Calculate total searches available (2 default + bonus)
+    const searchLimit = 2 + bonusSearches;
+
+    // Calculate searches used in the last 30 days
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const recentSearches = searchTransactions.filter((transaction: any) => {
+      const transactionDate = new Date(transaction.createdAt);
+      return transactionDate >= thirtyDaysAgo;
+    });
+    const searchesUsed = recentSearches.length;
+
+    // Total searches ever made
+    const totalSearches = searchTransactions.length;
 
     // Calculate referrals (users who joined through invites)
     const acceptedInvites = invites.sent.filter(
       (invite) => invite.status === "ACCEPTED"
     );
-    const referralCount = 0;
+    const referralCount = acceptedInvites.length;
+
+    // Calculate next search available date
+    let nextSearchDate = null;
+    if (searchesLeft === 0 && recentSearches.length > 0) {
+      // Find the earliest search in the last 30 days
+      const earliestSearch = recentSearches.reduce(
+        (earliest: any, current: any) => {
+          const currentDate = new Date(current.createdAt);
+          const earliestDate = new Date(earliest.createdAt);
+          return currentDate < earliestDate ? current : earliest;
+        }
+      );
+
+      // Add 30 days to the earliest search
+      const earliestDate = new Date(earliestSearch.createdAt);
+      nextSearchDate = new Date(
+        earliestDate.getTime() + 30 * 24 * 60 * 60 * 1000
+      );
+    }
 
     return {
       searchesLeft,
@@ -224,6 +258,8 @@ export default function SettingsScreen() {
       searchLimit,
       referralCount,
       totalSearches,
+      bonusSearches,
+      nextSearchDate,
     };
   }, [user, invites.sent]);
 
@@ -251,10 +287,25 @@ export default function SettingsScreen() {
       title: "Searches Remaining",
       icon: "search-outline",
       onPress: handleViewSearchHistory,
-      showChevron: true,
-      value: searchData
-        ? `${searchData.searchesLeft} of ${searchData.searchLimit}`
-        : "0 of 10",
+      showChevron: false,
+      value: (() => {
+        if (!searchData) return "0 searches left";
+
+        const searchesLeft = searchData.searchesLeft;
+        let valueText = `${searchesLeft} searches left`;
+
+        // Add next search date if user has no searches left and there's a next date
+        if (searchesLeft === 0 && searchData.nextSearchDate) {
+          const nextDate = searchData.nextSearchDate;
+          const formattedDate = nextDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+          valueText += ` • Next search on ${formattedDate}`;
+        }
+
+        return valueText;
+      })(),
     },
     {
       id: "search-history",
@@ -476,8 +527,8 @@ const styles = StyleSheet.create({
   },
   valueText: {
     fontSize: 14,
+    marginTop: 4,
     color: colors.text.secondary,
-    marginTop: 2,
   },
   statusText: {
     fontSize: 14,
