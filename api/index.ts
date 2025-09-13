@@ -2,9 +2,9 @@ import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
 // export const baseURL = "http://localhost:3000"; // Updated to match backend port
-// export const baseURL = "http://192.168.86.43:3000"; // 34 craigleith
+export const baseURL = "http://192.168.86.43:3000"; // 34 craigleith
 // export const baseURL = "http://10.0.0.143:3000"; // 450 Front st west, toronto
-export const baseURL = "https://mixer-backend.cfd";
+// export const baseURL = "https://mixer-backend.cfd";
 
 export const socketURL = baseURL; // Export socket URL for SocketContext
 
@@ -136,6 +136,11 @@ export const getUserRelationships = async () => {
   return API.get("/relationships");
 };
 
+// Add this new function for ending relationships
+export const endRelationship = async (relationshipId: string) => {
+  return API.post("/relationships/end", { relationshipId });
+};
+
 // Add this new function at the end of the file
 export const updateUserSingleStatus = async (isSingle: boolean) => {
   return API.put("/auth/single-status", { isSingle });
@@ -158,5 +163,14 @@ export const claimReferral = async (
     platform,
     appVersion,
     buildVersion,
+  });
+};
+
+// Add this new function at the end of the file
+export const updateUserRelationshipTypeVisibility = async (
+  showRelationshipType: boolean
+) => {
+  return API.put("/auth/relationship-type-visibility", {
+    showRelationshipType,
   });
 };

@@ -37,6 +37,8 @@ const getStatusImage = (status: string) => {
       return require("@/assets/images/single.png");
     case "Status Unknown":
       return require("@/assets/images/unknown.png");
+    case "In a relationship":
+      return require("@/assets/images/dating.png");
     case "Situationship":
       return require("@/assets/images/situationship.png");
     default:
@@ -146,11 +148,6 @@ export default function PastSearchesScreen() {
 
         <View style={styles.searchItemRight}>
           <Text style={styles.relationshipStatus}>{statusDisplay}</Text>
-          <Ionicons
-            name="chevron-forward-outline"
-            size={16}
-            color={colors.text.tertiary}
-          />
         </View>
       </TouchableOpacity>
     );
@@ -317,5 +314,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: colors.text.secondary,
     textAlign: "right",
+    marginLeft: 10,
   },
 });

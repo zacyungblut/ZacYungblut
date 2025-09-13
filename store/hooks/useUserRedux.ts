@@ -15,8 +15,10 @@ import {
   addRelationship,
   updateRelationship,
   editRelationship,
+  endRelationship,
   deleteUserAccount,
   updateSingleStatus,
+  updateRelationshipTypeVisibility,
   addReviewRequest,
   updateReviewRequest,
   selectUser,
@@ -130,6 +132,16 @@ export const useUserRedux = () => {
     }
   };
 
+  // New function to end relationship via API
+  const endExistingRelationship = async (relationshipId: string) => {
+    try {
+      const result = await dispatch(endRelationship(relationshipId));
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   // Save review request to backend and add to Redux store
   const saveUserReviewRequest = async (reviewData: {
     platform: string;
@@ -221,6 +233,19 @@ export const useUserRedux = () => {
     }
   };
 
+  const updateUserRelationshipTypeVisibility = async (
+    showRelationshipType: boolean
+  ) => {
+    try {
+      const result = await dispatch(
+        updateRelationshipTypeVisibility(showRelationshipType)
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     // User data
     user,
@@ -233,6 +258,7 @@ export const useUserRedux = () => {
     logoutUser,
     updateUserData,
     updateUserSingleStatus,
+    updateUserRelationshipTypeVisibility,
     deleteUserAccountPermanently,
 
     // Invites data and actions
@@ -246,6 +272,7 @@ export const useUserRedux = () => {
     addNewRelationship,
     updateExistingRelationship,
     editExistingRelationship,
+    endExistingRelationship,
 
     // Review requests data and actions
     reviewRequests,

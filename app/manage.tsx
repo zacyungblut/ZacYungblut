@@ -8,6 +8,7 @@ import {
   Platform,
   Image,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -26,10 +27,12 @@ export default function ManageScreen() {
     user,
     relationships,
     editExistingRelationship,
+    endExistingRelationship, // Add this
     sendUserInvite,
     fetchUser,
     cancelUserInvite,
     recordShareAttempt,
+    updateUserRelationshipTypeVisibility, // Add this
     invites,
   } = useUserRedux();
 
@@ -41,9 +44,10 @@ export default function ManageScreen() {
   const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
   const [isInviteLoading, setIsInviteLoading] = useState(false);
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+  const [isEndingRelationship, setIsEndingRelationship] = useState(false); // Add this
 
-  // Add new state for the toggle
-  const [showRelationshipType, setShowRelationshipType] = useState(false);
+  // Remove this local state line:
+  // const [showRelationshipType, setShowRelationshipType] = useState(false);
 
   const handleBackPress = () => {
     router.back();
@@ -175,9 +179,30 @@ export default function ManageScreen() {
         {
           text: "End Relationship",
           style: "destructive",
-          onPress: () => {
-            // TODO: Implement relationship ending logic
-            console.log("Relationship ended");
+          onPress: async () => {
+            setIsEndingRelationship(true);
+
+            try {
+              await endExistingRelationship(activeRelationship.id);
+
+              addNotification({
+                title: "Relationship Ended",
+                description: "Your relationship has been ended successfully",
+                type: "success",
+                emoji: "💔",
+              });
+
+              // Refresh user data to get updated relationships and status
+              await fetchUser();
+            } catch (error) {
+              console.error("Failed to end relationship:", error);
+              Alert.alert(
+                "Error",
+                "Failed to end relationship. Please try again."
+              );
+            } finally {
+              setIsEndingRelationship(false);
+            }
           },
         },
       ]
@@ -366,16 +391,22 @@ export default function ManageScreen() {
             {title}
           </Text>
           {value && <Text style={styles.valueText}>{value}</Text>}
-          {loading && <Text style={styles.statusText}>Loading...</Text>}
         </View>
       </View>
-      {showChevron && (
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={
+            destructive ? colors.status.error || "#FF3B30" : colors.primary
+          }
+        />
+      ) : showChevron ? (
         <Ionicons
           name="chevron-forward"
           size={20}
           color={colors.text.tertiary}
         />
-      )}
+      ) : null}
     </TouchableOpacity>
   );
 
@@ -394,7 +425,7 @@ export default function ManageScreen() {
       // User is in a relationship
       items.push(
         renderItem(
-          "Edit When We Met",
+          "When We Started Dating",
           "calendar-outline",
           handleChangeStartDate,
           new Date(activeRelationship.startDate).toLocaleDateString()
@@ -414,7 +445,7 @@ export default function ManageScreen() {
           handleBreakUp,
           undefined,
           true,
-          false,
+          isEndingRelationship, // Use the loading state
           false
         )
       );
@@ -471,10 +502,25 @@ export default function ManageScreen() {
     </View>
   );
 
-  const handleToggleShowRelationshipType = (value: boolean) => {
-    setShowRelationshipType(value);
-    // TODO: Update this via API when backend support is added
-    console.log("Show relationship type toggled:", value);
+  const handleToggleShowRelationshipType = async (value: boolean) => {
+    try {
+      await updateUserRelationshipTypeVisibility(value);
+
+      addNotification({
+        title: "Privacy Setting Updated",
+        description: `Relationship type visibility ${
+          value ? "enabled" : "disabled"
+        }`,
+        type: "success",
+        emoji: "🔒",
+      });
+    } catch (error) {
+      console.error("Failed to update relationship type visibility:", error);
+      Alert.alert(
+        "Error",
+        "Failed to update privacy setting. Please try again."
+      );
+    }
   };
 
   return (
@@ -510,6 +556,13 @@ export default function ManageScreen() {
               )}
             </View>
           </View>
+          {/* Edit Icon */}
+          <Ionicons
+            name="pencil"
+            size={20}
+            color={colors.text.secondary}
+            style={styles.editIcon}
+          />
         </TouchableOpacity>
 
         {/* Privacy Settings Section */}
@@ -517,7 +570,7 @@ export default function ManageScreen() {
           renderToggleItem(
             "Show my relationship type",
             "eye-outline",
-            showRelationshipType,
+            user?.showRelationshipType ?? true, // Use the actual user setting
             handleToggleShowRelationshipType,
             `Show that you're ${getCurrentStatusText()} when searched`
           ),
@@ -568,6 +621,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     borderWidth: 1,
     borderColor: colors.border.medium,
+    position: "relative", // Add this to enable absolute positioning of children
   },
   statusContent: {
     flexDirection: "column",
@@ -620,6 +674,11 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     textAlign: "center",
     marginTop: 4,
+  },
+  editIcon: {
+    position: "absolute",
+    top: 16,
+    right: 16,
   },
 
   // Section styles

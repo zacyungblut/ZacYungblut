@@ -47,6 +47,26 @@ export default function RelationshipScreen() {
   const [tutorialVisible, setTutorialVisible] = useState(false); // Add this state
   // Remove trustCenterVisible state since we're navigating to a page now
 
+  // Auto-open tutorial for new users (created in last 60 seconds)
+  useEffect(() => {
+    if (user?.createdAt) {
+      const userCreatedAt = new Date(user.createdAt);
+      const now = new Date();
+      const timeDifference = now.getTime() - userCreatedAt.getTime();
+      const sixtySecondsInMs = 60 * 1000;
+
+      // If user was created in the last 60 seconds, open tutorial
+      if (timeDifference <= sixtySecondsInMs) {
+        // Small delay to ensure the screen has rendered
+        const timer = setTimeout(() => {
+          setTutorialVisible(true);
+        }, 500); // 0.5 second delay
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user?.createdAt]);
+
   // Calculate relationship status based on actual data
   const relationshipData = useMemo(() => {
     // Check if user has any active relationships

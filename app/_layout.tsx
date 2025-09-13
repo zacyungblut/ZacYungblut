@@ -5,7 +5,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useGlobalSearchParams, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
@@ -25,7 +25,7 @@ import { store } from "@/store";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { SocketProvider } from "@/contexts/SocketContext";
-import { PostHogProvider } from "posthog-react-native";
+import { PostHogProvider, usePostHog } from "posthog-react-native";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -361,6 +361,20 @@ function AppContent() {
   return <RootLayoutNav />;
 }
 
+// New component to handle PostHog tracking
+function PostHogTracker() {
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const posthog = usePostHog();
+
+  // Track the location in your analytics provider here.
+  useEffect(() => {
+    posthog.screen(pathname, params);
+  }, [pathname, params]);
+
+  return null; // This component doesn't render anything
+}
+
 // Default export for the main layout
 export default function RootLayout() {
   return (
@@ -368,6 +382,11 @@ export default function RootLayout() {
       <KeyboardProvider>
         <PostHogProvider
           apiKey="phc_PslcpS6T5uuhlbXlk8N40CX8a9baZ9ZTr6mmjkJB0Wd"
+          autocapture={{
+            captureTouches: true,
+            captureScreens: true,
+            maxElementsCaptured: 20,
+          }}
           options={{
             host: "https://us.i.posthog.com",
             enableSessionReplay: true,
@@ -381,6 +400,7 @@ export default function RootLayout() {
               iOSdebouncerDelayMs: 1000,
             },
           }}>
+          <PostHogTracker />
           <NotificationProvider>
             <SocketProvider>
               <AppContent />
@@ -418,6 +438,7 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="past-searches" options={{ headerShown: false }} />
+        <Stack.Screen name="my-referrals" options={{ headerShown: false }} />
         <Stack.Screen name="trust-center" options={{ headerShown: false }} />
         <Stack.Screen
           name="why-limit-searches"

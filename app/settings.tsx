@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
@@ -44,6 +45,7 @@ export default function SettingsScreen() {
   } = useUserRedux();
   const { addNotification } = useNotification();
   const [isInviteLoading, setIsInviteLoading] = useState(false);
+  const posthog = usePostHog();
 
   const handleBackPress = () => {
     router.back();
@@ -82,13 +84,19 @@ export default function SettingsScreen() {
   };
 
   const handleViewReferrals = () => {
-    // TODO: Navigate to referrals screen
-    console.log("View referrals pressed");
+    router.push("/my-referrals");
   };
 
   const handleShareReferralLink = async () => {
     console.log("Share referral link pressed");
     setIsInviteLoading(true);
+
+    // Track referral share initiation
+    posthog.capture("referral_share_initiated", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "settings_screen",
+    });
 
     try {
       // Create the invite link
@@ -103,6 +111,15 @@ export default function SettingsScreen() {
         });
 
         if (result.action === Share.sharedAction) {
+          // Track successful referral share
+          posthog.capture("referral_shared", {
+            user_id: user?.id || "",
+            share_method: result.activityType || "unknown",
+            platform: Platform.OS,
+            source: "settings_screen",
+            was_successful: true,
+          });
+
           // Record successful share attempt
           try {
             const shareMethod = result.activityType
@@ -127,6 +144,13 @@ export default function SettingsScreen() {
           // Refresh user data after successful share
           await fetchUser();
         } else {
+          // Track cancelled referral share
+          posthog.capture("referral_share_cancelled", {
+            user_id: user?.id || "",
+            platform: Platform.OS,
+            source: "settings_screen",
+          });
+
           // Record aborted share attempt
           try {
             console.log("Share cancelled by user");
@@ -137,10 +161,32 @@ export default function SettingsScreen() {
       } catch (shareError) {
         console.error("Error sharing:", shareError);
 
+        // Track referral share error
+        posthog.capture("referral_share_failed", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+          source: "settings_screen",
+          error_message:
+            shareError instanceof Error
+              ? shareError.message
+              : String(shareError),
+        });
+
         Alert.alert("Share Error", "Failed to share the referral link");
       }
     } catch (error: any) {
       console.error("Error creating invite:", error);
+
+      // Track referral creation error
+      posthog.capture("referral_creation_failed", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        source: "settings_screen",
+        error_message:
+          error.response?.data?.error || "Failed to create invitation",
+        error_status: error.response?.status,
+      });
+
       const errorMessage =
         error.response?.data?.error || "Failed to create invitation";
       Alert.alert("Error", errorMessage);
@@ -150,6 +196,13 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
+    // Track account deletion attempt initiation
+    posthog.capture("account_deletion_initiated", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "settings_screen",
+    });
+
     Alert.alert(
       "Delete Account",
       "Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data, relationships, and invites.",
@@ -157,18 +210,52 @@ export default function SettingsScreen() {
         {
           text: "Cancel",
           style: "cancel",
+          onPress: () => {
+            // Track account deletion cancelled
+            posthog.capture("account_deletion_cancelled", {
+              user_id: user?.id || "",
+              platform: Platform.OS,
+              source: "settings_screen",
+            });
+          },
         },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
+              // Track account deletion confirmed
+              posthog.capture("account_deletion_confirmed", {
+                user_id: user?.id || "",
+                platform: Platform.OS,
+                source: "settings_screen",
+              });
+
               await deleteUserAccountPermanently();
+
+              // Track successful account deletion
+              posthog.capture("account_deleted", {
+                user_id: user?.id || "",
+                platform: Platform.OS,
+                source: "settings_screen",
+              });
+
               // On successful deletion, the user will be logged out automatically
               // and redirected to auth screen via the Redux state change
               router.replace("/auth");
             } catch (error: any) {
               console.error("Account deletion failed:", error);
+
+              // Track account deletion failure
+              posthog.capture("account_deletion_failed", {
+                user_id: user?.id || "",
+                platform: Platform.OS,
+                source: "settings_screen",
+                error_message:
+                  error.payload ||
+                  "Failed to delete account. Please try again later.",
+              });
+
               Alert.alert(
                 "Deletion Failed",
                 error.payload ||
@@ -182,15 +269,37 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
+    // Track logout attempt initiation
+    posthog.capture("logout_initiated", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "settings_screen",
+    });
+
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
         style: "cancel",
+        onPress: () => {
+          // Track logout cancelled
+          posthog.capture("logout_cancelled", {
+            user_id: user?.id || "",
+            platform: Platform.OS,
+            source: "settings_screen",
+          });
+        },
       },
       {
         text: "Logout",
         style: "destructive",
         onPress: () => {
+          // Track successful logout
+          posthog.capture("logout_completed", {
+            user_id: user?.id || "",
+            platform: Platform.OS,
+            source: "settings_screen",
+          });
+
           AuthService.removeAuthToken();
           router.replace("/auth");
         },

@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -16,9 +17,11 @@ import Purchases, {
   CustomerInfo,
   PurchasesError,
 } from "react-native-purchases";
+import { usePostHog } from "posthog-react-native";
 
 import { Text, View } from "@/components/Themed";
 import { colors } from "@/constants/Colors";
+import { useUserRedux } from "@/store/hooks/useUserRedux";
 
 type PricingTier = "monthly" | "weekly";
 
@@ -38,12 +41,45 @@ export default function PremiumScreen() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
+  const { user } = useUserRedux();
+  const posthog = usePostHog();
+
   const handleBackPress = () => {
+    // Track premium screen exit
+    posthog.capture("premium_screen_exited", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      selected_tier: selectedTier,
+      time_on_screen: Date.now() - screenStartTime,
+      exit_method: "back_button",
+    });
+
     router.back();
   };
 
+  // Track screen start time for time on screen calculation
+  const [screenStartTime] = useState(Date.now());
+
   useEffect(() => {
+    // Track premium screen viewed
+    posthog.capture("premium_screen_viewed", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "app_navigation",
+    });
+
     initializePurchases();
+
+    // Track screen exit when component unmounts
+    return () => {
+      posthog.capture("premium_screen_exited", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        selected_tier: selectedTier,
+        time_on_screen: Date.now() - screenStartTime,
+        exit_method: "navigation",
+      });
+    };
   }, []);
 
   const initializePurchases = async () => {
@@ -61,6 +97,14 @@ export default function PremiumScreen() {
       setIsLoading(false);
     } catch (error) {
       console.error("Error initializing purchases:", error);
+
+      // Track initialization error
+      posthog.capture("premium_purchases_init_failed", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        error_message: error instanceof Error ? error.message : String(error),
+      });
+
       setIsLoading(false);
       Alert.alert(
         "Error",
@@ -72,6 +116,14 @@ export default function PremiumScreen() {
 
   const handleSubscribe = async () => {
     if (!offerings || isPurchasing) return;
+
+    // Track subscription attempt
+    posthog.capture("premium_subscription_attempt", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      selected_tier: selectedTier,
+      time_on_screen: Date.now() - screenStartTime,
+    });
 
     setIsPurchasing(true);
 
@@ -100,12 +152,35 @@ export default function PremiumScreen() {
         throw new Error("No purchase packages available");
       }
 
+      // Track purchase initiation
+      posthog.capture("premium_purchase_initiated", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        package_identifier: selectedPackage.identifier,
+        package_type: selectedPackage.packageType,
+        price: selectedPackage.product.price,
+        currency: selectedPackage.product.currencyCode,
+        selected_tier: selectedTier,
+      });
+
       const { customerInfo } = await Purchases.purchasePackage(selectedPackage);
 
       setCustomerInfo(customerInfo);
 
       // Check if user is now premium
       if (customerInfo.entitlements.active["premium"]) {
+        // Track successful purchase
+        posthog.capture("premium_subscription_completed", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+          package_identifier: selectedPackage.identifier,
+          package_type: selectedPackage.packageType,
+          price: selectedPackage.product.price,
+          currency: selectedPackage.product.currencyCode,
+          selected_tier: selectedTier,
+          time_to_purchase: Date.now() - screenStartTime,
+        });
+
         Alert.alert(
           "Success!",
           "Welcome to Official Premium! Your subscription is now active.",
@@ -115,7 +190,24 @@ export default function PremiumScreen() {
     } catch (error) {
       const purchaseError = error as PurchasesError;
 
-      if (!purchaseError.userCancelled) {
+      if (purchaseError.userCancelled) {
+        // Track user cancelled purchase
+        posthog.capture("premium_purchase_cancelled", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+          selected_tier: selectedTier,
+          time_on_screen: Date.now() - screenStartTime,
+        });
+      } else {
+        // Track purchase error
+        posthog.capture("premium_purchase_failed", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+          selected_tier: selectedTier,
+          error_message: purchaseError.message || "Unknown purchase error",
+          error_code: purchaseError.code,
+        });
+
         Alert.alert(
           "Purchase Failed",
           purchaseError.message ||
@@ -129,18 +221,36 @@ export default function PremiumScreen() {
   };
 
   const handleRestorePurchases = async () => {
+    // Track restore attempt
+    posthog.capture("premium_restore_attempt", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+    });
+
     try {
       setIsLoading(true);
       const info = await Purchases.restorePurchases();
       setCustomerInfo(info);
 
       if (info.entitlements.active["premium"]) {
+        // Track successful restore
+        posthog.capture("premium_restore_successful", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+        });
+
         Alert.alert(
           "Purchases Restored",
           "Your premium subscription has been restored!",
           [{ text: "OK", onPress: () => router.back() }]
         );
       } else {
+        // Track no purchases found
+        posthog.capture("premium_restore_no_purchases", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+        });
+
         Alert.alert(
           "No Purchases Found",
           "No active premium subscriptions were found to restore.",
@@ -148,6 +258,13 @@ export default function PremiumScreen() {
         );
       }
     } catch (error) {
+      // Track restore error
+      posthog.capture("premium_restore_failed", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        error_message: error instanceof Error ? error.message : String(error),
+      });
+
       Alert.alert(
         "Restore Failed",
         "Unable to restore purchases. Please try again.",
@@ -159,8 +276,23 @@ export default function PremiumScreen() {
   };
 
   const handleTermsPress = () => {
+    // Track terms view
+    posthog.capture("premium_terms_viewed", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "premium_screen",
+    });
+
     Linking.openURL("https://makeitofficial.us/terms").catch((err) => {
       console.error("Failed to open Terms of Use:", err);
+
+      // Track terms link error
+      posthog.capture("premium_terms_link_failed", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        error_message: err instanceof Error ? err.message : String(err),
+      });
+
       Alert.alert(
         "Error",
         "Unable to open Terms of Use. Please try again later.",
@@ -170,8 +302,23 @@ export default function PremiumScreen() {
   };
 
   const handlePrivacyPress = () => {
+    // Track privacy policy view
+    posthog.capture("premium_privacy_viewed", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "premium_screen",
+    });
+
     Linking.openURL("https://makeitofficial.us/privacy").catch((err) => {
       console.error("Failed to open Privacy Policy:", err);
+
+      // Track privacy link error
+      posthog.capture("premium_privacy_link_failed", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        error_message: err instanceof Error ? err.message : String(err),
+      });
+
       Alert.alert(
         "Error",
         "Unable to open Privacy Policy. Please try again later.",
@@ -245,6 +392,20 @@ export default function PremiumScreen() {
     }
 
     return tiers;
+  };
+
+  // Enhanced tier selection with tracking
+  const handleTierSelection = (tierId: PricingTier) => {
+    // Track tier selection
+    posthog.capture("premium_tier_selected", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      selected_tier: tierId,
+      previous_tier: selectedTier,
+      time_on_screen: Date.now() - screenStartTime,
+    });
+
+    setSelectedTier(tierId);
   };
 
   const pricingTiers = buildPricingTiers();
@@ -368,7 +529,7 @@ export default function PremiumScreen() {
                   styles.pricingCard,
                   tier.isSelected && styles.pricingCardSelected,
                 ]}
-                onPress={() => setSelectedTier(tier.id)}
+                onPress={() => handleTierSelection(tier.id)}
                 activeOpacity={0.8}>
                 <View style={styles.pricingHeader}>
                   <Text
@@ -422,6 +583,13 @@ export default function PremiumScreen() {
           <Text style={styles.linkSeparator}> • </Text>
           <TouchableOpacity onPress={handlePrivacyPress}>
             <Text style={styles.linkText}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={styles.linkSeparator}> • </Text>
+          <TouchableOpacity
+            onPress={handleRestorePurchases}
+            disabled={isLoading}
+            activeOpacity={0.7}>
+            <Text style={styles.linkText}>Restore Purchases</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -691,5 +859,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: colors.white,
+  },
+  restoreButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  restoreButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.text.secondary,
   },
 });

@@ -7,6 +7,8 @@ import {
   Share,
   Alert,
   Linking,
+  Image,
+  Platform,
 } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +20,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from "react-native-reanimated";
+import { usePostHog } from "posthog-react-native";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
@@ -61,6 +64,7 @@ export default function SearchScreen() {
   // Get user data from Redux
   const { user, fetchUser } = useUserRedux();
   const { addNotification } = useNotification();
+  const posthog = usePostHog();
 
   // Calculate remaining searches
   const remainingSearches = calculateRemainingSearches(
@@ -87,6 +91,15 @@ export default function SearchScreen() {
     // Check if user has remaining searches
     if (remainingSearches <= 0) {
       setSearchError("You've used all your searches for this month.");
+
+      // Track search attempt when out of searches
+      posthog.capture("search_attempted_no_searches", {
+        target_phone: selectedCountry.dialCode + phone,
+        country_code: selectedCountry.dialCode,
+        remaining_searches: remainingSearches,
+        platform: Platform.OS,
+      });
+
       return;
     }
 
@@ -97,6 +110,16 @@ export default function SearchScreen() {
       // Combine country code with phone number - ensure proper formatting
       const fullPhoneNumber = selectedCountry.dialCode + phone;
       console.log("Searching for phone number:", fullPhoneNumber);
+
+      // Track search initiation
+      posthog.capture("search_initiated", {
+        target_phone: fullPhoneNumber,
+        country_code: selectedCountry.dialCode,
+        remaining_searches: remainingSearches,
+        platform: Platform.OS,
+        user_id: user?.id || "",
+      });
+
       const response = await searchUserByPhone(fullPhoneNumber);
 
       if (response.data.success) {
@@ -115,21 +138,61 @@ export default function SearchScreen() {
           relationshipStatus: actualStatus,
         });
 
+        // Track successful search
+        posthog.capture("search_completed", {
+          target_phone: fullPhoneNumber,
+          country_code: selectedCountry.dialCode,
+          user_exists: result.exists,
+          relationship_status: actualStatus,
+          has_name: !!result.name,
+          remaining_searches: remainingSearches - 1,
+          platform: Platform.OS,
+          user_id: user?.id || "",
+        });
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
+        // Track search failure
+        posthog.capture("search_failed", {
+          target_phone: fullPhoneNumber,
+          country_code: selectedCountry.dialCode,
+          error_reason: "search_unsuccessful",
+          remaining_searches: remainingSearches,
+          platform: Platform.OS,
+          user_id: user?.id || "",
+        });
+
         setSearchError("Search failed. Please try again.");
       }
     } catch (error: any) {
       console.error("Search error:", error);
+
+      let errorReason = "unknown_error";
+      let errorMessage = "Unable to search at this time. Please try again.";
+
       if (error.response?.status === 401) {
-        setSearchError("Please log in to search for users.");
+        errorReason = "unauthorized";
+        errorMessage = "Please log in to search for users.";
       } else if (
         error.response?.data?.error === "RELATIONSHIP_STATUS_REQUIRED"
       ) {
-        setSearchError("RELATIONSHIP_STATUS_REQUIRED");
-      } else {
-        setSearchError("Unable to search at this time. Please try again.");
+        errorReason = "relationship_status_required";
+        errorMessage = "RELATIONSHIP_STATUS_REQUIRED";
       }
+
+      // Track search error
+      posthog.capture("search_error", {
+        target_phone: selectedCountry.dialCode + phone,
+        country_code: selectedCountry.dialCode,
+        error_reason: errorReason,
+        error_status: error.response?.status,
+        error_message: error.response?.data?.error || error.message,
+        remaining_searches: remainingSearches,
+        platform: Platform.OS,
+        user_id: user?.id || "",
+      });
+
+      setSearchError(errorMessage);
     } finally {
       setIsSearching(false);
       await fetchUser();
@@ -167,6 +230,13 @@ export default function SearchScreen() {
     console.log("Share referral link pressed");
     setIsInviteLoading(true);
 
+    // Track referral share initiation
+    posthog.capture("referral_share_initiated", {
+      user_id: user?.id || "",
+      platform: Platform.OS,
+      source: "search_screen_out_of_searches",
+    });
+
     try {
       // Create the invite link
       const inviteLink = `https://makeitofficial.us/refer/${user?.id}`;
@@ -180,6 +250,15 @@ export default function SearchScreen() {
         });
 
         if (result.action === Share.sharedAction) {
+          // Track successful referral share
+          posthog.capture("referral_shared", {
+            user_id: user?.id || "",
+            share_method: result.activityType || "unknown",
+            platform: Platform.OS,
+            source: "search_screen_out_of_searches",
+            was_successful: true,
+          });
+
           // Record successful share attempt
           try {
             const shareMethod = result.activityType
@@ -204,6 +283,13 @@ export default function SearchScreen() {
           // Refresh user data after successful share
           await fetchUser();
         } else {
+          // Track cancelled referral share
+          posthog.capture("referral_share_cancelled", {
+            user_id: user?.id || "",
+            platform: Platform.OS,
+            source: "search_screen_out_of_searches",
+          });
+
           // Record aborted share attempt
           try {
             console.log("Share cancelled by user");
@@ -213,10 +299,33 @@ export default function SearchScreen() {
         }
       } catch (shareError) {
         console.error("Error sharing:", shareError);
+
+        // Track referral share error
+        posthog.capture("referral_share_failed", {
+          user_id: user?.id || "",
+          platform: Platform.OS,
+          source: "search_screen_out_of_searches",
+          error_message:
+            shareError instanceof Error
+              ? shareError.message
+              : String(shareError),
+        });
+
         Alert.alert("Share Error", "Failed to share the referral link");
       }
     } catch (error: any) {
       console.error("Error creating invite:", error);
+
+      // Track referral creation error
+      posthog.capture("referral_creation_failed", {
+        user_id: user?.id || "",
+        platform: Platform.OS,
+        source: "search_screen_out_of_searches",
+        error_message:
+          error.response?.data?.error || "Failed to create invitation",
+        error_status: error.response?.status,
+      });
+
       const errorMessage =
         error.response?.data?.error || "Failed to create invitation";
       Alert.alert("Error", errorMessage);
@@ -270,10 +379,10 @@ export default function SearchScreen() {
         {/* Animated Header Section */}
         <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
           <View style={styles.iconContainer}>
-            <Ionicons
-              name="search"
-              size={80}
-              color={colors.primary || "#2563EB"}
+            <Image
+              source={require("@/assets/images/search.png")}
+              style={styles.searchIcon}
+              resizeMode="contain"
             />
           </View>
           <Text style={styles.titleText}>Find a Status</Text>
@@ -328,7 +437,7 @@ export default function SearchScreen() {
                   <View style={styles.errorButtonsContainer}>
                     <TouchableOpacity
                       style={styles.setStatusButton}
-                      onPress={() => router.push("/(tabs)/relationship")}
+                      onPress={() => router.push("/manage")}
                       delayPressIn={0}
                       delayPressOut={0}>
                       <View style={styles.buttonContent}>
@@ -433,7 +542,9 @@ export default function SearchScreen() {
           </Text>
           <Text style={styles.premiumSubtext}>
             Upgrade for 8 monthly searches +{" "}
-            <Text style={styles.premiumLink}>Premium</Text>
+            <Text style={styles.premiumLink} onPress={handlePremiumPress}>
+              Premium
+            </Text>
           </Text>
         </View>
       )}
@@ -466,10 +577,15 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.background.secondary || "#F8FAFC",
+    // backgroundColor: colors.background.secondary || "#F8FAFC",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
+  },
+
+  searchIcon: {
+    width: 120,
+    height: 120,
   },
 
   titleText: {

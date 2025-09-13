@@ -34,30 +34,30 @@ interface TutorialProps {
 const tutorialSteps = [
   {
     title: "Make It Official",
-    subtitle: 'The modern way to make your relationship "Facebook" official',
+    subtitle:
+      'The modern way to make your relationship "Facebook" official \n \nOfficial brings transparency back to dating by verifying your relationship status and viewing others',
     description: "",
     emoji: "",
     isLogoStep: true,
   },
   {
     title: "Step 1: Set Your Relationship Status",
-    description:
-      "If you're single: you're all set!\n\nIf you're taken: Invite your partner, once they confirm your status will show as \"Dating\"",
+    subtitle:
+      "If you're single: you're all set!\n\nIf you're taken: Invite your partner, once they confirm your status will show as \"Dating\" \n \n Once your status is set, you can search others by phone number.",
     emoji: "✅",
   },
+
   {
-    title: "Step 2: Total Privacy, Built for Trust",
-    subtitle: "No one can EVER see",
-    description:
-      "• When you started dating\n• Your identity or activity\n• Whether or when you use the app \n\n It's always private!",
-    emoji: "🔒",
+    title: "Step 2: See Who's Official",
+    subtitle:
+      "Once your status is set, you can search others by phone number. \n \n Now when you're verifying someone's story, you can know for sure if they're telling the truth.",
+    emoji: "📱",
   },
   {
-    title: "Step 3: See Who's Official",
-    subtitle: "Once your status is set, you can search others by phone number.",
-    description:
-      "Whether you're checking if a crush is taken or just verifying someone's story - now you can know.",
-    emoji: "📱",
+    title: "Step 3: Make Better Dating Decisions and Build Trust",
+    subtitle:
+      "Official is built for privacy and trust. \n \n No one can EVER see when you started dating, who you're dating, your identity, or when you use the app. \n \n Confidentiality is our top priority.",
+    emoji: "🔒",
   },
 ];
 
@@ -232,6 +232,10 @@ export default function Tutorial({ visible, onClose }: TutorialProps) {
     animateClose();
   };
 
+  const handleBackdropPress = () => {
+    animateClose();
+  };
+
   const currentStepData = tutorialSteps[currentStep];
 
   return (
@@ -241,7 +245,12 @@ export default function Tutorial({ visible, onClose }: TutorialProps) {
       animationType="none"
       onRequestClose={handleClose}>
       <SafeAreaView style={styles.modalOverlay}>
-        <Animated.View style={[styles.backdrop, backdropStyle]} />
+        {/* Make backdrop touchable */}
+        <TouchableOpacity
+          style={[styles.backdrop, backdropStyle]}
+          onPress={handleBackdropPress}
+          activeOpacity={1}
+        />
 
         <Animated.View style={[styles.modalContainer, modalStyle]}>
           <LinearGradient colors={GRADIENT_COLORS} style={styles.modalContent}>
@@ -388,7 +397,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start", // Changed from "center" to "flex-start"
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingTop: 20, // Added small top padding for breathing room
   },
   emoji: {

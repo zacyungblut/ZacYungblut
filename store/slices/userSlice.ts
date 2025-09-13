@@ -7,8 +7,10 @@ import {
 import {
   getCurrentUser,
   editRelationship as editRelationshipAPI,
+  endRelationship as endRelationshipAPI, // Add this import
   deleteAccount as deleteAccountAPI,
   updateUserSingleStatus as updateUserSingleStatusAPI, // Add this import
+  updateUserRelationshipTypeVisibility as updateUserRelationshipTypeVisibilityAPI, // Add this import
 } from "@/api";
 
 // Define types based on your schema
@@ -113,6 +115,7 @@ interface User {
   name?: string;
   verified: boolean;
   isSingle: boolean;
+  showRelationshipType: boolean; // Add this field
   bonusSearches: number; // Add bonus searches field
   createdAt: string;
   updatedAt: string;
@@ -194,6 +197,39 @@ export const updateSingleStatus = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.error || "Failed to update single status"
+      );
+    }
+  }
+);
+
+// Add this new async thunk after updateSingleStatus
+export const updateRelationshipTypeVisibility = createAsyncThunk(
+  "user/updateRelationshipTypeVisibility",
+  async (showRelationshipType: boolean, { rejectWithValue }) => {
+    try {
+      const response = await updateUserRelationshipTypeVisibilityAPI(
+        showRelationshipType
+      );
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error ||
+          "Failed to update relationship type visibility"
+      );
+    }
+  }
+);
+
+// Add this new async thunk after updateRelationshipTypeVisibility
+export const endRelationship = createAsyncThunk(
+  "user/endRelationship",
+  async (relationshipId: string, { rejectWithValue }) => {
+    try {
+      const response = await endRelationshipAPI(relationshipId);
+      return response.data.relationship;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to end relationship"
       );
     }
   }
@@ -388,6 +424,47 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(updateSingleStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Add update relationship type visibility cases after updateSingleStatus cases
+      .addCase(updateRelationshipTypeVisibility.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateRelationshipTypeVisibility.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) {
+          state.user.showRelationshipType = action.payload.showRelationshipType;
+          state.user.updatedAt = action.payload.updatedAt;
+        }
+        state.error = null;
+      })
+      .addCase(updateRelationshipTypeVisibility.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Add end relationship cases after updateRelationshipTypeVisibility cases
+      .addCase(endRelationship.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(endRelationship.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) {
+          // Update the relationship in the user's relationships array
+          const index = state.user.relationships.findIndex(
+            (rel) => rel.id === action.payload.id
+          );
+          if (index !== -1) {
+            state.user.relationships[index] = action.payload;
+          }
+          // Set user's isSingle status to false (unknown) as they just ended a relationship
+          state.user.isSingle = false;
+        }
+        state.error = null;
+      })
+      .addCase(endRelationship.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

@@ -4,6 +4,7 @@ import InviteButton from "@/components/InviteButton";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { shareMessage } from "@/utils/helpers";
+import { usePostHog } from "posthog-react-native";
 
 interface TapToInviteButtonProps {
   onInviteSuccess?: () => void;
@@ -17,6 +18,7 @@ export default function TapToInviteButton({
 
   const { addNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
+  const posthog = usePostHog();
 
   const handleInvite = async () => {
     console.log("Invite pressed");
@@ -26,6 +28,14 @@ export default function TapToInviteButton({
       // Send invite with default "DATING" relationship type, but don't update local state yet
       const response = await sendUserInvite("DATING", false);
       const inviteId = response.data.invite.id;
+
+      // Track invite creation
+      posthog.capture("partner_invite_created", {
+        invite_id: inviteId,
+        relationship_type: "DATING",
+        platform: Platform.OS,
+        source: "tap_to_invite_button",
+      });
 
       // Create the invite link
       const inviteLink = `https://makeitofficial.us/confirm/${inviteId}`;
@@ -39,6 +49,15 @@ export default function TapToInviteButton({
         });
 
         if (result.action === Share.sharedAction) {
+          // Track successful invite share
+          posthog.capture("partner_invite_shared", {
+            invite_id: inviteId,
+            share_method: result.activityType || "unknown",
+            platform: Platform.OS,
+            source: "tap_to_invite_button",
+            was_successful: true,
+          });
+
           // Record successful share attempt with detailed activity type
           try {
             const shareMethod = result.activityType
@@ -75,6 +94,14 @@ export default function TapToInviteButton({
           // Call the success callback if provided
           onInviteSuccess?.();
         } else {
+          // Track cancelled invite share
+          posthog.capture("partner_invite_cancelled", {
+            invite_id: inviteId,
+            platform: Platform.OS,
+            source: "tap_to_invite_button",
+            reason: "user_cancelled_share",
+          });
+
           // Record aborted share attempt
           try {
             await recordShareAttempt(inviteId, {
@@ -105,6 +132,17 @@ export default function TapToInviteButton({
         }
       } catch (shareError) {
         console.error("Error sharing:", shareError);
+
+        // Track failed invite share
+        posthog.capture("partner_invite_failed", {
+          invite_id: inviteId,
+          platform: Platform.OS,
+          source: "tap_to_invite_button",
+          error_message:
+            shareError instanceof Error
+              ? shareError.message
+              : String(shareError),
+        });
 
         // Record failed share attempt
         try {
@@ -138,6 +176,16 @@ export default function TapToInviteButton({
       }
     } catch (error: any) {
       console.error("Error creating invite:", error);
+
+      // Track invite creation failure
+      posthog.capture("partner_invite_creation_failed", {
+        platform: Platform.OS,
+        source: "tap_to_invite_button",
+        error_message:
+          error.response?.data?.error || "Failed to create invitation",
+        error_status: error.response?.status,
+      });
+
       const errorMessage =
         error.response?.data?.error || "Failed to create invitation";
       Alert.alert("Error", errorMessage);

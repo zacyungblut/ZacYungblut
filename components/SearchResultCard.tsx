@@ -133,6 +133,48 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
     return searchResult.exists && searchResult.relationshipStatus !== "UNKNOWN";
   };
 
+  // Helper function to get the appropriate icon based on status
+  const getStatusIcon = () => {
+    const status = searchResult.relationshipStatus;
+
+    if (status === "UNKNOWN") {
+      return "help-circle";
+    }
+
+    // For all known statuses (including generic ones), use shield-checkmark
+    if (
+      status === "Single" ||
+      status === "In a relationship" ||
+      status === "Dating" ||
+      status === "Engaged" ||
+      status === "Married" ||
+      status === "Separated" ||
+      status === "Widowed" ||
+      status === "Situationship" ||
+      status === "Friends with Benefits" ||
+      status === "On a Break" ||
+      status === "Open Relationship" ||
+      status === "Polyamorous"
+    ) {
+      return "shield-checkmark";
+    }
+
+    // Default fallback
+    return "shield-checkmark";
+  };
+
+  // Helper function to determine color based on status type
+  const getStatusColor = () => {
+    const status = searchResult.relationshipStatus;
+
+    if (status === "UNKNOWN") {
+      return colors.primary || "#2563EB";
+    }
+
+    // All confirmed statuses get the success blue color
+    return "#1E40AF";
+  };
+
   return (
     <View
       style={[
@@ -144,15 +186,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
           styles.resultIconContainer,
           isSuccessfulResult() && styles.resultIconContainerSuccess,
         ]}>
-        <Ionicons
-          name={
-            searchResult.relationshipStatus === "UNKNOWN"
-              ? "help-circle"
-              : "shield-checkmark"
-          }
-          size={60}
-          color={isSuccessfulResult() ? "#1E40AF" : colors.primary || "#2563EB"}
-        />
+        <Ionicons name={getStatusIcon()} size={60} color={getStatusColor()} />
       </View>
 
       <View style={styles.resultContent}>

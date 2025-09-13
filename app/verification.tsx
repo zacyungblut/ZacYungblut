@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 
 import { verifyCode, resendVerification } from "@/api";
 import SignupButton from "@/components/SignupButton";
@@ -169,6 +170,7 @@ const CodeInput = React.memo<{
 
 function Verification() {
   const router = useRouter();
+  const posthog = usePostHog();
   const params = useLocalSearchParams();
   const phone =
     typeof params["phone"] === "string" ? params["phone"] : undefined;
@@ -177,59 +179,103 @@ function Verification() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const { fetchUser } = useUserRedux();
+  const { fetchUser, user } = useUserRedux();
   // Add these new state variables
   const [canResend, setCanResend] = useState(true);
   const [countdown, setCountdown] = useState(30);
   const [isResending, setIsResending] = useState(false);
 
   // Memoize the handlers to prevent recreation
-  const handleSubmit = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
+  const handleSubmit = useCallback(
+    async (codeToSubmit?: string) => {
+      setIsLoading(true);
+      setErrorMessage(null);
 
-    if (!phone || phone.trim() === "") {
-      setErrorMessage("No phone number provided");
-      setIsLoading(false);
-      return;
-    }
+      const codeToUse = codeToSubmit || verificationCode;
 
-    try {
-      const response = await verifyCode(phone, verificationCode);
-
-      // Save the token
-      if (response.data.token) {
-        AuthService.setAuthToken(response.data.token);
+      if (!phone || phone.trim() === "") {
+        setErrorMessage("No phone number provided");
+        setIsLoading(false);
+        return;
       }
 
-      // Navigate to main app
-      router.replace("/(tabs)");
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.error || "Invalid verification code";
-      setErrorMessage(errorMessage);
-    } finally {
-      await fetchUser();
-      setIsLoading(false);
-    }
-  }, [phone, verificationCode, router]);
+      if (!codeToUse || codeToUse.length !== 4) {
+        setErrorMessage("Please enter a valid 4-digit verification code");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await verifyCode(phone, codeToUse);
+
+        // Track successful verification
+        posthog.capture("verification_success", {
+          phone: phone,
+          code_length: codeToUse.length,
+        });
+
+        // Save the token
+        if (response.data.token) {
+          AuthService.setAuthToken(response.data.token);
+        }
+
+        // Fetch user data to get the user ID for identification
+        await fetchUser();
+
+        // Identify the user with PostHog using their phone number and user ID
+        if (user?.id) {
+          posthog.identify(user.id, {
+            phone: phone,
+            verified: true,
+            created_at: user.createdAt,
+            is_single: user.isSingle,
+            bonus_searches: user.bonusSearches,
+          });
+        } else {
+          // If user data isn't available yet, identify with phone number
+          posthog.identify(phone, {
+            phone: phone,
+            verified: true,
+          });
+        }
+
+        // Navigate to main app
+        router.replace("/(tabs)");
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.error || "Invalid verification code";
+
+        // Track verification failure
+        posthog.capture("verification_failure", {
+          phone: phone,
+          code_length: codeToUse.length,
+          error_message: errorMessage,
+          error_status: error.response?.status,
+        });
+
+        setErrorMessage(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [phone, verificationCode, router, fetchUser, posthog, user]
+  );
 
   const handleCodeChange = useCallback(
     (value: string) => {
       const numericValue = value.replace(/[^0-9]/g, "").slice(0, 4);
 
-      // If code goes from empty to complete (likely auto-fill), submit automatically
-      if (verificationCode.length === 0 && numericValue.length === 4) {
-        setVerificationCode(numericValue);
-        // Use setTimeout to ensure state is updated before submission
+      setVerificationCode(numericValue);
+
+      // Auto-submit when 4 digits are entered, passing the new value directly
+      if (numericValue.length === 4) {
+        // Pass the new code directly to avoid state timing issues
         setTimeout(() => {
-          handleSubmit();
+          handleSubmit(numericValue);
         }, 100);
-      } else {
-        setVerificationCode(numericValue);
       }
     },
-    [verificationCode.length, handleSubmit]
+    [handleSubmit]
   );
 
   const handleResendCode = useCallback(async () => {

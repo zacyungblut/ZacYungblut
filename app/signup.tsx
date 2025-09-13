@@ -74,6 +74,16 @@ export default function SignupScreen() {
         });
       } catch (error: any) {
         console.error("Signup error:", error);
+
+        // Track signup failure
+        posthog.capture("signup_failure", {
+          phone: fullNumberWithCountryCode,
+          country_code: selectedCountry.dialCode,
+          error_message:
+            error.response?.data?.error || "Failed to send verification code",
+          error_status: error.response?.status,
+        });
+
         Alert.alert(
           "Error",
           error.response?.data?.error ||
