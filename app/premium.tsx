@@ -497,7 +497,8 @@ export default function PremiumScreen() {
               style={styles.checkmark}
             />
             <Text style={styles.featureText}>
-              Searches roll over to next month
+              Get notifications when your partner changes your relationship
+              status
             </Text>
           </View>
           <View style={styles.featureItem}>

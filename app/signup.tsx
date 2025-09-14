@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Alert,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
@@ -123,7 +124,22 @@ export default function SignupScreen() {
           />
 
           <Text style={styles.helperText}>
-            We'll send an SMS verification code.
+            We'll send an SMS verification code. By continuing, you agree to our{" "}
+            <Text
+              style={styles.linkText}
+              onPress={() =>
+                Linking.openURL("https://makeitofficial.us/terms")
+              }>
+              Terms & Conditions{" "}
+            </Text>
+            and{" "}
+            <Text
+              style={styles.linkText}
+              onPress={() =>
+                Linking.openURL("https://makeitofficial.us/privacy")
+              }>
+              Privacy Policy
+            </Text>
           </Text>
 
           {/* Continue Button - Always inline */}
@@ -223,5 +239,9 @@ const styles = StyleSheet.create({
   },
   continueButtonTextDisabled: {
     color: colors.text.quaternary,
+  },
+  linkText: {
+    color: colors.primary,
+    fontWeight: "600",
   },
 });

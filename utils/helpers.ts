@@ -16,9 +16,10 @@ export const referralMessage = `Hey, check out this app called Official, the mod
 // Helper function to calculate remaining searches for the user
 export const calculateRemainingSearches = (
   searchTransactions: any[] = [],
-  bonusSearches: number = 0
+  bonusSearches: number = 0,
+  hasPremium: boolean = false
 ): number => {
-  const DEFAULT_MONTHLY_SEARCHES = 2;
+  const DEFAULT_MONTHLY_SEARCHES = hasPremium ? 8 : 2;
 
   // Get current date and calculate 30 days ago
   const now = new Date();

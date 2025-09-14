@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -92,10 +97,10 @@ export const SearchPlaceholderCard: React.FC<SearchPlaceholderCardProps> = ({
         {content.showSpinner ? (
           <ActivityIndicator size="large" color={colors.primary || "#2563EB"} />
         ) : (
-          <Ionicons
-            name="search"
-            size={60}
-            color={colors.text.tertiary || "#94A3B8"}
+          <Image
+            source={require("@/assets/images/search.png")}
+            style={styles.searchIcon}
+            resizeMode="contain"
           />
         )}
       </View>
@@ -235,7 +240,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.background.primary || "#FFFFFF",
+    // backgroundColor: colors.background.primary || "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
@@ -289,6 +294,11 @@ const styles = StyleSheet.create({
   placeholderContent: {
     width: "100%",
     maxWidth: "100%",
+  },
+
+  searchIcon: {
+    width: 60,
+    height: 60,
   },
 });
 

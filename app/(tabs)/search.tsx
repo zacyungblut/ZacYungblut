@@ -21,6 +21,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { usePostHog } from "posthog-react-native";
+import Purchases, { CustomerInfo } from "react-native-purchases";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
@@ -55,6 +56,7 @@ export default function SearchScreen() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
   // Animated value for focus state
   const focusAnimation = useSharedValue(0);
@@ -66,14 +68,32 @@ export default function SearchScreen() {
   const { addNotification } = useNotification();
   const posthog = usePostHog();
 
-  // Calculate remaining searches
+  // Check if user has premium
+  const hasPremium = customerInfo?.entitlements.active["premium"] != null;
+
+  // Calculate remaining searches with premium status
   const remainingSearches = calculateRemainingSearches(
     user?.searchTransactions || [],
-    user?.bonusSearches || 0
+    user?.bonusSearches || 0,
+    hasPremium
   );
 
   // Check if phone number is complete (10+ digits)
   const isPhoneComplete = phoneNumber.length >= 10;
+
+  // Initialize RevenueCat customer info
+  useEffect(() => {
+    const initializeCustomerInfo = async () => {
+      try {
+        const info = await Purchases.getCustomerInfo();
+        setCustomerInfo(info);
+      } catch (error) {
+        console.error("Error getting customer info:", error);
+      }
+    };
+
+    initializeCustomerInfo();
+  }, []);
 
   const handleInputFocus = () => {
     setIsInputFocused(true);

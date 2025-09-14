@@ -1,10 +1,13 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { Dimensions, StyleSheet, View, Keyboard } from "react-native";
+import { Dimensions, StyleSheet, View, Keyboard, Platform } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
   runOnJS,
 } from "react-native-reanimated";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
 
 import { colors } from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -12,6 +15,7 @@ import TabBar from "@/components/TabBar";
 import ReferralClaimModal from "@/components/ReferralClaimModal";
 import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
+import { useNotification } from "@/contexts/NotificationContext";
 
 // Import your tab screens directly
 import SearchScreen from "./search";
@@ -19,14 +23,123 @@ import RelationshipScreen from "./relationship";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+// Configure how notifications should be handled when the app is in the foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 export default function TabLayout() {
   const scrollViewRef = useRef<Animated.ScrollView>(null);
   const currentPage = useSharedValue(0);
-  const { user } = useUserRedux();
+  const { user, updateUserExpoPushToken } = useUserRedux();
+  const { addNotification } = useNotification();
 
   // Referral modal state
   const [showReferralModal, setShowReferralModal] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  // Push notification setup
+  useEffect(() => {
+    let isMounted = true;
+
+    const setupPushNotifications = async () => {
+      try {
+        // Only proceed if we have a user and this is a real device
+        if (!user) {
+          console.log(
+            "Skipping push notification setup: no user or not a real device"
+          );
+          return;
+        }
+
+        // Check if we already have a token and it matches what's stored
+        const existingToken = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        });
+
+        if (existingToken.data === user.expoPushToken) {
+          console.log("Push token already up to date");
+          return;
+        }
+
+        // Request permissions
+        const { status: existingStatus } =
+          await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        if (existingStatus !== "granted") {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+
+        if (finalStatus !== "granted") {
+          console.log("Push notification permissions not granted");
+
+          return;
+        }
+
+        // Get the token that uniquely identifies this device
+        const token = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        });
+
+        console.log("Got Expo push token:", token.data);
+
+        // Save the token to the user's profile
+        if (isMounted && token.data !== user.expoPushToken) {
+          try {
+            await updateUserExpoPushToken(token.data);
+            console.log("Push token saved successfully");
+          } catch (error) {
+            console.error("Failed to save push token:", error);
+          }
+        }
+
+        // Set up notification listeners
+        const notificationListener =
+          Notifications.addNotificationReceivedListener((notification) => {
+            console.log("Notification received:", notification);
+
+            // Show in-app notification
+            addNotification({
+              title: notification.request.content.title || "New Notification",
+              description: notification.request.content.body || "",
+              type: "info",
+              duration: 5000,
+            });
+          });
+
+        const responseListener =
+          Notifications.addNotificationResponseReceivedListener((response) => {
+            console.log("Notification response:", response);
+            // Handle notification tap - you can add navigation logic here
+          });
+
+        // Cleanup function
+        return () => {
+          notificationListener.remove();
+          responseListener.remove();
+        };
+      } catch (error) {
+        console.error("Error setting up push notifications:", error);
+      }
+    };
+
+    // Only set up notifications if user is logged in
+    if (user) {
+      setupPushNotifications();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, updateUserExpoPushToken, addNotification]);
 
   // Check for pending referral code on component mount
   useEffect(() => {

@@ -87,13 +87,17 @@ export default function Auth() {
               By continuing, you agree to Official's{" "}
               <Text
                 style={styles.linkText}
-                onPress={() => Linking.openURL("https://your-terms-url.com")}>
+                onPress={() =>
+                  Linking.openURL("https://makeitofficial.us/terms")
+                }>
                 Terms & Conditions
               </Text>{" "}
               and{" "}
               <Text
                 style={styles.linkText}
-                onPress={() => Linking.openURL("https://your-privacy-url.com")}>
+                onPress={() =>
+                  Linking.openURL("https://makeitofficial.us/privacy")
+                }>
                 Privacy Policy
               </Text>
               .

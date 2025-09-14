@@ -11,6 +11,7 @@ import {
   deleteAccount as deleteAccountAPI,
   updateUserSingleStatus as updateUserSingleStatusAPI, // Add this import
   updateUserRelationshipTypeVisibility as updateUserRelationshipTypeVisibilityAPI, // Add this import
+  updateExpoPushToken as updateExpoPushTokenAPI, // Add this import
 } from "@/api";
 
 // Define types based on your schema
@@ -117,6 +118,7 @@ interface User {
   isSingle: boolean;
   showRelationshipType: boolean; // Add this field
   bonusSearches: number; // Add bonus searches field
+  expoPushToken?: string; // Add this field
   createdAt: string;
   updatedAt: string;
   relationships: Relationship[];
@@ -215,6 +217,21 @@ export const updateRelationshipTypeVisibility = createAsyncThunk(
       return rejectWithValue(
         error.response?.data?.error ||
           "Failed to update relationship type visibility"
+      );
+    }
+  }
+);
+
+// Add this new async thunk after updateRelationshipTypeVisibility
+export const updateExpoPushToken = createAsyncThunk(
+  "user/updateExpoPushToken",
+  async (expoPushToken: string | null, { rejectWithValue }) => {
+    try {
+      const response = await updateExpoPushTokenAPI(expoPushToken);
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update push token"
       );
     }
   }
@@ -465,6 +482,23 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(endRelationship.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Add update Expo push token cases after endRelationship cases
+      .addCase(updateExpoPushToken.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateExpoPushToken.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) {
+          state.user.expoPushToken = action.payload.expoPushToken;
+          state.user.updatedAt = action.payload.updatedAt;
+        }
+        state.error = null;
+      })
+      .addCase(updateExpoPushToken.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

@@ -19,6 +19,7 @@ import {
   deleteUserAccount,
   updateSingleStatus,
   updateRelationshipTypeVisibility,
+  updateExpoPushToken,
   addReviewRequest,
   updateReviewRequest,
   selectUser,
@@ -246,6 +247,15 @@ export const useUserRedux = () => {
     }
   };
 
+  const updateUserExpoPushToken = async (expoPushToken: string | null) => {
+    try {
+      const result = await dispatch(updateExpoPushToken(expoPushToken));
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     // User data
     user,
@@ -260,6 +270,7 @@ export const useUserRedux = () => {
     updateUserSingleStatus,
     updateUserRelationshipTypeVisibility,
     deleteUserAccountPermanently,
+    updateUserExpoPushToken,
 
     // Invites data and actions
     invites,
