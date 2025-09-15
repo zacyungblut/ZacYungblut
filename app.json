@@ -9,8 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/images/splash.png",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
@@ -19,6 +19,11 @@
       "associatedDomains": ["applinks:makeitofficial.us"],
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "We use push notifications to alert you if your partner ends your relationship."
+      },
+      "icon": {
+        "light": "./assets/images/ios-light.png",
+        "dark": "./assets/images/ios-dark.png",
+        "tinted": "./assets/images/ios-tinted.png"
       }
     },
     "android": {
