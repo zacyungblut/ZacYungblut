@@ -26,13 +26,13 @@ export default function TapToInviteButton({
 
     try {
       // Send invite with default "DATING" relationship type, but don't update local state yet
-      const response = await sendUserInvite("DATING", false);
+      const response = await sendUserInvite("EXCLUSIVE", false);
       const inviteId = response.data.invite.id;
 
       // Track invite creation
       posthog.capture("partner_invite_created", {
         invite_id: inviteId,
-        relationship_type: "DATING",
+        relationship_type: "EXCLUSIVE",
         platform: Platform.OS,
         source: "tap_to_invite_button",
       });

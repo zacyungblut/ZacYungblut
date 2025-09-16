@@ -48,6 +48,7 @@ interface Relationship {
   id: string;
   status:
     | "DATING"
+    | "EXCLUSIVE"
     | "ENGAGED"
     | "MARRIED"
     | "SEPARATED"

@@ -151,6 +151,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
       status === "Single" ||
       status === "In a relationship" ||
       status === "Dating" ||
+      status === "Exclusive" ||
       status === "Engaged" ||
       status === "Married" ||
       status === "Separated" ||

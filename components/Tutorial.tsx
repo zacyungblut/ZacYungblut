@@ -43,7 +43,7 @@ const tutorialSteps = [
   {
     title: "Step 1: Set Your Relationship Status",
     subtitle:
-      "If you're single: you're all set!\n\nIf you're taken: Invite your partner, once they confirm your status will show as \"Dating\" \n \n Once your status is set, you can search others by phone number.",
+      "If you're single: you're all set!\n\nIf you're taken: Invite your partner, once they confirm your status will show as \"Exclusive\" \n \n Once your status is set, you can search others by phone number.",
     emoji: "✅",
   },
 

@@ -11,6 +11,7 @@ import { useUserRedux } from "@/store/hooks/useUserRedux";
 // Status display mapping based on the schema and existing patterns
 const STATUS_DISPLAY_MAP: { [key: string]: string } = {
   DATING: "Dating",
+  EXCLUSIVE: "Exclusive",
   ENGAGED: "Engaged",
   MARRIED: "Married",
   SEPARATED: "Separated",
@@ -29,6 +30,8 @@ const getStatusImage = (status: string) => {
   switch (status) {
     case "Dating":
       return require("@/assets/images/dating.png");
+    case "Exclusive":
+      return require("@/assets/images/exclusive.png");
     case "Engaged":
       return require("@/assets/images/engaged.png");
     case "Married":

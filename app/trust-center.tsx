@@ -18,38 +18,26 @@ const trustPoints = [
   {
     icon: "shield-checkmark",
     title: "Relationships are private.\nSo is Official",
-    description:
-      "Your privacy is our highest priority. We built Official with privacy-first design principles.",
   },
   {
     icon: "eye-off",
-    title: "We never share\nWHO you are dating",
-    description:
-      "Only your relationship status is visible. Your partner's identity remains completely private.",
+    title: "We never share\nWHO you are exclusive with",
   },
   {
     icon: "lock-closed",
     title: "We never share ANY\ninformation about you",
-    description:
-      "Only your phone number is used for verification. No personal data, no tracking, no profiles.",
   },
   {
     icon: "time",
     title: "We never share relationship details",
-    description:
-      "Duration, anniversary dates, and relationship history stay between you and your partner.",
   },
   {
     icon: "search",
-    title: "No one knows  when you\nsearch for them",
-    description:
-      "Searches are completely anonymous. No notifications, no traces, no digital footprints.",
+    title: "No one knows when you\nsearch for them",
   },
   {
     icon: "server",
     title: "Minimal data, maximum security",
-    description:
-      "We store only what's absolutely necessary and encrypt everything. Your trust is earned, not assumed.",
   },
 ];
 
@@ -93,15 +81,12 @@ export default function TrustCenterScreen() {
                 <View style={styles.trustPointIcon}>
                   <Ionicons
                     name={point.icon as any}
-                    size={24}
+                    size={28}
                     color={colors.primary}
                   />
                 </View>
                 <View style={styles.trustPointContent}>
                   <Text style={styles.trustPointTitle}>{point.title}</Text>
-                  <Text style={styles.trustPointDescription}>
-                    {point.description}
-                  </Text>
                 </View>
               </View>
             ))}
@@ -138,7 +123,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 32, // Increased horizontal padding
+    paddingHorizontal: 20, // Reduced from 32 to 20
     paddingTop: 24, // Added top padding
     paddingBottom: 40,
   },
@@ -171,35 +156,28 @@ const styles = StyleSheet.create({
   trustPointContainer: {
     flexDirection: "row",
     marginBottom: 24,
-    alignItems: "flex-start",
+    alignItems: "center", // Changed from "flex-start" to "center"
   },
   trustPointIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.background.secondary,
+    // backgroundColor: colors.background.secondary,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.primary,
   },
   trustPointContent: {
     flex: 1,
-    paddingTop: 2,
+    justifyContent: "center", // Added to center the text vertically
   },
   trustPointTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: 6,
-    lineHeight: 22,
-  },
-  trustPointDescription: {
-    fontSize: 14,
-    fontWeight: "400",
     color: colors.text.secondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   bottomAssurance: {
     marginTop: 32,

@@ -453,11 +453,6 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
-        <Stack.Screen name="alerts" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="add-alert"
-          options={{ headerShown: false, presentation: "formSheet" }}
-        />
         <Stack.Screen name="manage" options={{ headerShown: false }} />
         <Stack.Screen
           name="premium"

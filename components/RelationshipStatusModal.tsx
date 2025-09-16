@@ -55,10 +55,10 @@ const PENDING_STATUS_OPTIONS = [
 
 const IN_RELATIONSHIP_STATUS_OPTIONS = [
   {
-    value: "DATING",
-    label: "Dating",
+    value: "EXCLUSIVE",
+    label: "Exclusive",
     icon: "heart-outline",
-    image: require("@/assets/images/dating.png"),
+    image: require("@/assets/images/exclusive.png"),
   },
   {
     value: "ENGAGED",

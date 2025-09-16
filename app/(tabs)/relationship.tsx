@@ -16,7 +16,9 @@ import PendingInviteCard from "@/components/PendingInviteCard";
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import Tutorial from "@/components/Tutorial";
-import TapToInviteButton from "@/components/TapToInviteButton"; // Add this import
+import TapToInviteButton from "@/components/TapToInviteButton";
+import FallingElements from "@/components/FallingElements"; // Updated import
+import FloatingImage from "@/components/FloatingImage";
 import { colors } from "@/constants/Colors";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
@@ -74,7 +76,7 @@ export default function RelationshipScreen() {
 
     if (activeRelationship) {
       return {
-        status: "dating" as const,
+        status: "exclusive" as const,
         relationship: activeRelationship,
         partner: activeRelationship.users.find((u) => u.phone !== user?.phone),
       };
@@ -103,7 +105,7 @@ export default function RelationshipScreen() {
   // Auto-open date modal if startDate equals createdAt (user hasn't set custom date)
   useEffect(() => {
     if (
-      relationshipData.status === "dating" &&
+      relationshipData.status === "exclusive" &&
       relationshipData.relationship &&
       !dateModalVisible
     ) {
@@ -325,7 +327,8 @@ export default function RelationshipScreen() {
         return require("@/assets/images/married.png");
       case "ENGAGED":
         return require("@/assets/images/engaged.png");
-      case "DATING":
+      case "EXCLUSIVE":
+        return require("@/assets/images/exclusive.png");
       default:
         return require("@/assets/images/dating.png");
     }
@@ -337,6 +340,8 @@ export default function RelationshipScreen() {
       switch (relationshipData.relationship.status) {
         case "DATING":
           return "Dating";
+        case "EXCLUSIVE":
+          return "Exclusive";
         case "ENGAGED":
           return "Engaged";
         case "MARRIED":
@@ -404,9 +409,56 @@ export default function RelationshipScreen() {
     setTutorialVisible(false);
   };
 
-  // Remove handleTrustCenter function since we don't need it anymore
+  // Animation visibility logic
+  const shouldShowElements = () => {
+    if (relationshipData.status === "exclusive") return true;
 
-  // Remove handleTrustCenterClose function since we don't need it anymore
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+    if (hasPendingInvites) return true;
+
+    // Show elements for single users who aren't private
+    return user?.isSingle !== false;
+  };
+
+  const getElementCount = () => {
+    return relationshipData.status === "exclusive" ? 5 : 4;
+  };
+
+  // Function to get falling animation image based on status
+  const getFallingElementImage = () => {
+    if (
+      relationshipData.status === "exclusive" &&
+      relationshipData.relationship
+    ) {
+      // Use relationship status image for dating users
+      switch (relationshipData.relationship.status) {
+        case "MARRIED":
+          return require("@/assets/images/married.png");
+        case "ENGAGED":
+          return require("@/assets/images/engaged.png");
+        case "DATING":
+        default:
+          return require("@/assets/images/heart.png"); // Default to hearts for dating
+      }
+    }
+
+    // For single users
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+
+    if (hasPendingInvites) {
+      return require("@/assets/images/heart.png"); // Hearts for pending invites (romantic hope!)
+    }
+
+    if (user?.isSingle === false) {
+      return require("@/assets/images/heart.png"); // Default hearts for private users
+    }
+
+    return require("@/assets/images/heart.png"); // Hearts for single users
+  };
 
   // Single state render
   if (relationshipData.status === "single") {
@@ -416,6 +468,14 @@ export default function RelationshipScreen() {
 
     return (
       <View style={styles.container}>
+        {/* Falling Elements Animation */}
+        <FallingElements
+          count={getElementCount()}
+          size={22}
+          visible={shouldShowElements()}
+          imageSource={getFallingElementImage()}
+        />
+
         <TopBar title="My Relationship" />
 
         <View style={styles.content}>
@@ -425,13 +485,13 @@ export default function RelationshipScreen() {
             onPress={handleManage}
             activeOpacity={0.8}>
             <View style={styles.singleImageContainer}>
-              <View style={styles.imagePlaceholder}>
+              <FloatingImage style={styles.imagePlaceholder}>
                 <Image
                   source={getSingleUserImage()}
                   style={styles.singleImage}
                   resizeMode="contain"
                 />
-              </View>
+              </FloatingImage>
               <TouchableOpacity
                 style={styles.manageIconContainer}
                 onPress={handleManage}
@@ -517,6 +577,14 @@ export default function RelationshipScreen() {
   // Dating state render (existing functionality with dynamic images)
   return (
     <View style={styles.container}>
+      {/* Falling Elements Animation */}
+      <FallingElements
+        count={getElementCount()}
+        size={24}
+        visible={shouldShowElements()}
+        imageSource={getFallingElementImage()}
+      />
+
       <TopBar title="Relationship" />
 
       <View style={styles.content}>
@@ -526,7 +594,7 @@ export default function RelationshipScreen() {
           onPress={handleManage}
           activeOpacity={0.8}>
           <View style={styles.datingImageContainer}>
-            <View style={styles.imagePlaceholder}>
+            <FloatingImage style={styles.imagePlaceholder}>
               <Image
                 source={getRelationshipImage(
                   relationshipData.relationship?.status
@@ -534,7 +602,7 @@ export default function RelationshipScreen() {
                 style={styles.datingImage}
                 resizeMode="contain"
               />
-            </View>
+            </FloatingImage>
             <TouchableOpacity
               style={styles.manageIconContainer}
               onPress={handleManage}
