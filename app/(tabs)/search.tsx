@@ -240,7 +240,7 @@ export default function SearchScreen() {
 
       return () => clearTimeout(searchTimeout);
     }
-  }, [phoneNumber, isPhoneComplete, remainingSearches]);
+  }, [phoneNumber, isPhoneComplete]); // Remove remainingSearches from dependency array
 
   const handlePremiumPress = () => {
     router.push("/premium");
@@ -405,7 +405,9 @@ export default function SearchScreen() {
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.titleText}>Find a Status</Text>
+          <Text style={styles.titleText} allowFontScaling={false}>
+            Find a Status
+          </Text>
         </Animated.View>
 
         {/* Animated Content */}
@@ -446,7 +448,7 @@ export default function SearchScreen() {
 
             {searchError && (
               <View style={styles.errorCard}>
-                <Text style={styles.errorText}>
+                <Text style={styles.errorText} allowFontScaling={false}>
                   {searchError === "RELATIONSHIP_STATUS_REQUIRED"
                     ? "You must set your relationship status before searching others"
                     : searchError}
@@ -462,7 +464,9 @@ export default function SearchScreen() {
                       delayPressOut={0}>
                       <View style={styles.buttonContent}>
                         <Ionicons name="heart" size={20} color="white" />
-                        <Text style={styles.setStatusButtonText}>
+                        <Text
+                          style={styles.setStatusButtonText}
+                          allowFontScaling={false}>
                           Set Your Status
                         </Text>
                       </View>
@@ -478,13 +482,17 @@ export default function SearchScreen() {
                         delayPressOut={0}>
                         <View style={styles.buttonContent}>
                           <Ionicons name="star" size={20} color="white" />
-                          <Text style={styles.premiumButtonText}>
+                          <Text
+                            style={styles.premiumButtonText}
+                            allowFontScaling={false}>
                             Upgrade to Premium
                           </Text>
                         </View>
                       </TouchableOpacity>
                       <View style={styles.badge}>
-                        <Text style={styles.badgeText}>+8 searches</Text>
+                        <Text style={styles.badgeText} allowFontScaling={false}>
+                          +8 searches
+                        </Text>
                       </View>
                     </View>
 
@@ -511,7 +519,9 @@ export default function SearchScreen() {
                                 size={20}
                                 color={colors.primary}
                               />
-                              <Text style={styles.referButtonText}>
+                              <Text
+                                style={styles.referButtonText}
+                                allowFontScaling={false}>
                                 Refer a Friend
                               </Text>
                             </>
@@ -519,7 +529,9 @@ export default function SearchScreen() {
                         </View>
                       </TouchableOpacity>
                       <View style={styles.badgeBordered}>
-                        <Text style={styles.badgeTextBordered}>
+                        <Text
+                          style={styles.badgeTextBordered}
+                          allowFontScaling={false}>
                           +2 searches
                         </Text>
                       </View>
@@ -530,7 +542,9 @@ export default function SearchScreen() {
                       onPress={handleLearnWhy}
                       delayPressIn={0}
                       delayPressOut={0}>
-                      <Text style={styles.learnWhyText}>
+                      <Text
+                        style={styles.learnWhyText}
+                        allowFontScaling={false}>
                         Learn why we limit searches
                       </Text>
                     </TouchableOpacity>
@@ -541,7 +555,11 @@ export default function SearchScreen() {
                     onPress={() => performSearch(phoneNumber)}
                     delayPressIn={0}
                     delayPressOut={0}>
-                    <Text style={styles.retryButtonText}>Try Again</Text>
+                    <Text
+                      style={styles.retryButtonText}
+                      allowFontScaling={false}>
+                      Try Again
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -553,14 +571,14 @@ export default function SearchScreen() {
       {/* Fixed Premium Section - Only show when no digits entered */}
       {!searchResult && phoneNumber.length === 0 && (
         <View style={styles.fixedPremiumSection}>
-          <Text style={styles.premiumText}>
+          <Text style={styles.premiumText} allowFontScaling={false}>
             <Text style={{ fontWeight: "bold" }}>
               {remainingSearches}{" "}
-              {remainingSearches === 1 ? "search" : "searches"}
+              {remainingSearches === 1 ? "search left" : "searches left"}
             </Text>{" "}
-            left for this month.
+            for this month.
           </Text>
-          <Text style={styles.premiumSubtext}>
+          <Text style={styles.premiumSubtext} allowFontScaling={false}>
             Upgrade for 8 monthly searches +{" "}
             <Text style={styles.premiumLink} onPress={handlePremiumPress}>
               Premium

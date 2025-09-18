@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { APP_CONFIG } from "@/constants/AppConfig";
 
 export const playHapticDrumRoll = async () => {
   const numberOfBeats = 10;
@@ -11,7 +12,9 @@ export const playHapticDrumRoll = async () => {
 };
 
 export const shareMessage = `Hey! I'd like to make it official. Press this link to make our relationship official`;
-export const referralMessage = `Hey, check out this app called Official, the modern way to be "Facebook Official" with your partner. When you join we both get 2 free searches!`;
+export const referralMessage = `Hey, check out this app called Official, the modern way to be "Facebook Official" with your partner. When you join we both get ${
+  APP_CONFIG.REFERRAL_BONUS_SEARCHES || 2
+} free searches!`;
 
 // Helper function to calculate remaining searches for the user
 export const calculateRemainingSearches = (
@@ -19,11 +22,15 @@ export const calculateRemainingSearches = (
   bonusSearches: number = 0,
   hasPremium: boolean = false
 ): number => {
-  const DEFAULT_MONTHLY_SEARCHES = hasPremium ? 8 : 2;
+  const DEFAULT_MONTHLY_SEARCHES = hasPremium
+    ? APP_CONFIG.PREMIUM_MONTHLY_SEARCHES
+    : APP_CONFIG.DEFAULT_MONTHLY_SEARCHES;
 
   // Get current date and calculate 30 days ago
   const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(
+    now.getTime() - APP_CONFIG.SEARCH_HISTORY_DAYS * 24 * 60 * 60 * 1000
+  );
 
   // Count search transactions from the last 30 days
   const recentSearches = searchTransactions.filter((transaction) => {
@@ -34,6 +41,9 @@ export const calculateRemainingSearches = (
   // Calculate remaining searches
   const totalSearches = DEFAULT_MONTHLY_SEARCHES + bonusSearches;
   const remainingSearches = Math.max(0, totalSearches - recentSearches.length);
+  console.log("totalSearches", totalSearches);
+  console.log("recentSearches", recentSearches.length);
+  console.log("remainingSearches", remainingSearches);
 
   return remainingSearches;
 };

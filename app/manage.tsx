@@ -387,10 +387,15 @@ export default function ManageScreen() {
               styles.itemText,
               destructive && styles.destructiveText,
               loading && styles.loadingText,
-            ]}>
+            ]}
+            allowFontScaling={false}>
             {title}
           </Text>
-          {value && <Text style={styles.valueText}>{value}</Text>}
+          {value && (
+            <Text style={styles.valueText} allowFontScaling={false}>
+              {value}
+            </Text>
+          )}
         </View>
       </View>
       {loading ? (
@@ -412,7 +417,9 @@ export default function ManageScreen() {
 
   const renderSection = (title: string, children: React.ReactNode) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle} allowFontScaling={false}>
+        {title}
+      </Text>
       <View style={styles.sectionContainer}>{children}</View>
     </View>
   );
@@ -428,7 +435,10 @@ export default function ManageScreen() {
           "When We Started Dating",
           "calendar-outline",
           handleChangeStartDate,
-          new Date(activeRelationship.startDate).toLocaleDateString()
+          new Date(activeRelationship.startDate).toLocaleDateString(),
+          undefined,
+          undefined,
+          true
         )
       );
 
@@ -485,8 +495,14 @@ export default function ManageScreen() {
           style={styles.itemIcon}
         />
         <View style={styles.textContainer}>
-          <Text style={styles.itemText}>{title}</Text>
-          {description && <Text style={styles.valueText}>{description}</Text>}
+          <Text style={styles.itemText} allowFontScaling={false}>
+            {title}
+          </Text>
+          {description && (
+            <Text style={styles.valueText} allowFontScaling={false}>
+              {description}
+            </Text>
+          )}
         </View>
       </View>
       <Switch
@@ -546,11 +562,13 @@ export default function ManageScreen() {
               />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={[styles.statusText, { color: getStatusColor() }]}>
+              <Text
+                style={[styles.statusText, { color: getStatusColor() }]}
+                allowFontScaling={false}>
                 {getCurrentStatusText()}
               </Text>
               {activeRelationship && partner && (
-                <Text style={styles.partnerSubtitle}>
+                <Text style={styles.partnerSubtitle} allowFontScaling={false}>
                   You and {partner.phone}
                 </Text>
               )}

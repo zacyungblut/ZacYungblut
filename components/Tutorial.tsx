@@ -298,22 +298,26 @@ export default function Tutorial({ visible, onClose }: TutorialProps) {
                     resizeMode="contain"
                   />
                 ) : (
-                  <Text style={styles.emoji}>{currentStepData.emoji}</Text>
+                  <Text style={styles.emoji} allowFontScaling={false}>
+                    {currentStepData.emoji}
+                  </Text>
                 )}
 
                 {/* Title */}
-                <Text style={styles.title}>{currentStepData.title}</Text>
+                <Text style={styles.title} allowFontScaling={false}>
+                  {currentStepData.title}
+                </Text>
 
                 {/* Subtitle */}
                 {currentStepData.subtitle && (
-                  <Text style={styles.subtitle}>
+                  <Text style={styles.subtitle} allowFontScaling={false}>
                     {currentStepData.subtitle}
                   </Text>
                 )}
 
                 {/* Description */}
                 {currentStepData.description && (
-                  <Text style={styles.description}>
+                  <Text style={styles.description} allowFontScaling={false}>
                     {currentStepData.description}
                   </Text>
                 )}
@@ -321,14 +325,16 @@ export default function Tutorial({ visible, onClose }: TutorialProps) {
                 {/* Tap to Continue */}
                 <View style={styles.tapContainer}>
                   <View style={styles.tapContentRow}>
-                    <Text style={styles.tapText}>
+                    <Text style={styles.tapText} allowFontScaling={false}>
                       {currentStep < tutorialSteps.length - 1
                         ? "Tap to continue"
                         : "Tap to finish"}
                     </Text>
                     <Animated.View
                       style={[styles.fingerContainer, fingerAnimatedStyle]}>
-                      <Text style={styles.fingerEmoji}>👆</Text>
+                      <Text style={styles.fingerEmoji} allowFontScaling={false}>
+                        👆
+                      </Text>
                     </Animated.View>
                   </View>
                 </View>

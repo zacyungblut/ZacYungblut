@@ -427,8 +427,10 @@ export default function PremiumScreen() {
         <View style={styles.content}>
           <View style={styles.premiumActiveContainer}>
             <Ionicons name="checkmark-circle" size={64} color="#00E676" />
-            <Text style={styles.premiumActiveTitle}>You're Premium!</Text>
-            <Text style={styles.premiumActiveSubtitle}>
+            <Text style={styles.premiumActiveTitle} allowFontScaling={false}>
+              You're Premium!
+            </Text>
+            <Text style={styles.premiumActiveSubtitle} allowFontScaling={false}>
               Your subscription is active and all premium features are unlocked.
             </Text>
           </View>
@@ -456,7 +458,9 @@ export default function PremiumScreen() {
       {/* Main Content */}
       <View style={styles.content}>
         {/* Title */}
-        <Text style={styles.title}>Get Official Premium</Text>
+        <Text style={styles.title} allowFontScaling={false}>
+          Get Official Premium
+        </Text>
 
         {/* Social Proof */}
         <View style={styles.socialProof}>
@@ -470,10 +474,14 @@ export default function PremiumScreen() {
             ))}
             <View
               style={[styles.avatar, styles.moreUsersAvatar, { left: 5 * 26 }]}>
-              <Text style={styles.moreUsersText}>+999</Text>
+              <Text style={styles.moreUsersText} allowFontScaling={false}>
+                +999
+              </Text>
             </View>
           </View>
-          <Text style={styles.socialProofText}>Join 10,000+ premium users</Text>
+          <Text style={styles.socialProofText} allowFontScaling={false}>
+            Join 10,000+ premium users
+          </Text>
         </View>
 
         {/* Features */}
@@ -485,7 +493,7 @@ export default function PremiumScreen() {
               color={colors.offBlack}
               style={styles.checkmark}
             />
-            <Text style={styles.featureText}>
+            <Text style={styles.featureText} allowFontScaling={false}>
               8 searches per month (vs 2 on free plan)
             </Text>
           </View>
@@ -496,7 +504,7 @@ export default function PremiumScreen() {
               color={colors.offBlack}
               style={styles.checkmark}
             />
-            <Text style={styles.featureText}>
+            <Text style={styles.featureText} allowFontScaling={false}>
               Get notifications when your partner changes your relationship
               status
             </Text>
@@ -508,7 +516,9 @@ export default function PremiumScreen() {
               color={colors.offBlack}
               style={styles.checkmark}
             />
-            <Text style={styles.featureText}>Ad-free experience</Text>
+            <Text style={styles.featureText} allowFontScaling={false}>
+              Ad-free experience
+            </Text>
           </View>
         </View>
 
@@ -516,7 +526,9 @@ export default function PremiumScreen() {
         {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.offBlack} />
-            <Text style={styles.loadingText}>Loading purchase options...</Text>
+            <Text style={styles.loadingText} allowFontScaling={false}>
+              Loading purchase options...
+            </Text>
           </View>
         )}
 
@@ -537,12 +549,15 @@ export default function PremiumScreen() {
                     style={[
                       styles.pricingTitle,
                       tier.isSelected && styles.pricingTitleSelected,
-                    ]}>
+                    ]}
+                    allowFontScaling={false}>
                     {tier.title}
                   </Text>
                   {tier.savings && (
                     <View style={styles.savingsBadge}>
-                      <Text style={styles.savingsText}>{tier.savings}</Text>
+                      <Text style={styles.savingsText} allowFontScaling={false}>
+                        {tier.savings}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -551,7 +566,8 @@ export default function PremiumScreen() {
                   style={[
                     styles.pricingPrice,
                     tier.isSelected && styles.pricingPriceSelected,
-                  ]}>
+                  ]}
+                  allowFontScaling={false}>
                   {tier.price}
                 </Text>
               </TouchableOpacity>
@@ -567,30 +583,48 @@ export default function PremiumScreen() {
               size={14}
               color={colors.text.secondary}
             />
-            <Text style={styles.trustText}>100% confidential</Text>
+            <Text style={styles.trustText} allowFontScaling={false}>
+              100% confidential
+            </Text>
           </View>
-          <Text style={styles.trustSeparator}>•</Text>
+          <Text style={styles.trustSeparator} allowFontScaling={false}>
+            •
+          </Text>
           <View style={styles.trustItem}>
             <Ionicons name="time" size={14} color={colors.text.secondary} />
-            <Text style={styles.trustText}>Cancel anytime</Text>
+            <Text style={styles.trustText} allowFontScaling={false}>
+              Cancel anytime
+            </Text>
           </View>
         </View>
 
         {/* Footer Links */}
         <View style={styles.footerLinks}>
           <TouchableOpacity onPress={handleTermsPress}>
-            <Text style={styles.linkText}>Terms of Use</Text>
+            <Text style={styles.linkText} allowFontScaling={false}>
+              Terms of Use
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.linkSeparator}> • </Text>
+          <Text style={styles.linkSeparator} allowFontScaling={false}>
+            {" "}
+            •{" "}
+          </Text>
           <TouchableOpacity onPress={handlePrivacyPress}>
-            <Text style={styles.linkText}>Privacy Policy</Text>
+            <Text style={styles.linkText} allowFontScaling={false}>
+              Privacy Policy
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.linkSeparator}> • </Text>
+          <Text style={styles.linkSeparator} allowFontScaling={false}>
+            {" "}
+            •{" "}
+          </Text>
           <TouchableOpacity
             onPress={handleRestorePurchases}
             disabled={isLoading}
             activeOpacity={0.7}>
-            <Text style={styles.linkText}>Restore Purchases</Text>
+            <Text style={styles.linkText} allowFontScaling={false}>
+              Restore Purchases
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -610,7 +644,9 @@ export default function PremiumScreen() {
             {isPurchasing ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Text style={styles.subscribeButtonText}>Subscribe</Text>
+              <Text style={styles.subscribeButtonText} allowFontScaling={false}>
+                Subscribe
+              </Text>
             )}
           </TouchableOpacity>
         </View>

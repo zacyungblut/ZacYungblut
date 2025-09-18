@@ -19,6 +19,7 @@ import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { useNotification } from "@/contexts/NotificationContext";
 import { referralMessage, calculateRemainingSearches } from "@/utils/helpers";
+import { APP_CONFIG } from "@/constants/AppConfig";
 
 interface SettingItem {
   id: string;
@@ -321,12 +322,14 @@ export default function SettingsScreen() {
       bonusSearches
     );
 
-    // Calculate total searches available (2 default + bonus)
-    const searchLimit = 2 + bonusSearches;
+    // Calculate total searches available (3 default + bonus)
+    const searchLimit = APP_CONFIG.DEFAULT_MONTHLY_SEARCHES + bonusSearches;
 
     // Calculate searches used in the last 30 days
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(
+      now.getTime() - APP_CONFIG.SEARCH_HISTORY_DAYS * 24 * 60 * 60 * 1000
+    );
     const recentSearches = searchTransactions.filter((transaction: any) => {
       const transactionDate = new Date(transaction.createdAt);
       return transactionDate >= thirtyDaysAgo;
@@ -504,11 +507,20 @@ export default function SettingsScreen() {
               item.color && { color: item.color },
               item.destructive && styles.destructiveText,
               item.loading && styles.loadingText,
-            ]}>
+            ]}
+            allowFontScaling={false}>
             {item.title}
           </Text>
-          {item.value && <Text style={styles.valueText}>{item.value}</Text>}
-          {item.loading && <Text style={styles.statusText}>Loading...</Text>}
+          {item.value && (
+            <Text style={styles.valueText} allowFontScaling={false}>
+              {item.value}
+            </Text>
+          )}
+          {item.loading && (
+            <Text style={styles.statusText} allowFontScaling={false}>
+              Loading...
+            </Text>
+          )}
         </View>
       </View>
       {item.showChevron && (
@@ -527,7 +539,9 @@ export default function SettingsScreen() {
     isLast = false
   ) => (
     <View style={[styles.settingSection, !isLast && styles.sectionMargin]}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle} allowFontScaling={false}>
+        {title}
+      </Text>
       <View style={styles.settingsContainer}>
         {items.map((item, index) => (
           <View key={item.id}>
@@ -556,7 +570,9 @@ export default function SettingsScreen() {
 
         {/* App Version */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Official v1.0.0</Text>
+          <Text style={styles.versionText} allowFontScaling={false}>
+            Official v1.0.0
+          </Text>
         </View>
       </ScrollView>
     </View>

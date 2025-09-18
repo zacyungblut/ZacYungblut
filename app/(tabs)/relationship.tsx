@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Alert,
   Dimensions,
@@ -47,6 +47,10 @@ export default function RelationshipScreen() {
   const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
   const [tutorialVisible, setTutorialVisible] = useState(false); // Add this state
+
+  // Add polling ref to track the interval
+  const pollingIntervalRef = useRef<number | null>(null);
+
   // Remove trustCenterVisible state since we're navigating to a page now
 
   // Auto-open tutorial for new users (created in last 60 seconds)
@@ -94,6 +98,53 @@ export default function RelationshipScreen() {
       pendingInvites: pendingSentInvites,
     };
   }, [relationships, invites, user?.phone]); // Remove pendingInvites from dependencies
+
+  // Add polling effect for pending status
+  useEffect(() => {
+    const hasPendingInvites =
+      relationshipData.pendingInvites &&
+      relationshipData.pendingInvites.length > 0;
+
+    if (hasPendingInvites) {
+      console.log("Starting polling for pending invite status...");
+
+      // Start polling every 10 seconds
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          console.log("Polling server for status update...");
+          await fetchUser();
+        } catch (error) {
+          console.error("Failed to poll for status update:", error);
+          // Don't show error to user for background polling failures
+        }
+      }, 10000); // 10 seconds
+    } else {
+      // Clear polling when no pending invites
+      if (pollingIntervalRef.current) {
+        console.log("Clearing polling interval - no pending invites");
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [relationshipData.pendingInvites, fetchUser]);
+
+  // Cleanup polling on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Initialize temp date when modal opens
   useEffect(() => {
@@ -499,8 +550,10 @@ export default function RelationshipScreen() {
             </View>
 
             <View style={styles.relationshipInfo}>
-              <Text style={styles.statusText}>{getSingleUserStatusText()}</Text>
-              <Text style={styles.partnerText}>
+              <Text style={styles.statusText} allowFontScaling={false}>
+                {getSingleUserStatusText()}
+              </Text>
+              <Text style={styles.partnerText} allowFontScaling={false}>
                 {hasPendingInvites
                   ? "Waiting for confirmation"
                   : "Ready to connect"}
@@ -518,7 +571,7 @@ export default function RelationshipScreen() {
                   onShare={handleShareInvite}
                 />
                 {relationshipData.pendingInvites!.length > 1 && (
-                  <Text style={styles.moreInvitesText}>
+                  <Text style={styles.moreInvitesText} allowFontScaling={false}>
                     +{relationshipData.pendingInvites!.length - 1} more invites
                   </Text>
                 )}
@@ -539,7 +592,11 @@ export default function RelationshipScreen() {
                 size={20}
                 color={colors.primary}
               />
-              <Text style={styles.trustCenterButtonText}>Trust Center</Text>
+              <Text
+                style={styles.trustCenterButtonText}
+                allowFontScaling={false}>
+                Trust Center
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -547,7 +604,9 @@ export default function RelationshipScreen() {
               onPress={handleTutorial}
               activeOpacity={0.8}>
               <Ionicons name="help-circle" size={20} color={colors.primary} />
-              <Text style={styles.tutorialButtonText}>How It Works</Text>
+              <Text style={styles.tutorialButtonText} allowFontScaling={false}>
+                How It Works
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -563,7 +622,9 @@ export default function RelationshipScreen() {
                 size={16}
                 color={colors.text.secondary}
               />
-              <Text style={styles.settingsText}>Settings</Text>
+              <Text style={styles.settingsText} allowFontScaling={false}>
+                Settings
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -610,8 +671,10 @@ export default function RelationshipScreen() {
           </View>
 
           <View style={styles.relationshipInfo}>
-            <Text style={styles.statusText}>{getCurrentStatusText()}</Text>
-            <Text style={styles.partnerText}>
+            <Text style={styles.statusText} allowFontScaling={false}>
+              {getCurrentStatusText()}
+            </Text>
+            <Text style={styles.partnerText} allowFontScaling={false}>
               with{" "}
               {relationshipData.partner?.name ||
                 relationshipData.partner?.phone ||
@@ -626,24 +689,30 @@ export default function RelationshipScreen() {
           onPress={handleDateEdit}
           activeOpacity={0.8}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
+            <Text style={styles.statNumber} allowFontScaling={false}>
               {relationshipDuration?.years || 0}
             </Text>
-            <Text style={styles.statLabel}>Years</Text>
+            <Text style={styles.statLabel} allowFontScaling={false}>
+              Years
+            </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
+            <Text style={styles.statNumber} allowFontScaling={false}>
               {relationshipDuration?.months || 0}
             </Text>
-            <Text style={styles.statLabel}>Months</Text>
+            <Text style={styles.statLabel} allowFontScaling={false}>
+              Months
+            </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
+            <Text style={styles.statNumber} allowFontScaling={false}>
               {relationshipDuration?.days || 0}
             </Text>
-            <Text style={styles.statLabel}>Days</Text>
+            <Text style={styles.statLabel} allowFontScaling={false}>
+              Days
+            </Text>
           </View>
         </TouchableOpacity>
 
@@ -658,7 +727,9 @@ export default function RelationshipScreen() {
               size={20}
               color={colors.primary}
             />
-            <Text style={styles.trustCenterButtonText}>Trust Center</Text>
+            <Text style={styles.trustCenterButtonText} allowFontScaling={false}>
+              Trust Center
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -666,7 +737,9 @@ export default function RelationshipScreen() {
             onPress={handleTutorial}
             activeOpacity={0.8}>
             <Ionicons name="help-circle" size={20} color={colors.primary} />
-            <Text style={styles.tutorialButtonText}>How It Works</Text>
+            <Text style={styles.tutorialButtonText} allowFontScaling={false}>
+              How It Works
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -678,7 +751,9 @@ export default function RelationshipScreen() {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.7}>
             <Ionicons name="settings" size={16} color={colors.text.secondary} />
-            <Text style={styles.settingsText}>Settings</Text>
+            <Text style={styles.settingsText} allowFontScaling={false}>
+              Settings
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

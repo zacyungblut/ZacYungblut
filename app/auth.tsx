@@ -50,14 +50,22 @@ export default function Auth() {
 
           {/* Welcome text */}
           <View style={styles.textContainer}>
-            <Text style={styles.makeItText}>let's make it</Text>
-            <Text style={styles.officialText}>Official</Text>
+            <Text style={styles.makeItText} allowFontScaling={false}>
+              let's make it
+            </Text>
+            <Text style={styles.officialText} allowFontScaling={false}>
+              Official
+            </Text>
           </View>
 
           {/* Tagline */}
           <View style={styles.taglineContainer}>
-            <Text style={styles.taglineText}>Made for couples.</Text>
-            <Text style={styles.taglineText}>Designed for privacy.</Text>
+            <Text style={styles.taglineText} allowFontScaling={false}>
+              Made for couples.
+            </Text>
+            <Text style={styles.taglineText} allowFontScaling={false}>
+              Designed for privacy.
+            </Text>
           </View>
         </View>
 
@@ -65,28 +73,37 @@ export default function Auth() {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, styles.signupButton]}
-            onPress={() => router.push("/signup")}
+            onPress={() =>
+              router.push({ pathname: "/signup", params: { mode: "signup" } })
+            }
             activeOpacity={0.8}>
-            <Text style={[styles.buttonText, styles.signupButtonText]}>
+            <Text
+              style={[styles.buttonText, styles.signupButtonText]}
+              allowFontScaling={false}>
               Sign Up
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, styles.loginButton]}
-            onPress={() => router.push("/signup")} // Update this to login route when ready
+            onPress={() =>
+              router.push({ pathname: "/signup", params: { mode: "login" } })
+            }
             activeOpacity={0.8}>
-            <Text style={[styles.buttonText, styles.loginButtonText]}>
+            <Text
+              style={[styles.buttonText, styles.loginButtonText]}
+              allowFontScaling={false}>
               Log In
             </Text>
           </TouchableOpacity>
 
           {/* Terms and Privacy Policy */}
           <View style={styles.termsContainer}>
-            <Text style={styles.termsText}>
+            <Text style={styles.termsText} allowFontScaling={false}>
               By continuing, you agree to Official's{" "}
               <Text
                 style={styles.linkText}
+                allowFontScaling={false}
                 onPress={() =>
                   Linking.openURL("https://makeitofficial.us/terms")
                 }>
@@ -95,6 +112,7 @@ export default function Auth() {
               and{" "}
               <Text
                 style={styles.linkText}
+                allowFontScaling={false}
                 onPress={() =>
                   Linking.openURL("https://makeitofficial.us/privacy")
                 }>

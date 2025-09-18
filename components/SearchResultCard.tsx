@@ -106,11 +106,17 @@ export const SearchPlaceholderCard: React.FC<SearchPlaceholderCardProps> = ({
       </View>
 
       <View style={[styles.resultContent, styles.placeholderContent]}>
-        <Text style={styles.resultTitle}>{content.title}</Text>
-        <Text style={[styles.resultStatus, { fontWeight: "600" }]}>
+        <Text style={styles.resultTitle} allowFontScaling={false}>
+          {content.title}
+        </Text>
+        <Text
+          style={[styles.resultStatus, { fontWeight: "600" }]}
+          allowFontScaling={false}>
           {content.subtitle}
         </Text>
-        <Text style={[styles.resultDate, { opacity: 0 }]}>
+        <Text
+          style={[styles.resultDate, { opacity: 0 }]}
+          allowFontScaling={false}>
           Placeholder spacing
         </Text>
       </View>
@@ -196,16 +202,19 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
       </View>
 
       <View style={styles.resultContent}>
-        <Text style={styles.resultTitle}>This number's status is</Text>
+        <Text style={styles.resultTitle} allowFontScaling={false}>
+          This number's status is
+        </Text>
         <Text
           style={[
             styles.resultStatus,
             isSuccessfulResult() && styles.resultStatusSuccess,
-          ]}>
+          ]}
+          allowFontScaling={false}>
           {getDisplayStatus()}
         </Text>
 
-        <Text style={styles.resultDate}>
+        <Text style={styles.resultDate} allowFontScaling={false}>
           Confirmed on:{" "}
           {new Date().toLocaleDateString("en-US", {
             month: "short",

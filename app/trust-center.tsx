@@ -69,7 +69,9 @@ export default function TrustCenterScreen() {
                 style={styles.headerLogo}
                 resizeMode="contain"
               />
-              <Text style={styles.headerTitle}>Your Privacy Matters</Text>
+              <Text style={styles.headerTitle} allowFontScaling={false}>
+                Your Privacy Matters
+              </Text>
               {/* <Text style={styles.headerSubtitle}>
                 Your privacy and trust matter to us
               </Text> */}
@@ -86,20 +88,26 @@ export default function TrustCenterScreen() {
                   />
                 </View>
                 <View style={styles.trustPointContent}>
-                  <Text style={styles.trustPointTitle}>{point.title}</Text>
+                  <Text style={styles.trustPointTitle} allowFontScaling={false}>
+                    {point.title}
+                  </Text>
                 </View>
               </View>
             ))}
 
             {/* Bottom Assurance */}
             <View style={styles.bottomAssurance}>
-              <Text style={styles.assuranceTitle}>Our Promise</Text>
-              <Text style={styles.assuranceText}>
+              <Text style={styles.assuranceTitle} allowFontScaling={false}>
+                Our Promise
+              </Text>
+              <Text style={styles.assuranceText} allowFontScaling={false}>
                 Official was built by people who believe privacy is a
                 fundamental right, and nothing is more private than your
                 relationship. We will protect your privacy at all costs.
               </Text>
-              <Text style={styles.assuranceSignature}>— The Official Team</Text>
+              <Text style={styles.assuranceSignature} allowFontScaling={false}>
+                — The Official Team
+              </Text>
             </View>
           </ScrollView>
         </SafeAreaView>

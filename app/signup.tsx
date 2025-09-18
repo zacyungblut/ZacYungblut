@@ -9,7 +9,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { colors } from "@/constants/Colors";
 import {
@@ -25,6 +25,9 @@ const { height } = Dimensions.get("window");
 
 export default function SignupScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const mode = typeof params["mode"] === "string" ? params["mode"] : "signup";
+  const isLoginMode = mode === "login";
 
   const posthog = usePostHog();
 
@@ -103,13 +106,17 @@ export default function SignupScreen() {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.title} allowFontScaling={false}>
+          {isLoginMode ? "Login" : "Create Account"}
+        </Text>
       </View>
 
       {/* Main Content */}
       <View style={styles.content}>
         <View style={styles.formContainer}>
-          <Text style={styles.subtitle}>Enter your phone number</Text>
+          <Text style={styles.subtitle} allowFontScaling={false}>
+            Enter your phone number
+          </Text>
 
           {/* Phone Number Input */}
           <PhoneTextInput
@@ -122,25 +129,6 @@ export default function SignupScreen() {
             autoFocus={true}
             containerStyle={styles.phoneInputContainer}
           />
-
-          <Text style={styles.helperText}>
-            We'll send an SMS verification code. By continuing, you agree to our{" "}
-            <Text
-              style={styles.linkText}
-              onPress={() =>
-                Linking.openURL("https://makeitofficial.us/terms")
-              }>
-              Terms & Conditions{" "}
-            </Text>
-            and{" "}
-            <Text
-              style={styles.linkText}
-              onPress={() =>
-                Linking.openURL("https://makeitofficial.us/privacy")
-              }>
-              Privacy Policy
-            </Text>
-          </Text>
 
           {/* Continue Button - Always inline */}
           <View style={styles.buttonContainer}>
@@ -158,11 +146,33 @@ export default function SignupScreen() {
                   styles.continueButtonText,
                   (!isValidNumber(phoneNumber) || isLoading) &&
                     styles.continueButtonTextDisabled,
-                ]}>
+                ]}
+                allowFontScaling={false}>
                 {isLoading ? "Sending..." : "Continue"}
               </Text>
             </TouchableOpacity>
           </View>
+
+          <Text style={styles.helperText} allowFontScaling={false}>
+            We'll send an SMS verification code. By continuing, you agree to our{" "}
+            <Text
+              style={styles.linkText}
+              allowFontScaling={false}
+              onPress={() =>
+                Linking.openURL("https://makeitofficial.us/terms")
+              }>
+              Terms & Conditions{" "}
+            </Text>
+            and{" "}
+            <Text
+              style={styles.linkText}
+              allowFontScaling={false}
+              onPress={() =>
+                Linking.openURL("https://makeitofficial.us/privacy")
+              }>
+              Privacy Policy
+            </Text>
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -220,7 +230,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   buttonContainer: {
-    marginTop: 40,
+    marginTop: 0,
+    marginBottom: 20,
     width: "100%",
   },
   continueButton: {
