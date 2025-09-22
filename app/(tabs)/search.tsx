@@ -35,6 +35,7 @@ import { searchUserByPhone } from "@/api";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { calculateRemainingSearches, referralMessage } from "@/utils/helpers";
 import { useNotification } from "@/contexts/NotificationContext";
+import { APP_CONFIG } from "@/constants/AppConfig";
 
 const { width } = Dimensions.get("window");
 
@@ -491,7 +492,7 @@ export default function SearchScreen() {
                       </TouchableOpacity>
                       <View style={styles.badge}>
                         <Text style={styles.badgeText} allowFontScaling={false}>
-                          +8 searches
+                          +{APP_CONFIG.PREMIUM_MONTHLY_SEARCHES} searches
                         </Text>
                       </View>
                     </View>
@@ -532,7 +533,7 @@ export default function SearchScreen() {
                         <Text
                           style={styles.badgeTextBordered}
                           allowFontScaling={false}>
-                          +2 searches
+                          +{APP_CONFIG.REFERRAL_BONUS_SEARCHES} searches
                         </Text>
                       </View>
                     </View>
@@ -579,7 +580,7 @@ export default function SearchScreen() {
             for this month.
           </Text>
           <Text style={styles.premiumSubtext} allowFontScaling={false}>
-            Upgrade for 8 monthly searches +{" "}
+            Upgrade for {APP_CONFIG.PREMIUM_MONTHLY_SEARCHES} monthly searches +{" "}
             <Text style={styles.premiumLink} onPress={handlePremiumPress}>
               Premium
             </Text>
