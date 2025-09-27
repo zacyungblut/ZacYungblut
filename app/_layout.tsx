@@ -454,11 +454,31 @@ function RootLayoutNav() {
         />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="manage" options={{ headerShown: false }} />
+        <Stack.Screen name="pisser-tag" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="pisser-tag-signup"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="premium"
           options={{ headerShown: false, animation: "fade_from_bottom" }}
         />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="create-post"
+          options={{
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="song-search"
+          options={{
+            headerShown: false,
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

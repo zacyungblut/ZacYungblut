@@ -20,6 +20,7 @@ import {
 import PhoneTextInput from "@/components/PhoneTextInput";
 import { usePostHog } from "posthog-react-native";
 import { signup } from "@/api";
+import { AuthService } from "@/utils/authStorage";
 
 const { height } = Dimensions.get("window");
 
@@ -65,10 +66,14 @@ export default function SignupScreen() {
       try {
         console.log("Phone number to signup:", fullNumberWithCountryCode);
 
-        // Call signup API
-        await signup(fullNumberWithCountryCode);
+        // Get pending pisser tag from storage
+        const pendingPisserTag = AuthService.getPendingPisserTag();
+
+        // Call signup API with optional pisser tag
+        await signup(fullNumberWithCountryCode, pendingPisserTag);
         posthog.capture("signup", {
           phone: fullNumberWithCountryCode,
+          hasPisserTag: !!pendingPisserTag,
         });
 
         // Navigate to verification screen with phone number

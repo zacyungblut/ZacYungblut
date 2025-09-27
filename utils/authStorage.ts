@@ -7,6 +7,7 @@ export const authStorage = new MMKV({
 
 const AUTH_TOKEN_KEY = "authToken";
 const REFERRAL_CODE_KEY = "pendingReferralId";
+const PENDING_PISSER_TAG_KEY = "pendingPisserTag";
 
 export class AuthService {
   static getAuthToken(): string | undefined {
@@ -67,6 +68,35 @@ export class AuthService {
       console.log("Referral code removed successfully");
     } catch (error) {
       console.error("Error removing referral code:", error);
+    }
+  }
+
+  // Add pisser tag storage methods
+  static getPendingPisserTag(): string | undefined {
+    try {
+      const pisserTag = authStorage.getString(PENDING_PISSER_TAG_KEY);
+      return pisserTag;
+    } catch (error) {
+      console.error("Error retrieving pending pisser tag:", error);
+      return undefined;
+    }
+  }
+
+  static setPendingPisserTag(pisserTag: string): void {
+    try {
+      authStorage.set(PENDING_PISSER_TAG_KEY, pisserTag);
+      console.log("Pending pisser tag saved successfully:", pisserTag);
+    } catch (error) {
+      console.error("Error saving pending pisser tag:", error);
+    }
+  }
+
+  static removePendingPisserTag(): void {
+    try {
+      authStorage.delete(PENDING_PISSER_TAG_KEY);
+      console.log("Pending pisser tag removed successfully");
+    } catch (error) {
+      console.error("Error removing pending pisser tag:", error);
     }
   }
 }

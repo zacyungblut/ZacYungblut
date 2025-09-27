@@ -53,8 +53,9 @@ function createAPIInstance() {
   return instance;
 }
 
-export const signup = async (phone: string) => {
-  return API.post("/auth/signup", { phone });
+// Auth functions
+export const signup = async (phone: string, pisserTag?: string) => {
+  return API.post("/auth/signup", { phone, pisserTag });
 };
 
 export const verifyCode = async (phone: string, code: string) => {
@@ -70,112 +71,126 @@ export const getCurrentUser = async () => {
   return API.get("/auth/me");
 };
 
-// Add this new function for saving review requests
-export const saveReviewRequest = async (reviewData: {
-  platform: string;
-  appVersion?: string;
-  buildVersion?: string;
-  searchCount: number;
-  wasDisplayed: boolean;
-  userInteracted?: boolean;
-  deviceModel?: string;
-  osVersion?: string;
-}) => {
-  return API.post("/auth/review-request", reviewData);
-};
-
-// Invite functions
-export const sendInvite = async (relationshipType: string) => {
-  return API.post("/invites/send", { relationshipType });
-};
-
-export const getInvites = async () => {
-  return API.get("/invites");
-};
-
-export const respondToInvite = async (
-  inviteId: string,
-  response: "ACCEPTED" | "DECLINED"
-) => {
-  return API.post("/invites/respond", { inviteId, response });
-};
-
-export const cancelInvite = async (inviteId: string) => {
-  return API.delete(`/invites/${inviteId}`);
-};
-
-// Add share attempt tracking
-export const addShareAttempt = async (
-  inviteId: string,
-  shareData: {
-    shareMethod: string;
-    wasSuccessful: boolean;
-    wasAborted?: boolean;
-    errorMessage?: string;
-    platform?: string;
-    appVersion?: string;
-  }
-) => {
-  return API.post(`/invites/${inviteId}/share-attempt`, shareData);
-};
-
-// Search functions - simplified to just search without unlock
-export const searchUserByPhone = async (phone: string) => {
-  return API.post("/search/user", { phone });
-};
-
-// Relationship functions
-export const editRelationship = async (
-  relationshipId: string,
-  updateData: any
-) => {
-  return API.put("/relationships/edit", { relationshipId, ...updateData });
-};
-
-export const getUserRelationships = async () => {
-  return API.get("/relationships");
-};
-
-// Add this new function for ending relationships
-export const endRelationship = async (relationshipId: string) => {
-  return API.post("/relationships/end", { relationshipId });
-};
-
-// Add this new function at the end of the file
-export const updateUserSingleStatus = async (isSingle: boolean) => {
-  return API.put("/auth/single-status", { isSingle });
-};
-
-// Add this new function at the end of the file
+// Add this new function for deleting account
 export const deleteAccount = async () => {
   return API.delete("/auth/delete-account");
-};
-
-// Add referral claim function
-export const claimReferral = async (
-  referralCode: string,
-  platform?: string,
-  appVersion?: string,
-  buildVersion?: string
-) => {
-  return API.post("/auth/claim-referral", {
-    referralCode,
-    platform,
-    appVersion,
-    buildVersion,
-  });
-};
-
-// Add this new function at the end of the file
-export const updateUserRelationshipTypeVisibility = async (
-  showRelationshipType: boolean
-) => {
-  return API.put("/auth/relationship-type-visibility", {
-    showRelationshipType,
-  });
 };
 
 // Add this new function for updating push token
 export const updateExpoPushToken = async (expoPushToken: string | null) => {
   return API.put("/auth/push-token", { expoPushToken });
+};
+
+// Add this new function for checking pisser tag availability
+export const checkPisserTagAvailability = async (pisserTag: string) => {
+  return API.get(`/auth/check-pisser-tag?tag=${encodeURIComponent(pisserTag)}`);
+};
+
+// Add this new function for updating pisser tag
+export const updateUserPisserTag = async (pisserTag: string) => {
+  return API.put("/auth/pisser-tag", { pisserTag });
+};
+
+// Add this new function for updating user name
+export const updateUserName = async (name: string) => {
+  return API.put("/auth/name", { name });
+};
+
+// Posts API functions
+export const createPost = async (postData: {
+  caption?: string;
+  mediaUrl: string;
+  mediaType: "image" | "video";
+  songTitle?: string;
+  songArtist?: string;
+  songUrl?: string;
+}) => {
+  return API.post("/posts", postData);
+};
+
+// Enhanced feed function with cursor-based pagination
+export const getFeed = async (cursor?: string, limit: number = 20) => {
+  const params = new URLSearchParams();
+  if (cursor) params.append("cursor", cursor);
+  params.append("limit", limit.toString());
+
+  return API.get(`/posts/feed?${params.toString()}`);
+};
+
+// Keep existing getPosts for backward compatibility
+export const getPosts = async (page: number = 1, limit: number = 20) => {
+  return API.get(`/posts?page=${page}&limit=${limit}`);
+};
+
+export const getUserPosts = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 20
+) => {
+  return API.get(`/posts/user/${userId}?page=${page}&limit=${limit}`);
+};
+
+export const getPost = async (postId: string) => {
+  return API.get(`/posts/${postId}`);
+};
+
+export const updatePost = async (
+  postId: string,
+  updateData: {
+    caption?: string;
+    songTitle?: string;
+    songArtist?: string;
+    songUrl?: string;
+  }
+) => {
+  return API.put(`/posts/${postId}`, updateData);
+};
+
+export const deletePost = async (postId: string) => {
+  return API.delete(`/posts/${postId}`);
+};
+
+// Post interaction functions
+export const likePost = async (postId: string) => {
+  return API.post(`/posts/${postId}/like`);
+};
+
+export const unlikePost = async (postId: string) => {
+  return API.delete(`/posts/${postId}/like`);
+};
+
+export const dislikePost = async (postId: string) => {
+  return API.post(`/posts/${postId}/dislike`);
+};
+
+export const undislikePost = async (postId: string) => {
+  return API.delete(`/posts/${postId}/dislike`);
+};
+
+export const reportPost = async (
+  postId: string,
+  reason: string,
+  details?: string
+) => {
+  return API.post(`/posts/${postId}/report`, { reason, details });
+};
+
+// Get user's interactions with posts
+export const getUserPostInteractions = async (postIds: string[]) => {
+  return API.post("/posts/interactions", { postIds });
+};
+
+// Song search function
+export const searchSongs = async (query: string, limit: number = 20) => {
+  return API.get(
+    `/posts/search-songs?query=${encodeURIComponent(query)}&limit=${limit}`
+  );
+};
+
+// Add this new function for getting current user's posts
+export const getCurrentUserPosts = async (
+  page: number = 1,
+  limit: number = 20
+) => {
+  return API.get(`/auth/me/posts?page=${page}&limit=${limit}`);
 };

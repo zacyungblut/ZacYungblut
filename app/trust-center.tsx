@@ -17,23 +17,15 @@ import { router } from "expo-router";
 const trustPoints = [
   {
     icon: "shield-checkmark",
-    title: "Relationships are private.\nSo is Official",
+    title: "PissTracker is a platform to share aesthetic and beautiful content",
   },
   {
     icon: "eye-off",
-    title: "We never share\nWHO you are exclusive with",
+    title: "No inappropriate content is permitted on this app",
   },
   {
     icon: "lock-closed",
-    title: "We never share ANY\ninformation about you",
-  },
-  {
-    icon: "time",
-    title: "We never share relationship details",
-  },
-  {
-    icon: "search",
-    title: "No one knows when you\nsearch for them",
+    title: "Your identity is fully confidential",
   },
   {
     icon: "server",
@@ -70,7 +62,7 @@ export default function TrustCenterScreen() {
                 resizeMode="contain"
               />
               <Text style={styles.headerTitle} allowFontScaling={false}>
-                Your Privacy Matters
+                It's About Connection
               </Text>
               {/* <Text style={styles.headerSubtitle}>
                 Your privacy and trust matter to us
@@ -94,21 +86,6 @@ export default function TrustCenterScreen() {
                 </View>
               </View>
             ))}
-
-            {/* Bottom Assurance */}
-            <View style={styles.bottomAssurance}>
-              <Text style={styles.assuranceTitle} allowFontScaling={false}>
-                Our Promise
-              </Text>
-              <Text style={styles.assuranceText} allowFontScaling={false}>
-                Official was built by people who believe privacy is a
-                fundamental right, and nothing is more private than your
-                relationship. We will protect your privacy at all costs.
-              </Text>
-              <Text style={styles.assuranceSignature} allowFontScaling={false}>
-                — The Official Team
-              </Text>
-            </View>
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { Dimensions, StyleSheet, View, Keyboard, Platform } from "react-native";
+import { Dimensions, StyleSheet, View, Keyboard, Alert } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -13,13 +13,14 @@ import { colors } from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import TabBar from "@/components/TabBar";
 import ReferralClaimModal from "@/components/ReferralClaimModal";
+import PisserTagModal from "@/components/PisserTagModal";
 import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { useNotification } from "@/contexts/NotificationContext";
 
 // Import your tab screens directly
-import SearchScreen from "./search";
-import RelationshipScreen from "./relationship";
+import FeedScreen from "./feed";
+import ProfileScreen from "./profile";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -43,6 +44,10 @@ export default function TabLayout() {
   // Referral modal state
   const [showReferralModal, setShowReferralModal] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  // Pisser tag modal state
+  const [showPisserTagModal, setShowPisserTagModal] = useState(false);
+  const [pisserTagRequired, setPisserTagRequired] = useState(false);
 
   // Push notification setup
   useEffect(() => {
@@ -158,6 +163,19 @@ export default function TabLayout() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Check if user needs to set pisser tag
+  useEffect(() => {
+    if (user && !user.pisserTag && !showReferralModal) {
+      // Show pisser tag modal after a small delay if user doesn't have one
+      const timer = setTimeout(() => {
+        setShowPisserTagModal(true);
+        setPisserTagRequired(false);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, showReferralModal]);
+
   // Create a safe keyboard dismiss function
   const dismissKeyboard = useCallback(() => {
     Keyboard.dismiss();
@@ -174,21 +192,37 @@ export default function TabLayout() {
     });
   }, []);
 
+  const handlePlusPress = useCallback(() => {
+    // Check if user has pisser tag before allowing post
+    if (!user?.pisserTag) {
+      setShowPisserTagModal(true);
+      setPisserTagRequired(true);
+      return;
+    }
+    // Continue with normal post flow if user has pisser tag
+  }, [user?.pisserTag]);
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       const newScrollOffset = event.contentOffset.x / SCREEN_WIDTH;
       currentPage.value = newScrollOffset;
 
-      // Dismiss keyboard when scrolling away from search page (index 1)
-      if (Math.abs(newScrollOffset - 1) > 0.1) {
-        runOnJS(dismissKeyboard)();
-      }
+      // Dismiss keyboard when scrolling
+      runOnJS(dismissKeyboard)();
     },
   });
 
   const handleReferralModalClose = () => {
     setShowReferralModal(false);
     setReferralCode(null);
+  };
+
+  const handlePisserTagModalClose = () => {
+    // Only allow closing if it's not required or if user now has a pisser tag
+    if (!pisserTagRequired || user?.pisserTag) {
+      setShowPisserTagModal(false);
+      setPisserTagRequired(false);
+    }
   };
 
   return (
@@ -210,14 +244,18 @@ export default function TabLayout() {
         ]}
         decelerationRate="fast">
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-          <RelationshipScreen />
+          <FeedScreen />
         </View>
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
-          <SearchScreen />
+          <ProfileScreen />
         </View>
       </Animated.ScrollView>
 
-      <TabBar currentPage={currentPage} onTabPress={handleTabPress} />
+      <TabBar
+        currentPage={currentPage}
+        onTabPress={handleTabPress}
+        onPlusPress={handlePlusPress}
+      />
 
       {/* Referral Claim Modal */}
       {referralCode && (
@@ -227,6 +265,13 @@ export default function TabLayout() {
           referralCode={referralCode}
         />
       )}
+
+      {/* Pisser Tag Modal */}
+      <PisserTagModal
+        visible={showPisserTagModal}
+        onClose={handlePisserTagModalClose}
+        isRequired={pisserTagRequired}
+      />
     </View>
   );
 }

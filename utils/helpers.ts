@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { APP_CONFIG } from "@/constants/AppConfig";
+import * as ImagePicker from "expo-image-picker";
 
 export const playHapticDrumRoll = async () => {
   const numberOfBeats = 10;
@@ -47,3 +48,59 @@ export const calculateRemainingSearches = (
 
   return remainingSearches;
 };
+
+export interface SelectedMedia {
+  uri: string;
+  type: "image" | "video";
+}
+
+export const selectMediaFromLibrary =
+  async (): Promise<SelectedMedia | null> => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        quality: 0.6,
+        allowsEditing: false,
+        base64: true, // Enable base64 for S3 upload
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const selectedAsset = result.assets[0];
+
+        if (!selectedAsset.uri) {
+          throw new Error("Selected media is invalid");
+        }
+
+        console.log("Selected media:", selectedAsset.uri);
+        console.log("Media type:", selectedAsset.type);
+        console.log("File size:", selectedAsset.fileSize);
+
+        // For videos, we need to handle the URI differently
+        let mediaUri = selectedAsset.uri;
+
+        // If it's a video and we have base64, use that; otherwise use the file URI
+        if (selectedAsset.type === "video") {
+          if (selectedAsset.base64) {
+            mediaUri = `data:video/mp4;base64,${selectedAsset.base64}`;
+          }
+          // If no base64, the backend will handle the file URI
+        } else {
+          // For images, always use base64
+          if (selectedAsset.base64) {
+            mediaUri = `data:image/jpeg;base64,${selectedAsset.base64}`;
+          }
+        }
+
+        return {
+          uri: mediaUri,
+          type: selectedAsset.type === "video" ? "video" : "image",
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error selecting media:", error);
+      throw error;
+    }
+  };

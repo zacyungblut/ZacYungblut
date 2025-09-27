@@ -5,7 +5,6 @@ import {
   Alert,
   ScrollView,
   Linking,
-  Share,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,8 +17,6 @@ import { colors } from "@/constants/Colors";
 import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { useNotification } from "@/contexts/NotificationContext";
-import { referralMessage, calculateRemainingSearches } from "@/utils/helpers";
-import { APP_CONFIG } from "@/constants/AppConfig";
 
 interface SettingItem {
   id: string;
@@ -34,18 +31,8 @@ interface SettingItem {
 }
 
 export default function SettingsScreen() {
-  const {
-    deleteUserAccountPermanently,
-    loading,
-    user,
-    invites,
-    sendUserInvite,
-    fetchUser,
-    cancelUserInvite,
-    recordShareAttempt,
-  } = useUserRedux();
+  const { deleteUserAccountPermanently, loading, user } = useUserRedux();
   const { addNotification } = useNotification();
-  const [isInviteLoading, setIsInviteLoading] = useState(false);
   const posthog = usePostHog();
 
   const handleBackPress = () => {
@@ -56,8 +43,8 @@ export default function SettingsScreen() {
     router.push("/premium");
   };
 
-  const handleManageRelationship = () => {
-    router.push("/manage");
+  const handleEditProfile = () => {
+    router.push("/pisser-tag");
   };
 
   const handleGetSupport = () => {
@@ -80,122 +67,6 @@ export default function SettingsScreen() {
     });
   };
 
-  const handleViewSearchHistory = () => {
-    router.push("/past-searches");
-  };
-
-  const handleViewReferrals = () => {
-    router.push("/my-referrals");
-  };
-
-  const handleShareReferralLink = async () => {
-    console.log("Share referral link pressed");
-    setIsInviteLoading(true);
-
-    // Track referral share initiation
-    posthog.capture("referral_share_initiated", {
-      user_id: user?.id || "",
-      platform: Platform.OS,
-      source: "settings_screen",
-    });
-
-    try {
-      // Create the invite link
-      const inviteLink = `https://makeitofficial.us/refer/${user?.id}`;
-
-      // Show native share dialog
-      try {
-        const result = await Share.share({
-          message: referralMessage,
-          url: inviteLink,
-          title: "My Relationship",
-        });
-
-        if (result.action === Share.sharedAction) {
-          // Track successful referral share
-          posthog.capture("referral_shared", {
-            user_id: user?.id || "",
-            share_method: result.activityType || "unknown",
-            platform: Platform.OS,
-            source: "settings_screen",
-            was_successful: true,
-          });
-
-          // Record successful share attempt
-          try {
-            const shareMethod = result.activityType
-              ? `native_share:${result.activityType}`
-              : "native_share:unknown";
-
-            console.log(
-              "Share successful via:",
-              result.activityType || "unknown"
-            );
-          } catch (shareTrackingError) {
-            console.error("Failed to track share attempt:", shareTrackingError);
-          }
-
-          addNotification({
-            title: "Referral Link Shared",
-            description: "Your referral link has been shared successfully",
-            type: "success",
-            emoji: "🎉",
-          });
-
-          // Refresh user data after successful share
-          await fetchUser();
-        } else {
-          // Track cancelled referral share
-          posthog.capture("referral_share_cancelled", {
-            user_id: user?.id || "",
-            platform: Platform.OS,
-            source: "settings_screen",
-          });
-
-          // Record aborted share attempt
-          try {
-            console.log("Share cancelled by user");
-          } catch (shareTrackingError) {
-            console.error("Failed to track aborted share:", shareTrackingError);
-          }
-        }
-      } catch (shareError) {
-        console.error("Error sharing:", shareError);
-
-        // Track referral share error
-        posthog.capture("referral_share_failed", {
-          user_id: user?.id || "",
-          platform: Platform.OS,
-          source: "settings_screen",
-          error_message:
-            shareError instanceof Error
-              ? shareError.message
-              : String(shareError),
-        });
-
-        Alert.alert("Share Error", "Failed to share the referral link");
-      }
-    } catch (error: any) {
-      console.error("Error creating invite:", error);
-
-      // Track referral creation error
-      posthog.capture("referral_creation_failed", {
-        user_id: user?.id || "",
-        platform: Platform.OS,
-        source: "settings_screen",
-        error_message:
-          error.response?.data?.error || "Failed to create invitation",
-        error_status: error.response?.status,
-      });
-
-      const errorMessage =
-        error.response?.data?.error || "Failed to create invitation";
-      Alert.alert("Error", errorMessage);
-    } finally {
-      setIsInviteLoading(false);
-    }
-  };
-
   const handleDeleteAccount = () => {
     // Track account deletion attempt initiation
     posthog.capture("account_deletion_initiated", {
@@ -206,7 +77,7 @@ export default function SettingsScreen() {
 
     Alert.alert(
       "Delete Account",
-      "Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data, relationships, and invites.",
+      "Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data.",
       [
         {
           text: "Cancel",
@@ -308,73 +179,6 @@ export default function SettingsScreen() {
     ]);
   };
 
-  // Calculate search-related data
-  const searchData = React.useMemo(() => {
-    if (!user) return null;
-
-    // Get search transactions and bonus searches from user data
-    const searchTransactions = (user as any).searchTransactions || [];
-    const bonusSearches = (user as any).bonusSearches || 0;
-
-    // Use the helper function to calculate remaining searches
-    const searchesLeft = calculateRemainingSearches(
-      searchTransactions,
-      bonusSearches
-    );
-
-    // Calculate total searches available (3 default + bonus)
-    const searchLimit = APP_CONFIG.DEFAULT_MONTHLY_SEARCHES + bonusSearches;
-
-    // Calculate searches used in the last 30 days
-    const now = new Date();
-    const thirtyDaysAgo = new Date(
-      now.getTime() - APP_CONFIG.SEARCH_HISTORY_DAYS * 24 * 60 * 60 * 1000
-    );
-    const recentSearches = searchTransactions.filter((transaction: any) => {
-      const transactionDate = new Date(transaction.createdAt);
-      return transactionDate >= thirtyDaysAgo;
-    });
-    const searchesUsed = recentSearches.length;
-
-    // Total searches ever made
-    const totalSearches = searchTransactions.length;
-
-    // Calculate referrals (users who joined through invites)
-    const acceptedInvites = invites.sent.filter(
-      (invite) => invite.status === "ACCEPTED"
-    );
-    const referralCount = acceptedInvites.length;
-
-    // Calculate next search available date
-    let nextSearchDate = null;
-    if (searchesLeft === 0 && recentSearches.length > 0) {
-      // Find the earliest search in the last 30 days
-      const earliestSearch = recentSearches.reduce(
-        (earliest: any, current: any) => {
-          const currentDate = new Date(current.createdAt);
-          const earliestDate = new Date(earliest.createdAt);
-          return currentDate < earliestDate ? current : earliest;
-        }
-      );
-
-      // Add 30 days to the earliest search
-      const earliestDate = new Date(earliestSearch.createdAt);
-      nextSearchDate = new Date(
-        earliestDate.getTime() + 30 * 24 * 60 * 60 * 1000
-      );
-    }
-
-    return {
-      searchesLeft,
-      searchesUsed,
-      searchLimit,
-      referralCount,
-      totalSearches,
-      bonusSearches,
-      nextSearchDate,
-    };
-  }, [user, invites.sent]);
-
   const accountSettings: SettingItem[] = [
     {
       id: "premium",
@@ -385,67 +189,12 @@ export default function SettingsScreen() {
       showChevron: true,
     },
     {
-      id: "relationship",
-      title: "Manage Relationship",
-      icon: "build-outline",
-      onPress: handleManageRelationship,
+      id: "profile",
+      title: "Change Pissername",
+      icon: "at-outline",
+      onPress: handleEditProfile,
       showChevron: true,
-    },
-  ];
-
-  const searchSettings: SettingItem[] = [
-    {
-      id: "searches-remaining",
-      title: "Searches Remaining",
-      icon: "search-outline",
-      onPress: handleViewSearchHistory,
-      showChevron: false,
-      value: (() => {
-        if (!searchData) return "0 searches left";
-
-        const searchesLeft = searchData.searchesLeft;
-        let valueText = `${searchesLeft} searches left`;
-
-        // Add next search date if user has no searches left and there's a next date
-        if (searchesLeft === 0 && searchData.nextSearchDate) {
-          const nextDate = searchData.nextSearchDate;
-          const formattedDate = nextDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          });
-          valueText += ` • Next search on ${formattedDate}`;
-        }
-
-        return valueText;
-      })(),
-    },
-    {
-      id: "search-history",
-      title: "Search History",
-      icon: "time-outline",
-      onPress: handleViewSearchHistory,
-      showChevron: true,
-      value: searchData
-        ? `${searchData.totalSearches} searches made`
-        : "0 searches made",
-    },
-  ];
-
-  const referralSettings: SettingItem[] = [
-    {
-      id: "my-referrals",
-      title: "My Referrals",
-      icon: "people-outline",
-      onPress: handleViewReferrals,
-      showChevron: true,
-    },
-    {
-      id: "referral-link",
-      title: "Copy My Referral Link",
-      icon: "link-outline",
-      onPress: handleShareReferralLink,
-      showChevron: false,
-      loading: isInviteLoading,
+      value: user?.pisserTag ? `@${user.pisserTag}` : "Not set",
     },
   ];
 
@@ -563,8 +312,6 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {renderSettingSection("Account", accountSettings)}
-        {searchData && renderSettingSection("Searches", searchSettings)}
-        {searchData && renderSettingSection("Referrals", referralSettings)}
         {renderSettingSection("Support", supportSettings)}
         {renderSettingSection("Account Actions", dangerousSettings, true)}
 
@@ -620,9 +367,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 20, // Increased from 16 to match manage.tsx
+    paddingVertical: 20,
     backgroundColor: colors.background.tertiary,
-    minHeight: 60, // Added minimum height for better spacing
+    minHeight: 60,
   },
   destructiveItem: {
     backgroundColor: colors.background.secondary,

@@ -50,21 +50,21 @@ export default function Auth() {
 
           {/* Welcome text */}
           <View style={styles.textContainer}>
-            <Text style={styles.makeItText} allowFontScaling={false}>
-              let's make it
-            </Text>
             <Text style={styles.officialText} allowFontScaling={false}>
-              Official
+              PissTracker
+            </Text>
+            <Text style={styles.makeItText} allowFontScaling={false}>
+              Social App
             </Text>
           </View>
 
           {/* Tagline */}
           <View style={styles.taglineContainer}>
             <Text style={styles.taglineText} allowFontScaling={false}>
-              Made for couples.
+              Aesthetic content.
             </Text>
             <Text style={styles.taglineText} allowFontScaling={false}>
-              Designed for privacy.
+              Connect with pissers.
             </Text>
           </View>
         </View>
@@ -74,7 +74,10 @@ export default function Auth() {
           <TouchableOpacity
             style={[styles.button, styles.signupButton]}
             onPress={() =>
-              router.push({ pathname: "/signup", params: { mode: "signup" } })
+              router.push({
+                pathname: "/pisser-tag-signup",
+                params: { mode: "signup" },
+              })
             }
             activeOpacity={0.8}>
             <Text
@@ -87,7 +90,10 @@ export default function Auth() {
           <TouchableOpacity
             style={[styles.button, styles.loginButton]}
             onPress={() =>
-              router.push({ pathname: "/signup", params: { mode: "login" } })
+              router.push({
+                pathname: "/pisser-tag-signup",
+                params: { mode: "login" },
+              })
             }
             activeOpacity={0.8}>
             <Text
@@ -97,10 +103,10 @@ export default function Auth() {
             </Text>
           </TouchableOpacity>
 
-          {/* Terms and Privacy Policy */}
+          {/* Terms and Privacy Policy section */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText} allowFontScaling={false}>
-              By continuing, you agree to Official's{" "}
+              By continuing, you agree to our{" "}
               <Text
                 style={styles.linkText}
                 allowFontScaling={false}
@@ -244,10 +250,10 @@ const styles = StyleSheet.create({
     fontWeight: "300",
     color: colors.primary,
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginTop: 4,
   },
   officialText: {
-    fontSize: 72,
+    fontSize: 64,
     fontWeight: "600",
     color: colors.primary,
     letterSpacing: -1,

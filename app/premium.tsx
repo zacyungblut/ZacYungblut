@@ -459,7 +459,7 @@ export default function PremiumScreen() {
       <View style={styles.content}>
         {/* Title */}
         <Text style={styles.title} allowFontScaling={false}>
-          Get Official Premium
+          Become a Premium Pisser
         </Text>
 
         {/* Social Proof */}
@@ -494,7 +494,7 @@ export default function PremiumScreen() {
               style={styles.checkmark}
             />
             <Text style={styles.featureText} allowFontScaling={false}>
-              8 searches per month (vs 2 on free plan)
+              Receive a Premium Pisser Badge
             </Text>
           </View>
           <View style={styles.featureItem}>
@@ -505,8 +505,7 @@ export default function PremiumScreen() {
               style={styles.checkmark}
             />
             <Text style={styles.featureText} allowFontScaling={false}>
-              Get notifications when your partner changes your relationship
-              status
+              Change your Pisser Tag
             </Text>
           </View>
           <View style={styles.featureItem}>
@@ -517,7 +516,7 @@ export default function PremiumScreen() {
               style={styles.checkmark}
             />
             <Text style={styles.featureText} allowFontScaling={false}>
-              Ad-free experience
+              Post more than one Piss per day
             </Text>
           </View>
         </View>

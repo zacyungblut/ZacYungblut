@@ -11,6 +11,8 @@ interface TopBarProps {
   onBackPress?: () => void;
   showAddButton?: boolean;
   onAddPress?: () => void;
+  showPremiumButton?: boolean;
+  showSettingsButton?: boolean;
 }
 
 export default function TopBar({
@@ -19,9 +21,14 @@ export default function TopBar({
   onBackPress,
   showAddButton = false,
   onAddPress,
+  showPremiumButton = true,
+  showSettingsButton = false,
 }: TopBarProps) {
   const handlePremiumPress = () => {
     router.push("/premium");
+  };
+  const handleSettingsPress = () => {
+    router.push("/settings");
   };
   const handleHomePress = () => {
     router.push("/trust-center");
@@ -53,6 +60,14 @@ export default function TopBar({
       </View>
 
       <View style={styles.rightSection}>
+        {showSettingsButton && (
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={handleSettingsPress}
+            activeOpacity={0.7}>
+            <Ionicons name="cog" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        )}
         {showAddButton && onAddPress ? (
           <TouchableOpacity
             style={styles.addButton}
@@ -60,7 +75,7 @@ export default function TopBar({
             activeOpacity={0.7}>
             <Ionicons name="add" size={28} color={colors.text.primary} />
           </TouchableOpacity>
-        ) : (
+        ) : showPremiumButton ? (
           <TouchableOpacity
             style={styles.premiumButton}
             onPress={handlePremiumPress}
@@ -71,7 +86,7 @@ export default function TopBar({
               resizeMode="contain"
             />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -100,6 +115,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
+    gap: 8,
   },
   logo: {
     width: 32,
@@ -131,5 +147,11 @@ const styles = StyleSheet.create({
   premiumImage: {
     width: 36,
     height: 36,
+  },
+  settingsButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
