@@ -100,13 +100,7 @@ function AppContent() {
   const [isReady, setIsReady] = useState(false);
 
   // Use Redux for user state management
-  const {
-    user: userRedux,
-    saveUser,
-    logoutUser,
-    reviewRequests,
-    saveUserReviewRequest,
-  } = useUserRedux();
+  const { user: userRedux, saveUser, logoutUser } = useUserRedux();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -141,13 +135,13 @@ function AppContent() {
 
       // Check if we should request a review based on search count instead of unlocks
       if (
-        !ReviewService.shouldRequestReview([], reviewRequests) // Pass empty array for searches
+        !ReviewService.shouldRequestReview([], []) // Pass empty arrays
       ) {
         return;
       }
 
       // Log metrics for debugging
-      ReviewService.logReviewMetrics([], reviewRequests); // Pass empty array for searches
+      ReviewService.logReviewMetrics([], []); // Pass empty arrays
 
       // Small delay to ensure the app has fully loaded
       setTimeout(async () => {
@@ -156,39 +150,11 @@ function AppContent() {
         try {
           const reviewMetadata = await ReviewService.requestReview();
 
-          // Save the review request to the backend
-          try {
-            await saveUserReviewRequest({
-              platform: reviewMetadata.platform,
-              appVersion: reviewMetadata.appVersion,
-              buildVersion: reviewMetadata.buildVersion,
-              searchCount: 0, // We'll track this differently now
-              wasDisplayed: reviewMetadata.wasDisplayed,
-              userInteracted: false, // Will be updated later if user interacts
-              deviceModel: reviewMetadata.deviceModel,
-              osVersion: reviewMetadata.osVersion,
-            });
-
-            if (reviewMetadata.wasDisplayed) {
-              console.log(
-                "Review dialog was displayed to user and saved to backend"
-              );
-            } else {
-              console.log(
-                "Review request logged to backend (dialog not displayed)"
-              );
-            }
-          } catch (saveError) {
-            console.error(
-              "Failed to save review request to backend:",
-              saveError
-            );
-            // Still log success if the review was shown, even if save failed
-            if (reviewMetadata.wasDisplayed) {
-              console.log(
-                "Review dialog was displayed but failed to save to backend"
-              );
-            }
+          // Review request successful but no backend saving
+          if (reviewMetadata.wasDisplayed) {
+            console.log("Review dialog was displayed to user");
+          } else {
+            console.log("Review request logged (dialog not displayed)");
           }
         } catch (reviewError) {
           console.log(
@@ -344,9 +310,7 @@ function AppContent() {
         router.replace("/(tabs)");
 
         // Check if we should request a review after successful login
-        if (user.reviewRequests) {
-          handleReviewRequest();
-        }
+        handleReviewRequest();
       } else {
         // No token or no user data
         router.replace("/auth");

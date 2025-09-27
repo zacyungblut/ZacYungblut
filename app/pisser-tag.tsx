@@ -170,7 +170,7 @@ export default function PisserTagScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState("");
-  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const checkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleBackPress = () => {
     router.back();
@@ -276,6 +276,7 @@ export default function PisserTagScreen() {
           ? `Your pissername has been set to @${pisserTag}`
           : "Your pissername has been removed",
         type: "success",
+        duration: 3000,
         emoji: "✅",
       });
 

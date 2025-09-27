@@ -12,9 +12,6 @@ import Constants from "expo-constants";
 import { colors } from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import TabBar from "@/components/TabBar";
-import ReferralClaimModal from "@/components/ReferralClaimModal";
-import PisserTagModal from "@/components/PisserTagModal";
-import { AuthService } from "@/utils/authStorage";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { useNotification } from "@/contexts/NotificationContext";
 
@@ -40,14 +37,6 @@ export default function TabLayout() {
   const currentPage = useSharedValue(0);
   const { user, updateUserExpoPushToken } = useUserRedux();
   const { addNotification } = useNotification();
-
-  // Referral modal state
-  const [showReferralModal, setShowReferralModal] = useState(false);
-  const [referralCode, setReferralCode] = useState<string | null>(null);
-
-  // Pisser tag modal state
-  const [showPisserTagModal, setShowPisserTagModal] = useState(false);
-  const [pisserTagRequired, setPisserTagRequired] = useState(false);
 
   // Push notification setup
   useEffect(() => {
@@ -146,36 +135,6 @@ export default function TabLayout() {
     };
   }, [user, updateUserExpoPushToken, addNotification]);
 
-  // Check for pending referral code on component mount
-  useEffect(() => {
-    const checkReferralCode = () => {
-      const pendingReferralCode = AuthService.getReferralCode();
-      console.log("pendingReferralCode", pendingReferralCode);
-      if (pendingReferralCode && pendingReferralCode !== user?.id) {
-        setReferralCode(pendingReferralCode);
-        setShowReferralModal(true);
-      }
-    };
-
-    // Small delay to ensure the component is fully mounted
-    const timer = setTimeout(checkReferralCode, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Check if user needs to set pisser tag
-  useEffect(() => {
-    if (user && !user.pisserTag && !showReferralModal) {
-      // Show pisser tag modal after a small delay if user doesn't have one
-      const timer = setTimeout(() => {
-        setShowPisserTagModal(true);
-        setPisserTagRequired(false);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [user, showReferralModal]);
-
   // Create a safe keyboard dismiss function
   const dismissKeyboard = useCallback(() => {
     Keyboard.dismiss();
@@ -193,14 +152,8 @@ export default function TabLayout() {
   }, []);
 
   const handlePlusPress = useCallback(() => {
-    // Check if user has pisser tag before allowing post
-    if (!user?.pisserTag) {
-      setShowPisserTagModal(true);
-      setPisserTagRequired(true);
-      return;
-    }
-    // Continue with normal post flow if user has pisser tag
-  }, [user?.pisserTag]);
+    // Continue with normal post flow
+  }, []);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -211,19 +164,6 @@ export default function TabLayout() {
       runOnJS(dismissKeyboard)();
     },
   });
-
-  const handleReferralModalClose = () => {
-    setShowReferralModal(false);
-    setReferralCode(null);
-  };
-
-  const handlePisserTagModalClose = () => {
-    // Only allow closing if it's not required or if user now has a pisser tag
-    if (!pisserTagRequired || user?.pisserTag) {
-      setShowPisserTagModal(false);
-      setPisserTagRequired(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -255,22 +195,6 @@ export default function TabLayout() {
         currentPage={currentPage}
         onTabPress={handleTabPress}
         onPlusPress={handlePlusPress}
-      />
-
-      {/* Referral Claim Modal */}
-      {referralCode && (
-        <ReferralClaimModal
-          visible={showReferralModal}
-          onClose={handleReferralModalClose}
-          referralCode={referralCode}
-        />
-      )}
-
-      {/* Pisser Tag Modal */}
-      <PisserTagModal
-        visible={showPisserTagModal}
-        onClose={handlePisserTagModalClose}
-        isRequired={pisserTagRequired}
       />
     </View>
   );

@@ -228,8 +228,6 @@ function Verification() {
             phone: phone,
             verified: true,
             created_at: user.createdAt,
-            is_single: user.isSingle,
-            bonus_searches: user.bonusSearches,
           });
         } else {
           // If user data isn't available yet, identify with phone number

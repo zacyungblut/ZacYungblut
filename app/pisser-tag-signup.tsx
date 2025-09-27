@@ -35,7 +35,7 @@ export default function PisserTagSignupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const checkTimeoutRef = useRef<number | null>(null);
   const textInputRef = useRef<TextInput>(null);
 
   const handleBackPress = () => {
@@ -209,7 +209,9 @@ export default function PisserTagSignupScreen() {
       );
     }
     if (error) {
-      return <Ionicons name="close-circle" size={20} color={colors.accent} />;
+      return (
+        <Ionicons name="close-circle" size={20} color={colors.accent.primary} />
+      );
     }
     if (isAvailable === true) {
       return (
@@ -217,7 +219,9 @@ export default function PisserTagSignupScreen() {
       );
     }
     if (isAvailable === false) {
-      return <Ionicons name="close-circle" size={20} color={colors.accent} />;
+      return (
+        <Ionicons name="close-circle" size={20} color={colors.accent.primary} />
+      );
     }
     return null;
   };
@@ -234,7 +238,7 @@ export default function PisserTagSignupScreen() {
 
   const getStatusTextColor = () => {
     if (isChecking) return colors.text.secondary;
-    if (error || isAvailable === false) return colors.accent;
+    if (error || isAvailable === false) return colors.accent.primary;
     if (isAvailable === true) return colors.success;
     return colors.text.secondary;
   };
