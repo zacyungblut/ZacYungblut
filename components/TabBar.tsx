@@ -6,6 +6,7 @@ import {
   Keyboard,
   Dimensions,
   Alert,
+  Image,
 } from "react-native";
 import Animated, {
   SharedValue,
@@ -49,7 +50,7 @@ const TabBar: React.FC<TabBarProps> = ({
     index,
     label,
   }: {
-    iconType: "home" | "user";
+    iconType: "home" | "leaderboard" | "rank" | "user";
     index: number;
     label: string;
   }) => {
@@ -90,9 +91,37 @@ const TabBar: React.FC<TabBarProps> = ({
 
     const renderIcon = () => {
       if (iconType === "home") {
-        return <HomeIcon isFocused={isSelected} color="#FFFFFF" />;
+        return (
+          <View style={styles.iconWrapper}>
+            <HomeIcon isFocused={isSelected} color="#FFFFFF" />
+          </View>
+        );
+      } else if (iconType === "leaderboard") {
+        return (
+          <View style={styles.iconWrapper}>
+            <Ionicons
+              name={isSelected ? "trophy" : "trophy-outline"}
+              size={24}
+              color="#FFFFFF"
+            />
+          </View>
+        );
+      } else if (iconType === "rank") {
+        return (
+          <View style={styles.iconWrapper}>
+            <Image
+              source={require("@/assets/images/clan.png")}
+              style={[styles.clanIcon, { opacity: isSelected ? 1 : 0.7 }]}
+              resizeMode="contain"
+            />
+          </View>
+        );
       } else if (iconType === "user") {
-        return <UserIcon isFocused={isSelected} color="#FFFFFF" />;
+        return (
+          <View style={styles.iconWrapper}>
+            <UserIcon isFocused={isSelected} color="#FFFFFF" />
+          </View>
+        );
       }
       return null;
     };
@@ -180,18 +209,16 @@ const TabBar: React.FC<TabBarProps> = ({
           style={StyleSheet.absoluteFillObject}
         />
 
-        {/* Tab buttons with better spacing */}
+        {/* Tab buttons with perfect spacing and alignment */}
         <View style={styles.tabContainer}>
-          <View style={styles.leftTabsContainer}>
-            <TabIcon iconType="home" index={0} label="Feed" />
-          </View>
+          <TabIcon iconType="home" index={0} label="Feed" />
+          <TabIcon iconType="leaderboard" index={1} label="Leaderboard" />
 
           {/* Plus button in center */}
           <PlusButton />
 
-          <View style={styles.rightTabsContainer}>
-            <TabIcon iconType="user" index={1} label="Profile" />
-          </View>
+          <TabIcon iconType="rank" index={2} label="Rank" />
+          <TabIcon iconType="user" index={3} label="Profile" />
         </View>
       </Animated.View>
     </View>
@@ -209,61 +236,54 @@ const styles = StyleSheet.create({
   tabBar: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    paddingTop: 6,
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 20, // Increased bottom padding to push content up
+    paddingTop: 4, // Reduced top padding
     borderTopWidth: 0.5,
     borderTopColor: "rgba(40, 40, 40, 0.8)",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   tabContainer: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 5,
-  },
-  leftTabsContainer: {
-    flexDirection: "row",
-    flex: 1,
-    justifyContent: "space-around",
-    alignItems: "flex-start",
-  },
-  rightTabsContainer: {
-    flexDirection: "row",
-    flex: 1,
-    justifyContent: "space-around",
-    alignItems: "flex-start",
+    alignItems: "center",
+    marginTop: -4, // Move the entire container up
   },
   tabButton: {
     alignItems: "center",
-    justifyContent: "flex-start",
-    paddingVertical: 0,
-    minWidth: 60,
+    justifyContent: "center",
+    flex: 1,
+    paddingVertical: 2, // Reduced padding
   },
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    marginBottom: 3, // Reduced margin between icon and label
+    height: 32, // Fixed height for consistent alignment
+  },
+  iconWrapper: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
   tabLabel: {
     fontSize: 11,
     fontWeight: "600",
     textAlign: "center",
+    lineHeight: 13,
+  },
+  clanIcon: {
+    width: 24,
+    height: 24,
+    tintColor: "#FFFFFF",
   },
   plusButton: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: 8,
+    marginTop: -4, // Move the plus button up to align with other icons
   },
   plusButtonContainer: {
     width: 44,
@@ -272,14 +292,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(60, 60, 67, 0.8)",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },

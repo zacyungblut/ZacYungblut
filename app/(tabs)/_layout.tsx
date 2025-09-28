@@ -17,6 +17,8 @@ import { useNotification } from "@/contexts/NotificationContext";
 
 // Import your tab screens directly
 import FeedScreen from "./feed";
+import LeaderboardScreen from "./leaderboard";
+import RankScreen from "./rank";
 import ProfileScreen from "./profile";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -185,6 +187,12 @@ export default function TabLayout() {
         decelerationRate="fast">
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
           <FeedScreen />
+        </View>
+        <View style={[styles.page, { width: SCREEN_WIDTH }]}>
+          <LeaderboardScreen />
+        </View>
+        <View style={[styles.page, { width: SCREEN_WIDTH }]}>
+          <RankScreen />
         </View>
         <View style={[styles.page, { width: SCREEN_WIDTH }]}>
           <ProfileScreen />
