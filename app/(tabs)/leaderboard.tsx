@@ -1,49 +1,107 @@
-import React from "react";
-import { StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Text, View } from "@/components/Themed";
-import TopBar from "@/components/TopBar";
+import SearchBar from "@/components/SearchBar";
 import { colors } from "@/constants/Colors";
+import { getLeaderboard } from "@/api";
 
 interface LeaderboardUser {
   id: string;
   name: string;
+  pisserTag?: string;
   score: number;
   rank: number;
-  avatar?: string;
+  postCount: number;
+  totalLikes: number;
+  totalComments: number;
+  totalShares: number;
   isCurrentUser?: boolean;
 }
 
-const leaderboardData: LeaderboardUser[] = [
-  { id: "1", name: "Emma Johnson", score: 2850, rank: 1 },
-  { id: "2", name: "Michael Chen", score: 2720, rank: 2 },
-  { id: "3", name: "Sarah Williams", score: 2650, rank: 3 },
-  { id: "4", name: "David Rodriguez", score: 2580, rank: 4 },
-  { id: "5", name: "Jessica Taylor", score: 2490, rank: 5 },
-  { id: "6", name: "Alex Thompson", score: 2420, rank: 6, isCurrentUser: true },
-  { id: "7", name: "Maria Garcia", score: 2380, rank: 7 },
-  { id: "8", name: "James Wilson", score: 2320, rank: 8 },
-  { id: "9", name: "Lisa Anderson", score: 2250, rank: 9 },
-  { id: "10", name: "Ryan Martinez", score: 2180, rank: 10 },
-];
+interface LeaderboardResponse {
+  leaderboard: LeaderboardUser[];
+  currentUserRank?: LeaderboardUser;
+  meta: {
+    totalUsers: number;
+    generatedAt: string;
+  };
+}
 
 export default function LeaderboardScreen() {
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <Ionicons name="trophy" size={24} color="#FFD700" />;
-      case 2:
-        return <Ionicons name="medal" size={24} color="#C0C0C0" />;
-      case 3:
-        return <Ionicons name="medal" size={24} color="#CD7F32" />;
-      default:
-        return (
-          <View style={styles.rankNumberContainer}>
-            <Text style={styles.rankNumber}>{rank}</Text>
-          </View>
-        );
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
+  const [currentUserRank, setCurrentUserRank] =
+    useState<LeaderboardUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchLeaderboard = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const response = await getLeaderboard(50);
+      const data: LeaderboardResponse = response.data;
+
+      setLeaderboardData(data.leaderboard);
+      setCurrentUserRank(data.currentUserRank || null);
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
+      setError("Failed to load leaderboard. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
+
+  const onRefresh = () => {
+    fetchLeaderboard(true);
+  };
+
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    // Filter leaderboard data based on search query
+    // You can implement this filtering logic as needed
+  };
+
+  const handleMenuPress = () => {
+    // Handle menu button press - you can add your menu logic here
+    console.log("Menu pressed");
+  };
+
+  // Filter leaderboard data based on search query
+  const filteredLeaderboardData = leaderboardData.filter(
+    (user) =>
+      searchQuery === "" ||
+      (user.pisserTag &&
+        user.pisserTag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      user.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getRankIcon = (rank: number) => {
+    return (
+      <View style={styles.rankNumberContainer}>
+        <Text style={styles.rankNumber}>{rank}</Text>
+      </View>
+    );
   };
 
   const renderLeaderboardItem = (user: LeaderboardUser, index: number) => (
@@ -51,7 +109,6 @@ export default function LeaderboardScreen() {
       key={user.id}
       style={[
         styles.leaderboardItem,
-        user.isCurrentUser && styles.currentUserItem,
         index === 0 && styles.firstPlace,
         index === 1 && styles.secondPlace,
         index === 2 && styles.thirdPlace,
@@ -60,67 +117,122 @@ export default function LeaderboardScreen() {
       {/* Rank */}
       <View style={styles.rankContainer}>{getRankIcon(user.rank)}</View>
 
-      {/* User Avatar */}
-      <View
-        style={[
-          styles.avatarContainer,
-          user.isCurrentUser && styles.currentUserAvatar,
-        ]}>
-        <Ionicons
-          name="person"
-          size={24}
-          color={user.isCurrentUser ? colors.white : colors.text.secondary}
-        />
-      </View>
-
       {/* User Info */}
       <View style={styles.userInfo}>
-        <Text
-          style={[
-            styles.userName,
-            user.isCurrentUser && styles.currentUserText,
-          ]}>
-          {user.name}
-          {user.isCurrentUser && " (You)"}
-        </Text>
-        <Text
-          style={[
-            styles.userScore,
-            user.isCurrentUser && styles.currentUserScore,
-          ]}>
+        <View style={styles.userNameRow}>
+          <Text style={styles.userName}>
+            {user.pisserTag ? `@${user.pisserTag}` : user.name}
+          </Text>
+          {user.isCurrentUser && (
+            <View style={styles.youBadge}>
+              <Text style={styles.youBadgeText}>You</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.userScore}>
           {user.score.toLocaleString()} points
         </Text>
       </View>
-
-      {/* Arrow */}
-      <Ionicons
-        name="chevron-forward"
-        size={20}
-        color={user.isCurrentUser ? colors.white : colors.text.tertiary}
-      />
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <SearchBar
+          placeholder="Search users..."
+          onSearchChange={handleSearchChange}
+          onMenuPress={handleMenuPress}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading leaderboard...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <SearchBar
+          placeholder="Search users..."
+          onSearchChange={handleSearchChange}
+          onMenuPress={handleMenuPress}
+        />
+        <View style={styles.errorContainer}>
+          <Ionicons
+            name="alert-circle"
+            size={48}
+            color={colors.text.secondary}
+          />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => fetchLeaderboard()}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <TopBar title="Leaderboard" />
+      <SearchBar
+        placeholder="Search users..."
+        onSearchChange={handleSearchChange}
+        onMenuPress={handleMenuPress}
+      />
 
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }>
         {/* Header Section */}
         <View style={styles.headerSection}>
-          <Text style={styles.headerTitle}>Top Players</Text>
+          <Text style={styles.headerTitle}>Top Pissers</Text>
           <Text style={styles.headerSubtitle}>
-            See how you rank against other players
+            Based on piss engagement and activity
           </Text>
         </View>
 
+        {/* Current User Rank (if not in top 50) */}
+        {currentUserRank && !currentUserRank.isCurrentUser && (
+          <View style={styles.currentUserSection}>
+            <Text style={styles.currentUserSectionTitle}>Your Rank</Text>
+            {renderLeaderboardItem(currentUserRank, -1)}
+          </View>
+        )}
+
         {/* Leaderboard List */}
         <View style={styles.leaderboardContainer}>
-          {leaderboardData.map((user, index) =>
-            renderLeaderboardItem(user, index)
+          {filteredLeaderboardData.length > 0 ? (
+            filteredLeaderboardData.map((user, index) =>
+              renderLeaderboardItem(user, index)
+            )
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="trophy" size={48} color={colors.text.tertiary} />
+              <Text style={styles.emptyText}>
+                {searchQuery
+                  ? "No users found"
+                  : "No leaderboard data available"}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {searchQuery
+                  ? "Try a different search term"
+                  : "Start posting to see rankings!"}
+              </Text>
+            </View>
           )}
         </View>
 
@@ -140,7 +252,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    paddingHorizontal: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
     paddingHorizontal: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: "600",
   },
   headerSection: {
     paddingVertical: 24,
@@ -157,87 +302,91 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: "center",
   },
+  currentUserSection: {
+    marginBottom: 24,
+  },
+  currentUserSectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.text.primary,
+    marginBottom: 12,
+  },
   leaderboardContainer: {
     gap: 8,
   },
   leaderboardItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: colors.background.secondary,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: colors.background.quaternary,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border.light,
   },
   firstPlace: {
-    borderColor: "#FFD700",
-    borderWidth: 2,
+    backgroundColor: colors.background.quaternary,
   },
   secondPlace: {
-    borderColor: "#C0C0C0",
-    borderWidth: 2,
+    backgroundColor: colors.background.quaternary,
   },
   thirdPlace: {
-    borderColor: "#CD7F32",
-    borderWidth: 2,
-  },
-  currentUserItem: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primaryLight,
-    borderWidth: 2,
+    backgroundColor: colors.background.quaternary,
   },
   rankContainer: {
-    width: 40,
-    alignItems: "center",
-    marginRight: 16,
+    width: 32,
+    alignItems: "flex-start",
+    marginHorizontal: 8,
   },
   rankNumberContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.border.medium,
-    alignItems: "center",
-    justifyContent: "center",
+    // Remove this container styling - not needed anymore
   },
   rankNumber: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "bold",
     color: colors.text.primary,
-  },
-  avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.background.quaternary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: colors.border.light,
-  },
-  currentUserAvatar: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.white,
   },
   userInfo: {
     flex: 1,
+  },
+  userNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
   },
   userName: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text.primary,
-    marginBottom: 2,
+    marginRight: 8,
   },
-  currentUserText: {
-    color: colors.white,
+  youBadge: {
+    backgroundColor: colors.text.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  youBadgeText: {
+    color: colors.background.primary,
+    fontSize: 12,
+    fontWeight: "600",
   },
   userScore: {
     fontSize: 14,
     color: colors.text.secondary,
+    marginBottom: 2,
   },
-  currentUserScore: {
-    color: colors.text.light,
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 48,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.text.secondary,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.text.tertiary,
   },
   bottomSpacing: {
     height: 120, // Account for tab bar

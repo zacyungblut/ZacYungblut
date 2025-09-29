@@ -100,14 +100,33 @@ const CreatePostPage: React.FC = () => {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [showMediaSelector, setShowMediaSelector] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Start muted by default
+  const [isPlaying, setIsPlaying] = useState(false);
   const { addNotification } = useNotification();
+
   // Create video player for selected video
   const player = useVideoPlayer(
     selectedMedia && mediaType === "video" ? selectedMedia : "",
     (player) => {
       player.loop = false;
+      player.muted = isMuted;
     }
   );
+
+  // Auto-play video when media is selected
+  useEffect(() => {
+    if (selectedMedia && mediaType === "video" && player) {
+      player.play();
+      setIsPlaying(true);
+    }
+  }, [selectedMedia, mediaType, player]);
+
+  // Update player mute state when isMuted changes
+  useEffect(() => {
+    if (player) {
+      player.muted = isMuted;
+    }
+  }, [isMuted, player]);
 
   // Handle pre-selected media from navigation params
   useEffect(() => {
@@ -232,6 +251,7 @@ const CreatePostPage: React.FC = () => {
       Alert.alert("Error", errorMessage);
     } finally {
       setIsSubmitting(false);
+      router.back();
     }
   };
 
@@ -245,17 +265,66 @@ const CreatePostPage: React.FC = () => {
     setShowMediaSelector(true);
   };
 
+  const handleVideoPress = () => {
+    if (player) {
+      if (isPlaying) {
+        player.pause();
+        setIsPlaying(false);
+      } else {
+        player.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+  };
+
   const renderMediaPreview = () => {
     if (!selectedMedia) return null;
 
     if (mediaType === "video") {
       return (
-        <VideoView
-          style={styles.mediaPreview}
-          player={player}
-          allowsFullscreen={false}
-          allowsPictureInPicture={false}
-        />
+        <View style={styles.videoContainer}>
+          <VideoView
+            style={styles.mediaPreview}
+            player={player}
+            allowsFullscreen={false}
+            allowsPictureInPicture={false}
+            showsTimecodes={false}
+          />
+
+          {/* Transparent overlay to intercept touches */}
+          <TouchableOpacity
+            style={styles.videoOverlay}
+            onPress={handleVideoPress}
+            activeOpacity={1}
+          />
+
+          {/* Mute/Unmute Button */}
+          <TouchableOpacity
+            style={styles.muteButton}
+            onPress={toggleMute}
+            activeOpacity={0.7}>
+            <View style={styles.muteButtonBackground}>
+              <Ionicons
+                name={isMuted ? "volume-mute" : "volume-high"}
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Play/Pause Indicator */}
+          {!isPlaying && (
+            <View style={styles.playPauseIndicator}>
+              <View style={styles.playPauseBackground}>
+                <Ionicons name="play" size={32} color="#FFFFFF" />
+              </View>
+            </View>
+          )}
+        </View>
       );
     } else {
       return (
@@ -346,10 +415,10 @@ const CreatePostPage: React.FC = () => {
                     styles.button,
                     isSubmitting && styles.disabledButton,
                   ]}>
-                  Back
+                  Cancel
                 </Text>
               </TouchableOpacity>
-              <Text style={styles.title}>Create Post</Text>
+              <Text style={styles.title}>Create Piss</Text>
               <TouchableOpacity
                 onPress={handlePostSubmit}
                 disabled={isSubmitting}>
@@ -373,7 +442,7 @@ const CreatePostPage: React.FC = () => {
 
               {/* Caption Input */}
               <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>Caption</Text>
+                {/* <Text style={styles.inputLabel}>Caption</Text> */}
                 <TextInput
                   style={styles.postInput}
                   placeholder="Write a caption..."
@@ -497,20 +566,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000000",
-    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#666666",
+    marginBottom: 4,
   },
   postInput: {
-    minHeight: 100,
+    minHeight: 40,
     fontSize: 16,
     color: "#000000",
-    lineHeight: 24,
+    lineHeight: 20,
     textAlignVertical: "top",
     backgroundColor: "#F8F8F8",
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#E5E5E5",
   },
@@ -575,6 +644,51 @@ const styles = StyleSheet.create({
   },
   removeSongButton: {
     marginLeft: 12,
+  },
+  videoContainer: {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#fafafa",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  videoOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: "transparent",
+  },
+  muteButton: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    zIndex: 10,
+  },
+  muteButtonBackground: {
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 20,
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playPauseIndicator: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    zIndex: 6,
+  },
+  playPauseBackground: {
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 25,
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

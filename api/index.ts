@@ -1,10 +1,10 @@
 import axios from "axios";
 import { AuthService } from "@/utils/authStorage";
 
-// export const baseURL = "http://localhost:3000"; // Updated to match backend port
+export const baseURL = "http://localhost:3000"; // Updated to match backend port
 // export const baseURL = "http://192.168.86.43:3000"; // 34 craigleith
 // export const baseURL = "http://10.0.0.143:3000"; // 450 Front st west, toronto
-export const baseURL = "https://mixer-backend.cfd";
+// export const baseURL = "https://mixer-backend.cfd";
 
 export const socketURL = baseURL; // Export socket URL for SocketContext
 
@@ -193,4 +193,9 @@ export const getCurrentUserPosts = async (
   limit: number = 20
 ) => {
   return API.get(`/auth/me/posts?page=${page}&limit=${limit}`);
+};
+
+// Get leaderboard data
+export const getLeaderboard = async (limit: number = 50) => {
+  return API.get(`/posts/leaderboard?limit=${limit}`);
 };

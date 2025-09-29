@@ -13,6 +13,8 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   withSpring,
+  useAnimatedReaction,
+  runOnJS,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -36,6 +38,16 @@ const TabBar: React.FC<TabBarProps> = ({
   onPlusPress,
 }) => {
   const { user } = useUserRedux();
+  const [currentPageState, setCurrentPageState] = useState(0);
+
+  // Listen to changes in currentPage shared value and update local state
+  useAnimatedReaction(
+    () => currentPage.value,
+    (currentValue) => {
+      runOnJS(setCurrentPageState)(Math.round(currentValue));
+    },
+    [currentPage]
+  );
 
   // Animated styles for the tab bar background
   const animatedTabBarStyle = useAnimatedStyle(() => {
@@ -86,8 +98,8 @@ const TabBar: React.FC<TabBarProps> = ({
       onTabPress(index);
     };
 
-    // Determine if this tab is selected
-    const isSelected = Math.round(currentPage.value) === index;
+    // Use the state value instead of the shared value directly
+    const isSelected = currentPageState === index;
 
     const renderIcon = () => {
       if (iconType === "home") {
@@ -109,10 +121,11 @@ const TabBar: React.FC<TabBarProps> = ({
       } else if (iconType === "rank") {
         return (
           <View style={styles.iconWrapper}>
-            <Image
-              source={require("@/assets/images/clan.png")}
-              style={[styles.clanIcon, { opacity: isSelected ? 1 : 0.7 }]}
-              resizeMode="contain"
+            <Ionicons
+              name={isSelected ? "shield" : "shield-outline"}
+              size={24}
+              color="#FFFFFF"
+              style={{ opacity: isSelected ? 1 : 0.7 }}
             />
           </View>
         );

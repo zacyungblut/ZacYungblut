@@ -15,18 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { createAudioPlayer, AudioPlayer } from "expo-audio";
 import { searchSongs } from "@/api";
 import { router, useLocalSearchParams } from "expo-router";
-
-// Define Song interface locally since we're no longer using musicService
-interface Song {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  duration: number;
-  previewUrl?: string;
-  artworkUrl?: string;
-  appleMusicUrl?: string;
-}
+import { SUGGESTED_SONGS, Song } from "@/constants/SuggestedSongs";
 
 const SongSearchPage: React.FC = () => {
   const params = useLocalSearchParams();
@@ -357,13 +346,21 @@ const SongSearchPage: React.FC = () => {
             </Text>
           </View>
         ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="search-outline" size={48} color="#999" />
-            <Text style={styles.emptyText}>Search for songs</Text>
-            <Text style={styles.emptySubtext}>
-              Find the perfect song for your post
-            </Text>
-          </View>
+          <>
+            <View style={styles.suggestedHeader}>
+              <Text style={styles.suggestedTitle}>Suggested Songs</Text>
+              <Text style={styles.suggestedSubtext}>
+                Popular picks to get you started
+              </Text>
+            </View>
+            <FlatList
+              data={SUGGESTED_SONGS}
+              renderItem={renderSongItem}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.songsList}
+            />
+          </>
         )}
       </View>
     </SafeAreaView>
@@ -523,6 +520,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F8FF",
     justifyContent: "center",
     alignItems: "center",
+  },
+  suggestedHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  suggestedTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000000",
+    marginBottom: 4,
+  },
+  suggestedSubtext: {
+    fontSize: 14,
+    color: "#666666",
   },
 });
 

@@ -318,7 +318,7 @@ export default function SettingsScreen() {
         {/* App Version */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText} allowFontScaling={false}>
-            Official v1.0.0
+            PissTracker v{require("../app.json").expo.version}
           </Text>
         </View>
       </ScrollView>

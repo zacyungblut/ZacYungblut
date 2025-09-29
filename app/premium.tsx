@@ -459,7 +459,7 @@ export default function PremiumScreen() {
       <View style={styles.content}>
         {/* Title */}
         <Text style={styles.title} allowFontScaling={false}>
-          Become a Premium Pisser
+          {`Become a \n Premium Pisser`}
         </Text>
 
         {/* Social Proof */}
@@ -495,6 +495,17 @@ export default function PremiumScreen() {
             />
             <Text style={styles.featureText} allowFontScaling={false}>
               Receive a Premium Pisser Badge
+            </Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={colors.offBlack}
+              style={styles.checkmark}
+            />
+            <Text style={styles.featureText} allowFontScaling={false}>
+              2.5x Elo Multiplier
             </Text>
           </View>
           <View style={styles.featureItem}>

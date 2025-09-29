@@ -19,7 +19,7 @@ import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { getCurrentUserPosts } from "@/api";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const GRID_PADDING = 24; // Left and right padding
+const GRID_PADDING = 16; // Left and right padding
 const GRID_GAP = 4; // Gap between items
 const POST_SIZE = (SCREEN_WIDTH - GRID_PADDING * 2 - GRID_GAP * 2) / 3; // 3 posts per row
 
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
   userSection: {
     paddingVertical: 24,
-    marginBottom: 20,
+    marginBottom: 0,
   },
   userRow: {
     flexDirection: "row",
@@ -410,15 +410,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.white,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     padding: 20,
-    marginBottom: 32,
-    shadowColor: colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    marginBottom: 16,
+
     elevation: 4,
   },
   premiumIconContainer: {

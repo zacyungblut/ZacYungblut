@@ -1,145 +1,234 @@
 import React from "react";
-import { StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
+import {
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  View as RNView,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Text, View } from "@/components/Themed";
 import TopBar from "@/components/TopBar";
 import { colors } from "@/constants/Colors";
 
-interface ClanMember {
+interface UserRankData {
   id: string;
   name: string;
-  rank: string;
-  level: number;
-  avatar?: string;
+  rank:
+    | "Bronze"
+    | "Silver Streamer"
+    | "Golden Shower"
+    | "Platinum Pisser"
+    | "Grand Master"
+    | "One Above Piss";
+  elo: number;
+  streak: number;
+  postQuality: number;
+  totalPosts: number;
+  likesReceived: number;
+  commentsReceived: number;
   isCurrentUser?: boolean;
 }
 
-const clanMembers: ClanMember[] = [
-  { id: "1", name: "Emma Johnson", rank: "Leader", level: 45 },
-  { id: "2", name: "Michael Chen", rank: "Co-Leader", level: 42 },
-  { id: "3", name: "Sarah Williams", rank: "Elder", level: 38 },
-  { id: "4", name: "David Rodriguez", rank: "Member", level: 35 },
-  {
-    id: "5",
-    name: "Jessica Taylor",
-    rank: "Member",
-    level: 32,
-    isCurrentUser: true,
-  },
-  { id: "6", name: "Alex Thompson", rank: "Member", level: 28 },
-];
+// Mock user data - in real app this would come from API/Redux
+const currentUserData: UserRankData = {
+  id: "current",
+  name: "You",
+  rank: "Golden Shower",
+  elo: 1847,
+  streak: 12,
+  postQuality: 8.4,
+  totalPosts: 156,
+  likesReceived: 2341,
+  commentsReceived: 567,
+  isCurrentUser: true,
+};
 
 export default function RankScreen() {
+  const getRankColor = (rank: string) => {
+    switch (rank) {
+      case "One Above Piss":
+        return "#9B59B6"; // Purple
+      case "Grand Master":
+        return "#FF6B6B"; // Red
+      case "Platinum Pisser":
+        return "#95A5A6"; // Silver/Platinum
+      case "Golden Shower":
+        return "#FFD700"; // Gold
+      case "Silver Streamer":
+        return "#C0C0C0"; // Silver
+      case "Bronze":
+        return "#CD7F32"; // Bronze
+      default:
+        return colors.text.secondary;
+    }
+  };
+
+  const getRankImage = (rank: string) => {
+    switch (rank) {
+      case "One Above Piss":
+        return require("@/assets/images/one_above_piss.png");
+      case "Grand Master":
+        return require("@/assets/images/grand_master.png");
+      case "Platinum Pisser":
+        return require("@/assets/images/platinum_pisser.png");
+      case "Golden Shower":
+        return require("@/assets/images/golden_shower.png");
+      case "Silver Streamer":
+        return require("@/assets/images/silver_streamer.png");
+      case "Bronze":
+        return require("@/assets/images/bronze.png");
+      default:
+        return require("@/assets/images/unknown.png");
+    }
+  };
+
   const getRankIcon = (rank: string) => {
     switch (rank) {
-      case "Leader":
-        return <Ionicons name="crown" size={24} color="#FFD700" />;
-      case "Co-Leader":
-        return <Ionicons name="star" size={24} color="#FF6B6B" />;
-      case "Elder":
-        return <Ionicons name="shield" size={24} color="#4ECDC4" />;
+      case "One Above Piss":
+        return <Ionicons name="crown" size={32} color="#9B59B6" />;
+      case "Grand Master":
+        return <Ionicons name="trophy" size={32} color="#FF6B6B" />;
+      case "Platinum Pisser":
+        return <Ionicons name="medal" size={32} color="#95A5A6" />;
+      case "Golden Shower":
+        return <Ionicons name="medal" size={32} color="#FFD700" />;
+      case "Silver Streamer":
+        return <Ionicons name="medal" size={32} color="#C0C0C0" />;
+      case "Bronze":
+        return <Ionicons name="medal" size={32} color="#CD7F32" />;
       default:
         return (
-          <Ionicons name="person" size={24} color={colors.text.secondary} />
+          <Ionicons name="person" size={32} color={colors.text.secondary} />
         );
     }
   };
 
-  const renderClanMember = (member: ClanMember) => (
-    <TouchableOpacity
-      key={member.id}
-      style={[
-        styles.memberItem,
-        member.isCurrentUser && styles.currentUserItem,
-      ]}
-      activeOpacity={0.7}>
-      {/* Rank Icon */}
-      <View style={styles.rankContainer}>{getRankIcon(member.rank)}</View>
-
-      {/* Member Avatar */}
-      <View
-        style={[
-          styles.avatarContainer,
-          member.isCurrentUser && styles.currentUserAvatar,
-        ]}>
+  const renderStatCard = (
+    title: string,
+    value: string | number,
+    subtitle?: string,
+    icon?: string
+  ) => (
+    <View style={styles.statCard}>
+      {icon && (
         <Ionicons
-          name="person"
+          name={icon as any}
           size={24}
-          color={member.isCurrentUser ? colors.white : colors.text.secondary}
+          color={colors.primary}
+          style={styles.statIcon}
         />
-      </View>
-
-      {/* Member Info */}
-      <View style={styles.memberInfo}>
-        <Text
-          style={[
-            styles.memberName,
-            member.isCurrentUser && styles.currentUserText,
-          ]}>
-          {member.name}
-          {member.isCurrentUser && " (You)"}
-        </Text>
-        <Text
-          style={[
-            styles.memberRank,
-            member.isCurrentUser && styles.currentUserRank,
-          ]}>
-          {member.rank} • Level {member.level}
-        </Text>
-      </View>
-
-      {/* Arrow */}
-      <Ionicons
-        name="chevron-forward"
-        size={20}
-        color={member.isCurrentUser ? colors.white : colors.text.tertiary}
-      />
-    </TouchableOpacity>
+      )}
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statTitle}>{title}</Text>
+      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      <TopBar title="Clan Rank" />
+      {/* <TopBar title="Your Rank" /> */}
 
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        {/* Clan Header */}
-        <View style={styles.clanHeader}>
-          <Image
-            source={require("@/assets/images/clan.png")}
-            style={styles.clanImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.clanName}>Elite Squad</Text>
-          <Text style={styles.clanDescription}>
-            A community of top performers
-          </Text>
+        {/* Current Rank Header */}
+        <View style={styles.rankHeader}>
+          <View style={styles.rankIconContainer}>
+            <Image
+              source={getRankImage(currentUserData.rank)}
+              style={styles.rankHeaderImage}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.rankTitle}>{currentUserData.rank}</Text>
         </View>
 
-        {/* Clan Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>Members</Text>
+        {/* ELO Section */}
+        <View style={styles.eloSection}>
+          <View style={styles.eloContainer}>
+            <Text style={styles.eloNumber}>{currentUserData.elo}</Text>
+            <Text style={styles.eloLabel}>ELO Rating</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>1,250</Text>
-            <Text style={styles.statLabel}>Total Score</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>#3</Text>
-            <Text style={styles.statLabel}>Global Rank</Text>
+          <View style={styles.eloProgress}>
+            <View style={styles.eloProgressBar}>
+              <View
+                style={[
+                  styles.eloProgressFill,
+                  {
+                    width: `${Math.min(
+                      ((currentUserData.elo % 200) / 200) * 100,
+                      100
+                    )}%`,
+                    backgroundColor: getRankColor(currentUserData.rank),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.eloProgressText}>
+              {Math.max(
+                0,
+                (Math.floor(currentUserData.elo / 200) + 1) * 200 -
+                  currentUserData.elo
+              )}{" "}
+              points to next rank
+            </Text>
           </View>
         </View>
 
-        {/* Members List */}
-        <View style={styles.membersSection}>
-          <Text style={styles.sectionTitle}>Clan Members</Text>
-          <View style={styles.membersContainer}>
-            {clanMembers.map((member) => renderClanMember(member))}
+        {/* Rank Progression */}
+        <View style={styles.progressionSection}>
+          <Text style={styles.sectionTitle}>Rank Progression</Text>
+          <View style={styles.ranksList}>
+            {[
+              "Bronze",
+              "Silver Streamer",
+              "Golden Shower",
+              "Platinum Pisser",
+              "Grand Master",
+              "One Above Piss",
+            ].map((rank, index) => {
+              const isCurrentRank = rank === currentUserData.rank;
+              const isPastRank =
+                [
+                  "Bronze",
+                  "Silver Streamer",
+                  "Golden Shower",
+                  "Platinum Pisser",
+                  "Grand Master",
+                  "One Above Piss",
+                ].indexOf(currentUserData.rank) > index;
+
+              return (
+                <View
+                  key={rank}
+                  style={[
+                    styles.rankItem,
+                    isCurrentRank && styles.currentRankItem,
+                  ]}>
+                  <Image
+                    source={getRankImage(rank)}
+                    style={[
+                      styles.rankImage,
+                      {
+                        opacity: 1,
+                      },
+                    ]}
+                    resizeMode="contain"
+                  />
+                  <Text
+                    style={[
+                      styles.rankName,
+                      isCurrentRank && styles.currentRankName,
+                    ]}>
+                    {rank}
+                  </Text>
+                  <Text style={styles.rankElo}>{1000 + index * 400}+ Elo</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 
@@ -154,6 +243,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
+    paddingTop: 40,
   },
   content: {
     flex: 1,
@@ -161,50 +251,104 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
   },
-  clanHeader: {
+  rankHeader: {
     alignItems: "center",
     paddingVertical: 32,
   },
-  clanImage: {
-    width: 80,
-    height: 80,
+  rankIconContainer: {
     marginBottom: 16,
   },
-  clanName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text.primary,
-    marginBottom: 8,
+  rankHeaderImage: {
+    width: 150, // Increased size for the large image
+    height: 150, // Increased size for the large image
   },
-  clanDescription: {
+  rankTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: colors.text.primary, // Changed color to black
+  },
+  rankSubtitle: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
   },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 24,
-    marginBottom: 24,
+  eloSection: {
     backgroundColor: colors.background.secondary,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: colors.border.light,
   },
-  statItem: {
+  eloContainer: {
     alignItems: "center",
+    marginBottom: 20,
   },
-  statNumber: {
+  eloNumber: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  eloLabel: {
+    fontSize: 16,
+    color: colors.text.secondary,
+  },
+  eloProgress: {
+    width: "100%",
+  },
+  eloProgressBar: {
+    height: 8,
+    backgroundColor: colors.background.quaternary,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  eloProgressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  eloProgressText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 24,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: "47%",
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  statIcon: {
+    marginBottom: 8,
+  },
+  statValue: {
     fontSize: 20,
     fontWeight: "bold",
     color: colors.text.primary,
     marginBottom: 4,
   },
-  statLabel: {
+  statTitle: {
     fontSize: 14,
     color: colors.text.secondary,
+    textAlign: "center",
   },
-  membersSection: {
+  statSubtitle: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+  metricsSection: {
     marginBottom: 24,
   },
   sectionTitle: {
@@ -213,62 +357,73 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: 16,
   },
-  membersContainer: {
-    gap: 8,
+  metricItem: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
-  memberItem: {
+  metricHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  metricTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.primary,
+    marginLeft: 8,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  metricDescription: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  progressionSection: {
+    marginBottom: 24,
+  },
+  ranksList: {
+    gap: 12,
+  },
+  rankItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: colors.background.secondary,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border.light,
   },
-  currentUserItem: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primaryLight,
+  currentRankItem: {
+    backgroundColor: colors.background.tertiary,
+    borderColor: colors.primary,
     borderWidth: 2,
   },
-  rankContainer: {
-    width: 40,
-    alignItems: "center",
+  rankImage: {
+    width: 24,
+    height: 24,
     marginRight: 16,
   },
-  avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.background.quaternary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: colors.border.light,
-  },
-  currentUserAvatar: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.white,
-  },
-  memberInfo: {
+  rankName: {
     flex: 1,
-  },
-  memberName: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "500",
     color: colors.text.primary,
-    marginBottom: 2,
   },
-  currentUserText: {
-    color: colors.white,
+  currentRankName: {
+    fontWeight: "bold",
   },
-  memberRank: {
+  rankElo: {
     fontSize: 14,
     color: colors.text.secondary,
-  },
-  currentUserRank: {
-    color: colors.text.light,
   },
   bottomSpacing: {
     height: 120, // Account for tab bar

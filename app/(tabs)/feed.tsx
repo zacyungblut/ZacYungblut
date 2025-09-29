@@ -453,7 +453,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
             <Ionicons
               name="ellipsis-horizontal"
               size={28}
-              color={item.isReported ? "#ff3040" : "#ffffff"}
+              color={"#ffffff"}
               style={styles.actionIcon}
             />
           </TouchableOpacity>
