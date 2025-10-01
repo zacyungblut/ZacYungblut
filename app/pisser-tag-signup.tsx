@@ -102,6 +102,7 @@ export default function PisserTagSignupScreen() {
       } else {
         setIsAvailable(data.available);
         if (!data.available) {
+          // This shouldn't happen if backend is working correctly, but keep as fallback
           setError("This pissername is already taken");
         } else {
           setError(null);

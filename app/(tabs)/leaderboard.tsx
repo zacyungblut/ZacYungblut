@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -117,11 +118,19 @@ export default function LeaderboardScreen() {
       {/* Rank */}
       <View style={styles.rankContainer}>{getRankIcon(user.rank)}</View>
 
+      {/* Profile Photo */}
+      <View style={styles.profilePhotoContainer}>
+        <Image
+          source={require("@/assets/images/DefaultProfile.jpg")}
+          style={styles.profilePhoto}
+        />
+      </View>
+
       {/* User Info */}
       <View style={styles.userInfo}>
         <View style={styles.userNameRow}>
           <Text style={styles.userName}>
-            {user.pisserTag ? `@${user.pisserTag}` : user.name}
+            {user.pisserTag ? `${user.pisserTag}` : user.name}
           </Text>
           {user.isCurrentUser && (
             <View style={styles.youBadge}>
@@ -129,9 +138,11 @@ export default function LeaderboardScreen() {
             </View>
           )}
         </View>
-        <Text style={styles.userScore}>
-          {user.score.toLocaleString()} points
-        </Text>
+      </View>
+
+      {/* Score Badge */}
+      <View style={styles.scoreBadge}>
+        <Text style={styles.scoreText}>{user.score.toLocaleString()}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -318,18 +329,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: colors.background.quaternary,
+    paddingHorizontal: 16,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   firstPlace: {
-    backgroundColor: colors.background.quaternary,
+    backgroundColor: colors.background.secondary,
+    borderColor: colors.border.light,
   },
   secondPlace: {
-    backgroundColor: colors.background.quaternary,
+    backgroundColor: colors.background.secondary,
+    borderColor: colors.border.light,
   },
   thirdPlace: {
-    backgroundColor: colors.background.quaternary,
+    backgroundColor: colors.background.secondary,
+    borderColor: colors.border.light,
   },
   rankContainer: {
     width: 32,
@@ -390,5 +406,26 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 120, // Account for tab bar
+  },
+  profilePhotoContainer: {
+    marginRight: 12,
+  },
+  profilePhoto: {
+    width: 26,
+    height: 26,
+    borderRadius: 20,
+    backgroundColor: colors.background.tertiary,
+  },
+  scoreBadge: {
+    backgroundColor: colors.score,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginLeft: 8,
+  },
+  scoreText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

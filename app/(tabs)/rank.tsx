@@ -35,7 +35,7 @@ interface UserRankData {
 const currentUserData: UserRankData = {
   id: "current",
   name: "You",
-  rank: "Golden Shower",
+  rank: "Bronze",
   elo: 1847,
   streak: 12,
   postQuality: 8.4,
@@ -84,75 +84,28 @@ export default function RankScreen() {
     }
   };
 
-  const getRankIcon = (rank: string) => {
-    switch (rank) {
-      case "One Above Piss":
-        return <Ionicons name="crown" size={32} color="#9B59B6" />;
-      case "Grand Master":
-        return <Ionicons name="trophy" size={32} color="#FF6B6B" />;
-      case "Platinum Pisser":
-        return <Ionicons name="medal" size={32} color="#95A5A6" />;
-      case "Golden Shower":
-        return <Ionicons name="medal" size={32} color="#FFD700" />;
-      case "Silver Streamer":
-        return <Ionicons name="medal" size={32} color="#C0C0C0" />;
-      case "Bronze":
-        return <Ionicons name="medal" size={32} color="#CD7F32" />;
-      default:
-        return (
-          <Ionicons name="person" size={32} color={colors.text.secondary} />
-        );
-    }
-  };
-
-  const renderStatCard = (
-    title: string,
-    value: string | number,
-    subtitle?: string,
-    icon?: string
-  ) => (
-    <View style={styles.statCard}>
-      {icon && (
-        <Ionicons
-          name={icon as any}
-          size={24}
-          color={colors.primary}
-          style={styles.statIcon}
-        />
-      )}
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
-      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      {/* <TopBar title="Your Rank" /> */}
+      {/* ELO Top Bar */}
+      <View style={styles.eloTopBar}>
+        <View style={styles.eloLeftSection}>
+          <Image
+            source={getRankImage(currentUserData.rank)}
+            style={styles.eloRankIcon}
+            resizeMode="contain"
+          />
+        </View>
 
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-        {/* Current Rank Header */}
-        <View style={styles.rankHeader}>
-          <View style={styles.rankIconContainer}>
+        <View style={styles.eloCenterSection}>
+          <View style={styles.eloInfo}>
+            <Text style={styles.eloNumber}>{currentUserData.elo}</Text>
             <Image
-              source={getRankImage(currentUserData.rank)}
-              style={styles.rankHeaderImage}
+              source={require("@/assets/images/mmr_black.png")}
+              style={styles.mmrIcon}
               resizeMode="contain"
             />
           </View>
-          <Text style={styles.rankTitle}>{currentUserData.rank}</Text>
-        </View>
-
-        {/* ELO Section */}
-        <View style={styles.eloSection}>
-          <View style={styles.eloContainer}>
-            <Text style={styles.eloNumber}>{currentUserData.elo}</Text>
-            <Text style={styles.eloLabel}>ELO Rating</Text>
-          </View>
-          <View style={styles.eloProgress}>
+          <View style={styles.eloProgressContainer}>
             <View style={styles.eloProgressBar}>
               <View
                 style={[
@@ -173,9 +126,30 @@ export default function RankScreen() {
                 (Math.floor(currentUserData.elo / 200) + 1) * 200 -
                   currentUserData.elo
               )}{" "}
-              points to next rank
+              to next rank
             </Text>
           </View>
+        </View>
+
+        <View style={styles.eloRightSection}>
+          <Text style={styles.rankName}>{currentUserData.rank}</Text>
+        </View>
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+        {/* Current Rank Header */}
+        <View style={styles.rankHeader}>
+          <View style={styles.rankIconContainer}>
+            <Image
+              source={getRankImage(currentUserData.rank)}
+              style={styles.rankHeaderImage}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.rankTitle}>{currentUserData.rank}</Text>
         </View>
 
         {/* Rank Progression */}
@@ -243,7 +217,74 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
-    paddingTop: 40,
+  },
+  // New ELO Top Bar Styles
+  eloTopBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 65, // Increased from 50 for more breathing room
+    paddingBottom: 20, // Increased from 16 for more space
+    height: 130, // Increased from 110 to accommodate larger padding
+    backgroundColor: colors.background.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  eloLeftSection: {
+    flex: 0.8,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  eloRankIcon: {
+    width: 28, // Slightly smaller from 32
+    height: 28, // Slightly smaller from 32
+  },
+  eloCenterSection: {
+    flex: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  eloInfo: {
+    flexDirection: "row",
+    alignItems: "center", // Changed from "baseline" to "center" for better image alignment
+    marginBottom: 6,
+  },
+  eloNumber: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: colors.text.primary,
+    marginRight: 6, // Increased spacing for the image
+  },
+  mmrIcon: {
+    width: 16, // Appropriate size for the MMR icon
+    height: 16,
+  },
+  eloProgressContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  eloProgressBar: {
+    width: "100%",
+    height: 5, // Reduced from 6
+    backgroundColor: colors.background.quaternary,
+    borderRadius: 2.5, // Adjusted to match height
+    overflow: "hidden",
+    marginBottom: 3, // Reduced from 4
+  },
+  eloProgressFill: {
+    height: "100%",
+    borderRadius: 2.5, // Adjusted to match height
+  },
+  eloProgressText: {
+    fontSize: 10, // Reduced from 11
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
+  eloRightSection: {
+    flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
@@ -284,34 +325,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  eloNumber: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: colors.text.primary,
-    marginBottom: 4,
-  },
-  eloLabel: {
-    fontSize: 16,
-    color: colors.text.secondary,
-  },
   eloProgress: {
     width: "100%",
-  },
-  eloProgressBar: {
-    height: 8,
-    backgroundColor: colors.background.quaternary,
-    borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  eloProgressFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  eloProgressText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: "center",
   },
   statsGrid: {
     flexDirection: "row",
@@ -414,7 +429,7 @@ const styles = StyleSheet.create({
   },
   rankName: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14, // Reduced from 16 for the right section rank name
     fontWeight: "500",
     color: colors.text.primary,
   },

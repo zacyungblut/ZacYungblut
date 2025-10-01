@@ -2,18 +2,15 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   Dimensions,
-  FlatList,
   View,
   Text,
   TouchableOpacity,
   ViewToken,
   Alert,
-  Image,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { useVideoPlayer, VideoView, VideoSource } from "expo-video";
-import { useEvent } from "expo";
+import { FlashList, FlashListRef } from "@shopify/flash-list";
 import { Ionicons } from "@expo/vector-icons";
 import {
   getFeed,
@@ -23,6 +20,7 @@ import {
   undislikePost,
   reportPost,
 } from "@/api";
+import MediaViewer from "@/components/MediaViewer";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -78,44 +76,6 @@ const VideoItem: React.FC<VideoItemProps> = ({
     setLocalLikesCount(item.likesCount);
     setLocalDislikesCount(item.dislikesCount);
   }, [item.isLiked, item.isDisliked, item.likesCount, item.dislikesCount]);
-
-  // Only create video player for video posts
-  const player = useVideoPlayer(
-    item.mediaType === "video" ? ({ uri: item.mediaUrl } as VideoSource) : null,
-    (player) => {
-      if (player) {
-        player.loop = true;
-        player.muted = false;
-      }
-    }
-  );
-
-  // Use useEvent hook to listen to playing state changes (only for videos)
-  const { isPlaying } = useEvent(player, "playingChange", {
-    isPlaying: player?.playing || false,
-  });
-
-  // Handle play/pause on tap (only for videos)
-  const handleVideoPress = useCallback(() => {
-    if (item.mediaType === "video" && player) {
-      if (isPlaying) {
-        player.pause();
-      } else {
-        player.play();
-      }
-    }
-  }, [isPlaying, player, item.mediaType]);
-
-  // Auto play/pause based on visibility (only for videos)
-  useEffect(() => {
-    if (item.mediaType === "video" && player) {
-      if (isVisible) {
-        player.play();
-      } else {
-        player.pause();
-      }
-    }
-  }, [isVisible, player, item.mediaType]);
 
   // Handle like button press with optimistic updates
   const handleLike = useCallback(async () => {
@@ -362,27 +322,12 @@ const VideoItem: React.FC<VideoItemProps> = ({
   return (
     <View style={styles.videoContainer}>
       {/* Media component */}
-      <TouchableOpacity
+      <MediaViewer
+        mediaUrl={item.mediaUrl}
+        mediaType={item.mediaType}
+        isVisible={isVisible}
         style={styles.videoWrapper}
-        onPress={handleVideoPress}
-        activeOpacity={1}>
-        {item.mediaType === "video" && player ? (
-          <VideoView
-            style={styles.video}
-            player={player}
-            allowsFullscreen={false}
-            allowsPictureInPicture={false}
-            nativeControls={false}
-            contentFit="cover"
-          />
-        ) : (
-          <Image
-            source={{ uri: item.mediaUrl }}
-            style={styles.video}
-            resizeMode="cover"
-          />
-        )}
-      </TouchableOpacity>
+      />
 
       {/* Content overlay */}
       <View style={styles.overlay}>
@@ -480,7 +425,7 @@ export default function FeedScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlashListRef<Post>>(null);
 
   // Update post in local state
   const handleUpdatePost = useCallback(
@@ -629,7 +574,7 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <FlashList
         ref={flatListRef}
         data={posts}
         renderItem={renderVideoItem}
@@ -639,15 +584,10 @@ export default function FeedScreen() {
         snapToInterval={SCREEN_HEIGHT}
         snapToAlignment="start"
         decelerationRate="fast"
-        getItemLayout={getItemLayout}
         onViewableItemsChanged={handleViewabilityChange}
         viewabilityConfig={{
           itemVisiblePercentThreshold: 50,
         }}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={3}
-        windowSize={5}
-        initialNumToRender={2}
         onEndReached={loadMorePosts}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
@@ -679,10 +619,6 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   videoWrapper: {
-    width: "100%",
-    height: "100%",
-  },
-  video: {
     width: "100%",
     height: "100%",
   },

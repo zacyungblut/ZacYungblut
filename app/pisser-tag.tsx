@@ -110,7 +110,8 @@ const PisserTagInput: React.FC<PisserTagInputProps> = ({
       return "Pissername available!";
     }
     if (isAvailable === false) {
-      return "Pissername not available";
+      // Return the actual error message instead of generic message
+      return error || "Pissername not available";
     }
     return null;
   };
@@ -157,7 +158,7 @@ const PisserTagInput: React.FC<PisserTagInputProps> = ({
       )}
 
       {/* Error message */}
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {/* {error && <Text style={styles.errorText}>{error}</Text>} */}
     </View>
   );
 };
@@ -170,6 +171,7 @@ export default function PisserTagScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState("");
+  const [availabilityError, setAvailabilityError] = useState(""); // New state for availability errors
   const checkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleBackPress = () => {
@@ -196,25 +198,34 @@ export default function PisserTagScreen() {
   const checkAvailability = async (tag: string) => {
     if (tag.length < 3) {
       setIsAvailable(null);
+      setAvailabilityError("");
       return;
     }
 
     // If it's the user's current tag, mark as available
     if (tag === user?.pisserTag) {
       setIsAvailable(true);
+      setAvailabilityError("");
       return;
     }
 
     setIsChecking(true);
     setIsAvailable(null);
+    setAvailabilityError("");
 
     try {
       const response = await checkPisserTagAvailability(tag);
       setIsAvailable(response.data.available);
-    } catch (error) {
+
+      // Set the actual error message from the backend
+      if (!response.data.available && response.data.error) {
+        setAvailabilityError(response.data.error);
+      }
+    } catch (error: any) {
       console.error("Error checking availability:", error);
       // If backend is down or there's an error, assume available for now
       setIsAvailable(true);
+      setAvailabilityError("");
     } finally {
       setIsChecking(false);
     }
@@ -228,6 +239,7 @@ export default function PisserTagScreen() {
     // Clear previous states
     setError("");
     setIsAvailable(null);
+    setAvailabilityError("");
 
     // Validate the input
     const validationError = validatePisserTag(cleanText);
@@ -325,7 +337,7 @@ export default function PisserTagScreen() {
           value={pisserTag}
           onChangeText={handlePisserTagChange}
           placeholder="piss.daddy_69"
-          error={error}
+          error={error || availabilityError} // Pass both validation and availability errors
           isChecking={isChecking}
           isAvailable={isAvailable}
         />

@@ -11,17 +11,19 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as VideoThumbnails from "expo-video-thumbnails";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { Text, View } from "@/components/Themed";
-import TopBar from "@/components/TopBar";
+import ProfileBar from "@/components/ProfileBar";
 import { colors } from "@/constants/Colors";
 import { useUserRedux } from "@/store/hooks/useUserRedux";
 import { getCurrentUserPosts } from "@/api";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const GRID_PADDING = 16; // Left and right padding
-const GRID_GAP = 4; // Gap between items
-const POST_SIZE = (SCREEN_WIDTH - GRID_PADDING * 2 - GRID_GAP * 2) / 3; // 3 posts per row
+const GRID_PADDING = 16; // Left and right padding for content sections (not posts)
+const GRID_GAP = 1; // Small gap between items
+const POST_WIDTH = (SCREEN_WIDTH - GRID_GAP * 2) / 3; // 3 posts per row, account for gaps
+const POST_HEIGHT = POST_WIDTH * 1.5; // Make posts vertical (1.5:1 aspect ratio)
 
 interface Post {
   id: string;
@@ -60,6 +62,9 @@ export default function ProfileScreen() {
   const [thumbnailsLoading, setThumbnailsLoading] = useState<Set<string>>(
     new Set()
   );
+  const [selectedFilter, setSelectedFilter] = useState<
+    "grid" | "list" | "bookmark" | "tagged"
+  >("grid");
 
   // Generate video thumbnail
   const generateVideoThumbnail = useCallback(
@@ -156,6 +161,15 @@ export default function ProfileScreen() {
     console.log("Post pressed:", post.id);
   }, []);
 
+  // Handle filter selection
+  const handleFilterSelect = useCallback(
+    (filter: "grid" | "list" | "bookmark" | "tagged") => {
+      setSelectedFilter(filter);
+      // You can add logic here to filter posts based on the selected type
+    },
+    []
+  );
+
   // Get the appropriate image source for a post
   const getPostImageSource = useCallback(
     (post: Post) => {
@@ -220,34 +234,14 @@ export default function ProfileScreen() {
                   </View>
                 )}
 
-                {/* Video indicator overlay */}
-                {post.mediaType === "video" && (
-                  <View style={styles.videoIndicator}>
-                    <Ionicons name="play" size={20} color={colors.white} />
-                  </View>
-                )}
-
-                {/* Post stats overlay */}
-                <View style={styles.postOverlay}>
-                  <View style={styles.postStats}>
-                    <View style={styles.statItem}>
-                      <Ionicons name="heart" size={14} color={colors.white} />
-                      <Text style={styles.statText}>{post.likesCount}</Text>
-                    </View>
-                    {post.commentsCount > 0 && (
-                      <View style={styles.statItem}>
-                        <Ionicons
-                          name="chatbubble"
-                          size={14}
-                          color={colors.white}
-                        />
-                        <Text style={styles.statText}>
-                          {post.commentsCount}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
+                {/* Linear Gradient Overlay */}
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.4)"]}
+                  style={styles.gradientOverlay}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 0, y: 1 }}
+                  pointerEvents="none"
+                />
 
                 {/* Loading indicator for thumbnail generation */}
                 {isLoadingThumbnail && (
@@ -255,6 +249,16 @@ export default function ProfileScreen() {
                     <ActivityIndicator size="small" color={colors.white} />
                   </View>
                 )}
+
+                {/* MMR Badge */}
+                <View style={styles.mmrBadge}>
+                  <Image
+                    source={require("@/assets/images/mmr.png")}
+                    style={styles.mmrIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.mmrText}>200</Text>
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -266,7 +270,13 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <TopBar title="Profile" showSettingsButton={true} />
+      <ProfileBar
+        username={user?.pisserTag ? user.pisserTag : "No Pissername"}
+        onUsernamePress={() => {
+          // Could implement account switcher or username editing
+          console.log("Username pressed");
+        }}
+      />
 
       <ScrollView
         style={styles.content}
@@ -281,44 +291,139 @@ export default function ProfileScreen() {
         }>
         {/* User Info Section */}
         <View style={styles.userSection}>
-          <View style={styles.userRow}>
+          <View style={styles.userColumn}>
             <View style={styles.avatarContainer}>
-              <Ionicons name="person" size={48} color={colors.text.secondary} />
+              <Image
+                source={require("@/assets/images/DefaultProfile.jpg")}
+                style={styles.profilePhoto}
+                resizeMode="cover"
+              />
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>
                 {user?.pisserTag ? `@${user.pisserTag}` : "No Pissername"}
               </Text>
-              <Text style={styles.postCount}>
-                {posts.length} {posts.length === 1 ? "post" : "posts"}
-              </Text>
+
+              {/* Action Buttons */}
+              <View style={styles.actionButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => {
+                    // Navigate to edit profile or show edit profile modal
+                    router.push("/edit-profile");
+                  }}
+                  activeOpacity={0.8}>
+                  <Text style={styles.actionButtonText}>Edit profile</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => {
+                    // Navigate to invite friends or show invite modal
+                    console.log("Invite friends pressed");
+                  }}
+                  activeOpacity={0.8}>
+                  <Text style={styles.actionButtonText}>Invite friends</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Premium Upsell Banner */}
-        <View style={styles.premiumBanner}>
-          <View style={styles.premiumIconContainer}>
-            <Image
-              source={require("@/assets/images/premium.png")}
-              style={styles.premiumIcon}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.premiumContent}>
-            <Text style={styles.premiumTitle}>Become a Premium Pisser</Text>
-          </View>
+        <View style={styles.premiumBannerContainer}>
           <TouchableOpacity
-            style={styles.premiumButton}
+            style={styles.premiumBanner}
             onPress={() => router.push("/premium")}
             activeOpacity={0.8}>
-            <Text style={styles.premiumButtonText}>Upgrade</Text>
+            <View style={styles.premiumIconContainer}>
+              <Image
+                source={require("@/assets/images/premium.png")}
+                style={styles.premiumIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.premiumContent}>
+              <Text style={styles.premiumTitle}>Become a Premium Pisser</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* Posts Grid */}
         <View style={styles.postsSection}>
-          <Text style={styles.sectionTitle}>Posts</Text>
+          <View style={styles.filterTabsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.filterTab,
+                selectedFilter === "grid" && styles.filterTabActive,
+              ]}
+              onPress={() => handleFilterSelect("grid")}
+              activeOpacity={0.7}>
+              <Ionicons
+                name="grid-outline"
+                size={24}
+                color={
+                  selectedFilter === "grid"
+                    ? colors.text.primary
+                    : colors.text.secondary
+                }
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterTab,
+                selectedFilter === "list" && styles.filterTabActive,
+              ]}
+              onPress={() => handleFilterSelect("list")}
+              activeOpacity={0.7}>
+              <Ionicons
+                name="list-outline"
+                size={24}
+                color={
+                  selectedFilter === "list"
+                    ? colors.text.primary
+                    : colors.text.secondary
+                }
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterTab,
+                selectedFilter === "bookmark" && styles.filterTabActive,
+              ]}
+              onPress={() => handleFilterSelect("bookmark")}
+              activeOpacity={0.7}>
+              <Ionicons
+                name="bookmark-outline"
+                size={24}
+                color={
+                  selectedFilter === "bookmark"
+                    ? colors.text.primary
+                    : colors.text.secondary
+                }
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterTab,
+                selectedFilter === "tagged" && styles.filterTabActive,
+              ]}
+              onPress={() => handleFilterSelect("tagged")}
+              activeOpacity={0.7}>
+              <Ionicons
+                name="person-outline"
+                size={24}
+                color={
+                  selectedFilter === "tagged"
+                    ? colors.text.primary
+                    : colors.text.secondary
+                }
+              />
+            </TouchableOpacity>
+          </View>
 
           {loading ? (
             <View style={styles.loadingContainer}>
@@ -368,11 +473,17 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: GRID_PADDING,
+    // Removed paddingHorizontal: GRID_PADDING,
   },
   userSection: {
-    paddingVertical: 24,
+    paddingVertical: 32,
+    paddingHorizontal: GRID_PADDING,
     marginBottom: 0,
+    alignItems: "center",
+  },
+  userColumn: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   userRow: {
     flexDirection: "row",
@@ -380,30 +491,56 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   avatarContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: colors.background.secondary,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
-    borderWidth: 2,
+    marginBottom: 16,
+    borderWidth: 3,
     borderColor: colors.border.light,
+    overflow: "hidden",
+  },
+  profilePhoto: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 60,
   },
   userInfo: {
-    flex: 1,
-    paddingTop: 16,
+    alignItems: "center",
+    paddingTop: 0,
   },
   userName: {
     fontSize: 24,
     fontWeight: "bold",
     color: colors.text.primary,
-    marginBottom: 8,
+    marginBottom: 16,
+    textAlign: "center",
   },
-  postCount: {
+  actionButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  actionButton: {
+    backgroundColor: colors.background.secondary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  actionButtonText: {
     fontSize: 16,
-    color: colors.text.secondary,
-    fontWeight: "500",
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  premiumBannerContainer: {
+    paddingHorizontal: GRID_PADDING, // Added container with horizontal padding
+    marginBottom: 16,
   },
   premiumBanner: {
     flexDirection: "row",
@@ -412,9 +549,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border.light,
-    padding: 20,
-    marginBottom: 16,
-
+    padding: 8,
+    // Removed marginBottom: 16, (now handled by container)
+    shadowColor: colors.text.secondary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3.84,
     elevation: 4,
   },
   premiumIconContainer: {
@@ -447,16 +587,45 @@ const styles = StyleSheet.create({
   },
   postsSection: {
     marginBottom: 32,
+    // No horizontal padding - posts will stretch edge to edge
+  },
+  filterTabsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingHorizontal: GRID_PADDING,
+    paddingVertical: 0,
+    marginBottom: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  filterTab: {
+    padding: 12,
+    borderRadius: 0,
+    minWidth: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  filterTabActive: {
+    borderBottomColor: colors.text.primary,
+    backgroundColor: "transparent",
+  },
+  postsSectionHeader: {
+    paddingHorizontal: GRID_PADDING, // Added horizontal padding just for the header
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: colors.text.primary,
-    marginBottom: 16,
+    // Removed marginBottom: 16, (now handled by header container)
   },
   loadingContainer: {
     alignItems: "center",
     paddingVertical: 48,
+    paddingHorizontal: GRID_PADDING, // Added horizontal padding for loading state
   },
   loadingText: {
     fontSize: 16,
@@ -466,7 +635,7 @@ const styles = StyleSheet.create({
   errorContainer: {
     alignItems: "center",
     paddingVertical: 48,
-    paddingHorizontal: 20,
+    paddingHorizontal: GRID_PADDING, // Added horizontal padding for error state
   },
   errorText: {
     fontSize: 16,
@@ -489,7 +658,7 @@ const styles = StyleSheet.create({
   noPostsContainer: {
     alignItems: "center",
     paddingVertical: 48,
-    paddingHorizontal: 20,
+    paddingHorizontal: GRID_PADDING, // Added horizontal padding for no posts state
   },
   noPostsIcon: {
     marginBottom: 16,
@@ -508,22 +677,23 @@ const styles = StyleSheet.create({
   },
   postsGrid: {
     flex: 1,
+    // Removed paddingHorizontal - posts stretch edge to edge
   },
   postRow: {
     flexDirection: "row",
-    justifyContent: "flex-start", // This ensures items align to the left
-    marginBottom: GRID_GAP,
+    justifyContent: "flex-start",
+    marginBottom: GRID_GAP, // Add gap between rows
   },
   postItem: {
-    width: POST_SIZE,
-    height: POST_SIZE,
+    width: POST_WIDTH,
+    height: POST_HEIGHT,
     position: "relative",
-    borderRadius: 8,
+    borderRadius: 0, // Remove border radius for edge-to-edge look
     overflow: "hidden",
     backgroundColor: colors.background.secondary,
   },
   postItemWithMargin: {
-    marginRight: GRID_GAP,
+    marginRight: GRID_GAP, // Add gap between posts in the same row
   },
   postImage: {
     width: "100%",
@@ -536,41 +706,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  videoIndicator: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -15 }, { translateY: -15 }],
-    backgroundColor: "rgba(0,0,0,0.7)",
-    borderRadius: 20,
-    width: 30,
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  postOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    padding: 8,
-  },
-  postStats: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  statText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: "600",
-    marginLeft: 4,
-  },
   thumbnailGeneratingOverlay: {
     position: "absolute",
     top: 8,
@@ -578,5 +713,33 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 12,
     padding: 4,
+  },
+  gradientOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  mmrBadge: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    backgroundColor: "rgba(0,0,0,0)",
+    borderRadius: 12,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  mmrIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 4,
+  },
+  mmrText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.white,
   },
 });

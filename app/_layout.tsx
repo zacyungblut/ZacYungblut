@@ -388,6 +388,7 @@ function RootLayoutNav() {
           name="verification"
           options={{ headerShown: false, presentation: "modal" }}
         />
+        <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         <Stack.Screen
           name="invite"
           options={{ headerShown: false, presentation: "modal" }}
