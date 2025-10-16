@@ -75,7 +75,7 @@ export default function Auth() {
             style={[styles.button, styles.signupButton]}
             onPress={() =>
               router.push({
-                pathname: "/pisser-tag-signup",
+                pathname: "/signup",
                 params: { mode: "signup" },
               })
             }

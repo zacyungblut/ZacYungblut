@@ -35,7 +35,7 @@ export default function PisserTagSignupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const checkTimeoutRef = useRef<number | null>(null);
+  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const textInputRef = useRef<TextInput>(null);
 
   const handleBackPress = () => {
@@ -260,7 +260,7 @@ export default function PisserTagSignupScreen() {
           {/* Intro Section */}
           <View style={styles.introSection}>
             <Text style={styles.introTitle}>
-              {isLoginMode ? "Welcome back!" : "Create Your Pissername"}
+              {isLoginMode ? "Welcome back!" : "Create Your Username"}
             </Text>
             <Text style={styles.introDescription}>
               {isLoginMode

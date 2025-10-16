@@ -84,7 +84,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const gestureTranslateY = useSharedValue(0);
 
   const notificationQueue = useRef<Notification[]>([]);
-  const timeoutRef = useRef<number | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingQueue = useRef(false);
   const isDismissing = useRef(false);
   const router = useRouter();
