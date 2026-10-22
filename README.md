@@ -1,5 +1,7 @@
 # Relationship Status Verification App
 
+[![GitElo](https://gitelo.dev/badge/zacyungblut)](https://gitelo.dev/zacyungblut)
+
 A lightweight social utility that helps couples make their relationship "official" by linking phone numbers. Inspired by the days of being "Facebook official", this app brings back transparency in dating for the modern era.
 
 When two people confirm their relationship, their status (dating, situationship, single, etc.) is visible to others who search their phone number - only if they've opted in. If someone refuses to confirm, that itself is information.
